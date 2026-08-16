@@ -310,7 +310,27 @@ section + section{border-top:1px solid var(--line)}
   .positions .btn{justify-self:start}
 }
 
+/* ---------- patent groups ---------- */
+.pat-group{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:26px;margin-bottom:24px;
+}
+.pat-group:last-child{margin-bottom:0}
+.pat-group__head{
+  display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;
+  padding-bottom:14px;margin-bottom:22px;border-bottom:2px solid var(--line-strong);
+}
+.pat-group__head h3{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.pat-group__count{font-size:13.5px;color:var(--muted);font-weight:500}
+.pat-group__note{margin-left:auto;font-size:13px;color:var(--muted)}
+.patent-no--granted{color:var(--accent-ink);background:var(--accent-soft);border-color:var(--accent-line)}
+@media (max-width:620px){
+  .pat-group{padding:20px}
+  .pat-group__note{margin-left:0;flex-basis:100%}
+}
+
 /* ---------- footer ---------- */
+
 .site-footer{
   background:var(--brand);color:var(--brand-ink);
   padding:56px 0 32px;
@@ -397,7 +417,7 @@ section + section{border-top:1px solid var(--line)}
       <li>University of Maine · Electrical &amp; Computer Engineering</li>
       <li>8 researchers</li>
       <li>53 publications</li>
-      <li>6 patents filed</li>
+      <li>20 patents &amp; applications</li>
     </ul>
   </div>
 </div>
@@ -1312,67 +1332,158 @@ section + section{border-top:1px solid var(--line)}
   </div>
 </section>
 
-<!-- ========================= INVENTIONS ========================= -->
+<!-- ========================= INVENTIONS =========================
+     Two groups: UMaine-held provisionals, and the earlier UF-held portfolio. -->
 <section id="inventions">
   <div class="wrap">
     <div class="section-head">
       <span class="eyebrow">Technology transfer</span>
       <h2>Inventions</h2>
-      <p>Provisional patent applications filed on lab research. Licensing enquiries go through the UMaine Flintbox portfolio.</p>
+      <p>Patents and patent applications arising from this research, grouped by the institution holding them.</p>
     </div>
 
-    <div class="card-grid">
+    <div class="pat-group">
+      <div class="pat-group__head">
+        <h3>University of Maine</h3>
+        <span class="pat-group__count">6 provisional applications</span>
+        <span class="pat-group__note">Current lab portfolio</span>
+      </div>
 
+      <div class="card-grid">
       <article class="card">
         <h3>Bit-Flip Induced Semantic Drift in Multimodal Transformer Models</h3>
         <span class="patent-no">U.S. Provisional No. 63/930,131</span>
         <p class="inventors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Shane Moeykens, <span class="me">Prabuddha Chakraborty</span></p>
         <p class="desc">Bit flip analysis via differentiable estimation.</p>
       </article>
-
       <article class="card">
         <h3>Methods and Systems for the Automated Generation of Neural Network Architectures</h3>
         <span class="patent-no">U.S. Provisional No. 63/627,621</span>
         <p class="inventors"><span class="me">Md Hafizur Rahman</span>, <span class="me">Prabuddha Chakraborty</span>, <span class="me">Zafaryab Haider</span></p>
         <p class="desc">A framework that automatically generates architectures against user preferences such as FPS, accuracy, and energy.</p>
       </article>
-
       <article class="card">
         <h3>Methods and Systems for the Design and Use of Intelligent Layer Shared Neural Networks and Model Architecture Search Algorithms</h3>
         <span class="patent-no">U.S. Provisional No. 63/535,627</span>
         <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Md Hafizur Rahman</span>, Sumaiya Shomaji, Md Mashfiq Rizvee</p>
         <p class="desc">Searches networks for multi-task applications using a layer-sharing approach; the predictive method reduces overall search time.</p>
       </article>
-
       <article class="card">
         <h3>Leakage-Aware Secure Transformations (LAST) and POLARIS for Power Side-Channel Mitigation</h3>
         <span class="patent-no">U.S. Provisional No. 63/827,407</span>
         <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Tanzim Mahfuz</span>, <span class="me">Tasneem Farhana Suha</span>, Swarup Bhunia, Sudipta Paria</p>
         <p class="desc">An AI-driven framework that generates and optimally inserts masked logic solutions to significantly reduce power side-channel leakage in digital hardware.</p>
       </article>
-
       <article class="card">
         <h3>Framework for Mitigating Malicious RLHF Feedback in LLM Training Using Consensus Based Reward</h3>
         <span class="patent-no">U.S. Provisional No. 63/768,361</span>
         <p class="inventors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Shane Moeykens, <span class="me">Prabuddha Chakraborty</span></p>
         <p class="desc">Makes AI training safer when you cannot fully control or verify every human giving feedback.</p>
       </article>
-
       <article class="card">
         <h3>Live Tracking of Cyber Components and AI Guided Automated Vulnerability Detection &amp; Fixing</h3>
         <span class="patent-no">U.S. Provisional — number pending</span>
         <p class="inventors"><span class="me">Nickolas Millett</span>, Katherine Arsenault, <span class="me">Prabuddha Chakraborty</span></p>
         <p class="desc">Tracks cyber components in real time to build a digital twin, which then drives automated AI vulnerability assessment; the resulting fixes can be applied to the production environment.</p>
       </article>
+      </div>
 
+      <p style="margin:24px 0 0">
+        <a class="btn" href="https://umaine.flintbox.com/portfolios/bd048e0c-a516-4887-8cc9-a23920d2dad1" target="_blank" rel="noopener noreferrer">
+          See Full Inventory on Flintbox
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+        </a>
+      </p>
     </div>
 
-    <p style="margin:28px 0 0">
-      <a class="btn" href="https://umaine.flintbox.com/portfolios/bd048e0c-a516-4887-8cc9-a23920d2dad1" target="_blank" rel="noopener noreferrer">
-        See Full Inventory on Flintbox
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
-      </a>
-    </p>
+    <div class="pat-group">
+      <div class="pat-group__head">
+        <h3>University of Florida</h3>
+        <span class="pat-group__count">8 granted &middot; 6 applications</span>
+        <span class="pat-group__note">Held by UF from earlier research</span>
+      </div>
+
+      <div class="card-grid">
+      <article class="card">
+        <h3>Predictive joint compression and encryption for images and videos</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 12,058,238</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span>, Jonathan W. Cruz, Tamzidul Hoque, T. T. Nguyen</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US12058238" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>Multi-level battery systems for battery-operated entities, methods for rapid charge transfer therebetween, and methods for optimizing entity routing and network charge distribution</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 12,049,151</span>
+        <p class="inventors">Shuo Wang, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span>, Robert Parker, Rohan Reddy Kalavakonda</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US12049151" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>Smart infrastructures and first-responder network for security and safety hazards</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 12,024,201</span>
+        <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, Reiner Dizon-Paradis, Christopher Vega, Joel B. Harley, Sandip Ray, Swarup Bhunia, et al.</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US12024201" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>Drone-based administration of remotely located instruments and gadgets</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 11,978,023</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span>, Reiner Dizon-Paradis, Patrick Difuntorum, Christopher Vega, et al.</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US11978023" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>System and method for a battery on wheels (BoW) for charging mobile battery-operated units</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 11,890,957</span>
+        <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia, Christopher M. Vega</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US11890957" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>System and method for charging a network of mobile battery-operated units on-the-go</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 11,376,979</span>
+        <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US11376979" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>Learning guided obfuscation framework for hardware IP protection</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 11,341,283</span>
+        <p class="inventors">Abdulrahman Alaql, Saranyu Chattopadhyay, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US11341283" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>Systems and methods for machine intelligence based malicious design alteration insertion</h3>
+        <span class="patent-no patent-no--granted">U.S. Patent 11,321,510</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span>, Abhishek A. Nair, Tamzidul Hoque, Jonathan W. Cruz, Naren Vikram Raj Masna, et al.</p>
+        <a class="btn btn--ghost" href="https://patents.google.com/patent/US11321510" target="_blank" rel="noopener noreferrer">View Patent <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+      <article class="card">
+        <h3>Learning memory systems and methods</h3>
+        <span class="patent-no">U.S. Patent App. 19/037,772</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+      </article>
+      <article class="card">
+        <h3>Spatio-temporal intelligent digital memory systems and methods</h3>
+        <span class="patent-no">U.S. Patent App. 18/451,509</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+      </article>
+      <article class="card">
+        <h3>Framework for sustainable recharging of battery electric vehicles with near-perpetual mobility</h3>
+        <span class="patent-no">U.S. Patent App. 18/297,436</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span>, Reiner Dizon-Paradis</p>
+      </article>
+      <article class="card">
+        <h3>Learning-rooted IoT platform</h3>
+        <span class="patent-no">U.S. Patent App. 17/863,172</span>
+        <p class="inventors">Swarup Bhunia, Reiner Dizon-Paradis, <span class="me">Prabuddha Chakraborty</span>, Rohan Reddy Kalavakonda, Patrick Difuntorum</p>
+      </article>
+      <article class="card">
+        <h3>Brain inspired learning memory systems and methods</h3>
+        <span class="patent-no">U.S. Patent App. 17/336,944</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+      </article>
+      <article class="card">
+        <h3>Multi-purpose context-aware bump (CAB) supporting dynamic adaptation of form factors and functionality</h3>
+        <span class="patent-no">U.S. Patent App. 16/885,642</span>
+        <p class="inventors">Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span>, Lili Du, Sandip Ray</p>
+      </article>
+      </div>
+    </div>
   </div>
 </section>
 
