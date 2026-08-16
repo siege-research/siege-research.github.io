@@ -186,6 +186,7 @@ section + section{border-top:1px solid var(--line)}
 .pi .role{margin:6px 0 0;color:var(--accent);font-weight:600;font-size:15px}
 .pi .affil{margin:10px 0 0;color:var(--muted);font-size:15px;line-height:1.55}
 .pi .affil strong{color:var(--ink-2);font-weight:600}
+.pi__links{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
 
 .team-grid{
   display:grid;gap:22px;
@@ -342,6 +343,7 @@ section + section{border-top:1px solid var(--line)}
   .pub__action{justify-self:start;flex-direction:row;flex-wrap:wrap;align-items:center}
   .pi{grid-template-columns:1fr;text-align:center;gap:22px;padding:24px}
   .pi__photo{width:170px;margin-inline:auto}
+  .pi__links{justify-content:center}
   .hero{padding:48px 0 44px}
 }
 @media (max-width:620px){
@@ -420,12 +422,16 @@ section + section{border-top:1px solid var(--line)}
           <strong>Dr. Waldo &ldquo;Mac&rdquo; Libbey &rsquo;44 Professor &amp; Assistant Professor</strong><br>
           Electrical and Computer Engineering, University of Maine
         </p>
-        <p style="margin:16px 0 0">
+        <div class="pi__links">
           <a class="btn" href="https://www.prabuddha.org/" target="_blank" rel="noopener noreferrer">
             Personal Website
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
           </a>
-        </p>
+          <a class="btn btn--ghost" href="https://scholar.google.com/citations?user=zzXy8kgAAAAJ&amp;hl=en" target="_blank" rel="noopener noreferrer">
+            Google Scholar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </a>
+        </div>
       </div>
     </article>
 
