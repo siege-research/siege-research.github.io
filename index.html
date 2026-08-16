@@ -266,6 +266,42 @@ section + section{border-top:1px solid var(--line)}
 .btn svg{width:13px;height:13px;flex:0 0 auto}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#062018}}
 
+/* ---------- inventions / resources / demos ---------- */
+.card-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.card{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+  border-top:3px solid var(--line-strong);
+  padding:24px;display:flex;flex-direction:column;
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.card:hover{border-color:var(--line-strong);border-top-color:var(--accent);box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.card h3{font-size:17px;font-weight:650;letter-spacing:-.015em;line-height:1.35}
+.card .patent-no{
+  margin:10px 0 0;font-size:12.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--warm);background:var(--warm-soft);border:1px solid var(--warm-line);
+  border-radius:5px;padding:4px 9px;display:inline-block;align-self:flex-start;
+  font-variant-numeric:tabular-nums;
+}
+.card .inventors{margin:12px 0 0;font-size:13.5px;color:var(--muted);line-height:1.55}
+.card .inventors .me{color:var(--ink-2);font-weight:650}
+.card .desc{margin:12px 0 0;font-size:14.5px;color:var(--ink-2);line-height:1.6}
+.card ul{margin:12px 0 0;padding-left:20px;font-size:14.5px;color:var(--ink-2);line-height:1.7}
+.card ul strong{color:var(--ink);font-weight:650}
+.card .btn{margin-top:18px;align-self:flex-start}
+.card .note{margin:14px 0 0;font-size:13.5px;color:var(--muted);line-height:1.6}
+
+.positions{
+  display:grid;grid-template-columns:1fr auto;gap:28px;align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:32px;box-shadow:var(--shadow);
+}
+.positions h3{font-size:21px;font-weight:700}
+.positions p{margin:10px 0 0;color:var(--muted);font-size:15.5px;max-width:60ch;line-height:1.6}
+@media (max-width:720px){
+  .positions{grid-template-columns:1fr;gap:20px}
+  .positions .btn{justify-self:start}
+}
+
 /* ---------- footer ---------- */
 .site-footer{
   background:var(--brand);color:var(--brand-ink);
@@ -335,8 +371,10 @@ section + section{border-top:1px solid var(--line)}
     <nav class="site-nav" aria-label="Primary">
       <a href="#team">Team</a>
       <a href="#publications">Publications</a>
-      <a href="#contact">Contact</a>
-      <a class="cta" href="mailto:prabuddha@maine.edu">Join Us</a>
+      <a href="#inventions">Inventions</a>
+      <a href="#resources">Resources</a>
+      <a href="#demos">Demos</a>
+      <a class="cta" href="#positions">Join Us</a>
     </nav>
   </div>
 </header>
@@ -882,6 +920,154 @@ section + section{border-top:1px solid var(--line)}
         </div>
       </article>
 
+    </div>
+  </div>
+</section>
+
+<!-- ========================= INVENTIONS ========================= -->
+<section id="inventions">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Technology transfer</span>
+      <h2>Inventions</h2>
+      <p>Provisional patent applications filed on lab research. Licensing enquiries go through the UMaine Flintbox portfolio.</p>
+    </div>
+
+    <div class="card-grid">
+
+      <article class="card">
+        <h3>Bit-Flip Induced Semantic Drift in Multimodal Transformer Models</h3>
+        <span class="patent-no">U.S. Provisional No. 63/930,131</span>
+        <p class="inventors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Shane Moeykens, <span class="me">Prabuddha Chakraborty</span></p>
+        <p class="desc">Bit flip analysis via differentiable estimation.</p>
+      </article>
+
+      <article class="card">
+        <h3>Methods and Systems for the Automated Generation of Neural Network Architectures</h3>
+        <span class="patent-no">U.S. Provisional No. 63/627,621</span>
+        <p class="inventors"><span class="me">Md Hafizur Rahman</span>, <span class="me">Prabuddha Chakraborty</span>, <span class="me">Zafaryab Haider</span></p>
+        <p class="desc">A framework that automatically generates architectures against user preferences such as FPS, accuracy, and energy.</p>
+        <a class="btn" href="https://www.nature.com/articles/s41598-025-97378-5" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+
+      <article class="card">
+        <h3>Methods and Systems for the Design and Use of Intelligent Layer Shared Neural Networks and Model Architecture Search Algorithms</h3>
+        <span class="patent-no">U.S. Provisional No. 63/535,627</span>
+        <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Md Hafizur Rahman</span>, Sumaiya Shomaji, Md Mashfiq Rizvee</p>
+        <p class="desc">Searches networks for multi-task applications using a layer-sharing approach; the predictive method reduces overall search time.</p>
+        <a class="btn" href="https://ieeexplore.ieee.org/document/11091315" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+
+      <article class="card">
+        <h3>Leakage-Aware Secure Transformations (LAST) and POLARIS for Power Side-Channel Mitigation</h3>
+        <span class="patent-no">U.S. Provisional No. 63/827,407</span>
+        <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Tanzim Mahfuz</span>, <span class="me">Tasneem Farhana Suha</span>, Swarup Bhunia, Sudipta Paria</p>
+        <p class="desc">An AI-driven framework that generates and optimally inserts masked logic solutions to significantly reduce power side-channel leakage in digital hardware.</p>
+        <a class="btn" href="https://arxiv.org/abs/2507.22177" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+
+      <article class="card">
+        <h3>Framework for Mitigating Malicious RLHF Feedback in LLM Training Using Consensus Based Reward</h3>
+        <span class="patent-no">U.S. Provisional No. 63/768,361</span>
+        <p class="inventors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Shane Moeykens, <span class="me">Prabuddha Chakraborty</span></p>
+        <p class="desc">Makes AI training safer when you cannot fully control or verify every human giving feedback.</p>
+        <a class="btn" href="https://www.nature.com/articles/s41598-025-92889-7" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+
+      <article class="card">
+        <h3>Live Tracking of Cyber Components and AI Guided Automated Vulnerability Detection &amp; Fixing</h3>
+        <span class="patent-no">U.S. Provisional — number pending</span>
+        <p class="inventors"><span class="me">Nickolas Millett</span>, Katherine Arsenault, <span class="me">Prabuddha Chakraborty</span></p>
+        <p class="desc">Tracks cyber components in real time to build a digital twin, which then drives automated AI vulnerability assessment; the resulting fixes can be applied to the production environment.</p>
+      </article>
+
+    </div>
+
+    <p style="margin:28px 0 0">
+      <a class="btn" href="https://umaine.flintbox.com/portfolios/bd048e0c-a516-4887-8cc9-a23920d2dad1" target="_blank" rel="noopener noreferrer">
+        See Full Inventory on Flintbox
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </a>
+    </p>
+  </div>
+</section>
+
+<!-- =========================== DEMOS =========================== -->
+<section id="demos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Try it</span>
+      <h2>Demos</h2>
+      <p>Interactive walkthroughs of frameworks built in the lab.</p>
+    </div>
+
+    <div class="card-grid">
+      <article class="card">
+        <h3>COBRA — COnsensus Based Reward Aggregator</h3>
+        <p class="desc">A trust layer that sits between feedback and model training to identify reliable signals, filter corrupted ones, and produce safer training data.</p>
+        <a class="btn" href="https://zafaryab.github.io/demo.html" target="_blank" rel="noopener noreferrer">Open Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+
+      <article class="card">
+        <h3>LEMONADE — Large languagE MOdel Guided Neural Architecture DEsign</h3>
+        <p class="desc">Automatically generates neural architectures against user requirements including accuracy, energy efficiency, latency, and model size.</p>
+        <a class="btn" href="https://hafizuriu.github.io/lemonade-demo/" target="_blank" rel="noopener noreferrer">Open Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= RESOURCES ========================= -->
+<section id="resources">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Facilities</span>
+      <h2>Resources</h2>
+      <p>An environment for developing, testing, and scaling embedded AI, distributed systems, and FPGA acceleration.</p>
+    </div>
+
+    <div class="card-grid">
+      <article class="card">
+        <h3>Test Bed</h3>
+        <p class="desc">Our lab network currently hosts <strong>12 devices</strong> available for testing and development:</p>
+        <ul>
+          <li>Raspberry Pis</li>
+          <li>NVIDIA Jetson AGX Orin &amp; Xavier</li>
+          <li>TNAS storage systems</li>
+        </ul>
+        <p class="note">We're actively expanding — soon we'll support <strong>~50 devices</strong> with a more diverse set of hardware, including Jetson Nanos and other edge AI platforms.</p>
+      </article>
+
+      <article class="card">
+        <h3>FPGAs</h3>
+        <p class="desc">Alongside embedded and edge computing devices, the lab features a range of FPGAs:</p>
+        <ul>
+          <li>AMD Zynq UltraScale+</li>
+          <li>Virtex UltraScale+ VCU 118 Evaluation Kit</li>
+          <li>And more high-performance programmable logic boards</li>
+        </ul>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ====================== OPEN POSITIONS ====================== -->
+<section id="positions">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Join us</span>
+      <h2>Open Positions</h2>
+    </div>
+
+    <div class="positions">
+      <div>
+        <h3>Funded Ph.D. positions are available</h3>
+        <p>We're looking for students interested in AI security, microelectronics assurance, side-channel analysis, and intelligent edge systems. Full details, requirements, and how to apply are on the director's site.</p>
+      </div>
+      <a class="btn" href="https://www.prabuddha.org/funded-phd-positions" target="_blank" rel="noopener noreferrer">
+        See Details
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+      </a>
     </div>
   </div>
 </section>
