@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIEGE Lab — Secure &amp; Intelligent Edge Research Lab</title>
+<meta name="description" content="The Secure and Intelligent Edge Research Lab (SIEGE) at the University of Maine researches AI security, hardware and side-channel security, neural architecture search, and trustworthy systems for edge devices.">
+<link rel="canonical" href="https://www.siegelab.org/">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<link rel="apple-touch-icon" href="assets/favicon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SIEGE Lab">
+<meta property="og:title" content="SIEGE Lab — Secure &amp; Intelligent Edge Research Lab">
+<meta property="og:description" content="Pioneering the design of secure and AI-enabled systems for edge devices. University of Maine, Electrical &amp; Computer Engineering.">
+<meta property="og:url" content="https://www.siegelab.org/">
+<meta property="og:image" content="https://www.siegelab.org/assets/siege-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "ResearchOrganization",
+  "name": "Secure and Intelligent Edge Research Lab",
+  "alternateName": "SIEGE Lab",
+  "url": "https://www.siegelab.org/",
+  "logo": "https://www.siegelab.org/assets/siege-logo.png",
+  "email": "prabuddha@maine.edu",
+  "telephone": "+1-207-581-2224",
+  "parentOrganization": { "@type": "CollegeOrUniversity", "name": "University of Maine" },
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "5708 Barrows Hall, Room 2B",
+    "addressLocality": "Orono",
+    "addressRegion": "ME",
+    "postalCode": "04469",
+    "addressCountry": "US"
+  },
+  "sameAs": ["https://www.linkedin.com/company/siege-research"]
+}
+</script>
+
+<style>
+/* ---------- design tokens ---------- */
+:root{
+  --bg:#ffffff;
+  --surface:#f5f8f8;
+  --surface-2:#eef3f3;
+  --ink:#14222a;
+  --ink-2:#33474f;
+  --muted:#5f747d;
+  --line:#dde5e6;
+  --line-strong:#c6d3d5;
+  --brand:#1e2c33;
+  --brand-ink:#f2f8f7;
+  --accent:#0f9d6e;
+  --accent-soft:#e4f6ef;
+  --accent-line:#9fdfc6;
+  --accent-ink:#0a7550;
+  --warm:#a8560c;
+  --warm-soft:#fdf0e0;
+  --warm-line:#f0cda1;
+  --shadow:0 1px 2px rgba(20,34,42,.05), 0 8px 24px -12px rgba(20,34,42,.18);
+  --shadow-lift:0 2px 4px rgba(20,34,42,.06), 0 18px 40px -18px rgba(20,34,42,.30);
+  --radius:14px;
+  --maxw:1120px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1518;
+    --surface:#131f24;
+    --surface-2:#18262c;
+    --ink:#e9f2f1;
+    --ink-2:#c2d3d4;
+    --muted:#90a6ad;
+    --line:#22343b;
+    --line-strong:#2e454e;
+    --brand:#0a1114;
+    --brand-ink:#eaf4f2;
+    --accent:#45d6a4;
+    --accent-soft:#12312a;
+    --accent-line:#1f5a48;
+    --accent-ink:#45d6a4;
+    --warm:#f0a860;
+    --warm-soft:#35220f;
+    --warm-line:#5c3a15;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 18px 40px -18px rgba(0,0,0,.75);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px;-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:400 16px/1.6 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;display:block}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+h1,h2,h3{line-height:1.2;letter-spacing:-.02em;margin:0}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:24px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:10px 16px;z-index:100;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* ---------- header ---------- */
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:saturate(160%) blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.site-header .wrap{display:flex;align-items:center;gap:24px;min-height:68px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex:0 0 auto}
+.brand picture{display:flex}
+.brand img{height:34px;width:auto}
+.brand span{position:absolute;left:-9999px}
+.site-nav{margin-left:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.site-nav a{
+  color:var(--ink-2);text-decoration:none;font-size:14.5px;font-weight:500;
+  padding:8px 12px;border-radius:8px;white-space:nowrap;
+}
+.site-nav a:hover{color:var(--ink);background:var(--surface-2)}
+.site-nav a.cta{
+  background:var(--accent);color:#fff;font-weight:600;
+}
+.site-nav a.cta:hover{background:var(--accent);filter:brightness(1.08)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .site-nav a.cta{color:#062018}}
+
+/* ---------- hero ---------- */
+.hero{
+  background:var(--brand);
+  color:var(--brand-ink);
+  padding:64px 0 60px;
+  border-bottom:1px solid var(--line);
+  background-image:
+    radial-gradient(900px 420px at 88% -10%, rgba(69,214,164,.16), transparent 62%),
+    radial-gradient(600px 300px at 4% 108%, rgba(69,214,164,.09), transparent 60%);
+}
+.hero__logo{width:min(420px,84vw);margin-bottom:28px}
+.hero h1{
+  font-size:clamp(28px,4.4vw,46px);font-weight:700;max-width:20ch;
+  letter-spacing:-.03em;
+}
+.hero p.lede{
+  margin:18px 0 0;font-size:clamp(16px,1.7vw,19px);max-width:60ch;
+  color:rgba(242,248,247,.76);
+}
+.hero__facts{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:30px;padding:0;list-style:none;
+}
+.hero__facts li{
+  font-size:13.5px;font-weight:500;letter-spacing:.01em;
+  padding:7px 14px;border-radius:999px;
+  border:1px solid rgba(159,223,198,.28);
+  background:rgba(69,214,164,.08);
+  color:rgba(242,248,247,.9);
+}
+
+/* ---------- sections ---------- */
+section{padding:76px 0}
+section + section{border-top:1px solid var(--line)}
+.section-head{margin-bottom:36px;max-width:70ch}
+.eyebrow{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:12px;
+}
+.section-head h2{font-size:clamp(24px,3vw,34px);font-weight:700}
+.section-head p{margin:12px 0 0;color:var(--muted);font-size:16.5px}
+
+/* ---------- team ---------- */
+.pi{
+  display:grid;grid-template-columns:200px 1fr;gap:32px;align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:28px;margin-bottom:36px;box-shadow:var(--shadow);
+}
+.pi__photo{
+  width:200px;aspect-ratio:1;object-fit:cover;object-position:center 22%;
+  border-radius:12px;background:var(--surface-2);
+}
+.pi h3{font-size:26px;font-weight:700}
+.pi .role{margin:6px 0 0;color:var(--accent);font-weight:600;font-size:15px}
+.pi .affil{margin:10px 0 0;color:var(--muted);font-size:15px;line-height:1.55}
+.pi .affil strong{color:var(--ink-2);font-weight:600}
+
+.team-grid{
+  display:grid;gap:22px;
+  grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
+}
+.member{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+  padding:18px;text-align:center;transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.member:hover{border-color:var(--line-strong);box-shadow:var(--shadow);transform:translateY(-2px)}
+.member__photo{
+  width:120px;height:120px;object-fit:cover;border-radius:50%;
+  margin:0 auto 14px;background:var(--surface-2);
+  border:3px solid var(--bg);box-shadow:0 0 0 1px var(--line);
+}
+.member h4{margin:0;font-size:16.5px;font-weight:650;letter-spacing:-.01em;line-height:1.3}
+.member .yr{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--accent)}
+.member .ri{margin:9px 0 0;font-size:13.5px;color:var(--muted);line-height:1.45}
+.member .link{
+  display:inline-block;margin-top:13px;font-size:13px;font-weight:600;
+  text-decoration:none;color:var(--ink-2);
+  border:1px solid var(--line-strong);border-radius:999px;padding:5px 13px;
+}
+.member .link:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+
+/* ---------- publications ---------- */
+.pub-list{display:flex;flex-direction:column;gap:14px}
+.pub{
+  display:grid;
+  grid-template-columns:104px minmax(0,1fr) auto;
+  gap:24px;align-items:center;
+  background:var(--bg);
+  border:1px solid var(--line);
+  border-left:3px solid var(--line-strong);
+  border-radius:var(--radius);
+  padding:20px 24px;
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.pub:hover{border-color:var(--line-strong);border-left-color:var(--accent);box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.pub__meta{display:flex;flex-direction:column;gap:8px;align-items:flex-start}
+.pub__year{
+  font-size:22px;font-weight:700;letter-spacing:-.02em;color:var(--ink);
+  font-variant-numeric:tabular-nums;line-height:1;
+}
+.pub__type{
+  font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;
+  padding:4px 9px;border-radius:5px;white-space:nowrap;
+  background:var(--surface-2);color:var(--muted);border:1px solid var(--line);
+}
+.pub__type--journal{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-line)}
+.pub__type--conference{background:var(--warm-soft);color:var(--warm);border-color:var(--warm-line)}
+.pub__title{font-size:17.5px;font-weight:650;letter-spacing:-.015em;line-height:1.35;color:var(--ink)}
+.pub__venue{
+  margin:9px 0 0;font-size:14.5px;color:var(--ink-2);
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px;
+}
+.tag{
+  font-size:11.5px;font-weight:700;letter-spacing:.06em;
+  background:var(--brand);color:var(--brand-ink);
+  padding:3px 8px;border-radius:5px;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) .tag{background:var(--surface-2);color:var(--accent);border:1px solid var(--accent-line)}
+}
+.pub__venue em{font-style:normal;font-weight:600}
+.dot{color:var(--line-strong)}
+.pub__authors{margin:8px 0 0;font-size:13.5px;color:var(--muted);line-height:1.55}
+.pub__authors .me{color:var(--ink-2);font-weight:650}
+.pub__action{flex:0 0 auto}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  background:var(--accent);color:#fff;text-decoration:none;
+  font-size:14px;font-weight:600;letter-spacing:.01em;
+  padding:10px 18px;border-radius:9px;
+  transition:filter .15s ease, transform .15s ease;
+}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn svg{width:13px;height:13px;flex:0 0 auto}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#062018}}
+
+/* ---------- footer ---------- */
+.site-footer{
+  background:var(--brand);color:var(--brand-ink);
+  padding:56px 0 32px;
+}
+.footer-grid{
+  display:grid;gap:32px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+.footer-grid h5{
+  margin:0 0 12px;font-size:11.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(159,223,198,.85);
+}
+.footer-grid p,.footer-grid a{
+  margin:0;font-size:14.5px;line-height:1.7;color:rgba(242,248,247,.78);
+  text-decoration:none;
+}
+.footer-grid a:hover{color:#fff;text-decoration:underline}
+.footer-grid img{height:38px;width:auto;margin-bottom:14px}
+.footer-bottom{
+  margin-top:40px;padding-top:22px;border-top:1px solid rgba(242,248,247,.13);
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
+  font-size:13px;color:rgba(242,248,247,.55);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:880px){
+  .pub{grid-template-columns:1fr;gap:14px;padding:20px}
+  .pub__meta{flex-direction:row;align-items:center;gap:10px}
+  .pub__year{font-size:18px}
+  .pub__action{justify-self:start}
+  .pi{grid-template-columns:1fr;text-align:center;gap:22px;padding:24px}
+  .pi__photo{width:170px;margin-inline:auto}
+  .hero{padding:48px 0 44px}
+}
+@media (max-width:620px){
+  .wrap{padding-inline:18px}
+  section{padding:56px 0}
+  .site-nav a{padding:7px 9px;font-size:13.5px}
+  .team-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+  .member__photo{width:100px;height:100px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+  html{scroll-behavior:auto}
+}
+@media print{
+  .site-header,.hero__facts,.btn{display:none}
+  .pub,.member,.pi{break-inside:avoid;box-shadow:none}
+  body{background:#fff;color:#000}
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="#top">
+      <picture>
+        <source srcset="assets/siege-logo-light.png" media="(prefers-color-scheme: dark)">
+        <img src="assets/siege-logo.png" alt="SIEGE — Secure &amp; Intelligent Edge Research Lab">
+      </picture>
+      <span>SIEGE Lab</span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="#team">Team</a>
+      <a href="#publications">Publications</a>
+      <a href="#contact">Contact</a>
+      <a class="cta" href="mailto:prabuddha@maine.edu">Join Us</a>
+    </nav>
+  </div>
+</header>
+
+<div id="top"></div>
+
+<div class="hero">
+  <div class="wrap">
+    <img class="hero__logo" src="assets/siege-logo-light.png" alt="SIEGE — Secure and Intelligent Edge Research Lab">
+    <h1>Secure and Intelligent Edge Research Lab</h1>
+    <p class="lede">Pioneering the design of secure and AI-enabled systems for edge devices — spanning AI security, hardware and side-channel assurance, neural architecture search, and trustworthy embedded systems.</p>
+    <ul class="hero__facts">
+      <li>University of Maine · Electrical &amp; Computer Engineering</li>
+      <li>8 researchers</li>
+      <li>28 publications</li>
+      <li>6 patents filed</li>
+    </ul>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ============================ TEAM ============================ -->
+<section id="team">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Who we are</span>
+      <h2>Team</h2>
+      <p>A group of doctoral and master's researchers at the University of Maine working across AI security, microelectronics assurance, and intelligent edge systems.</p>
+    </div>
+
+    <article class="pi">
+      <img class="pi__photo" src="assets/team/prabuddha-chakraborty.jpg" alt="Portrait of Dr. Prabuddha Chakraborty" width="200" height="200">
+      <div>
+        <h3>Dr. Prabuddha Chakraborty</h3>
+        <p class="role">Director, SIEGE Research Lab</p>
+        <p class="affil">
+          <strong>Dr. Waldo &ldquo;Mac&rdquo; Libbey &rsquo;44 Professor &amp; Assistant Professor</strong><br>
+          Electrical and Computer Engineering, University of Maine
+        </p>
+        <p style="margin:16px 0 0">
+          <a class="btn" href="https://www.prabuddha.org/" target="_blank" rel="noopener noreferrer">
+            Personal Website
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
+          </a>
+        </p>
+      </div>
+    </article>
+
+    <div class="team-grid">
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/tanzim-mahfuz.jpg" alt="Portrait of Tanzim Mahfuz" width="120" height="120" loading="lazy">
+        <h4>Tanzim Mahfuz</h4>
+        <p class="yr">4th Year Ph.D. Scholar</p>
+        <p class="ri">AI for Microelectronic Security</p>
+        <a class="link" href="https://drive.google.com/file/d/12Zas7R-6ATBsVVTR1wxlIoHO8zNmNcsC/view?usp=sharing" target="_blank" rel="noopener noreferrer">Details</a>
+      </article>
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/zafaryab-haider.jpg" alt="Portrait of Zafaryab Haider" width="120" height="120" loading="lazy">
+        <h4>Zafaryab Haider</h4>
+        <p class="yr">Ph.D. Candidate</p>
+        <p class="ri">AI Security, Trustworthy AI</p>
+        <a class="link" href="https://zafaryab.github.io/" target="_blank" rel="noopener noreferrer">Details</a>
+      </article>
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/md-hafizur-rahman.jpg" alt="Portrait of Md Hafizur Rahman" width="120" height="120" loading="lazy">
+        <h4>Md Hafizur Rahman</h4>
+        <p class="yr">3rd Year Ph.D. Scholar</p>
+        <p class="ri">Agentic AI, System Security</p>
+        <a class="link" href="https://sites.google.com/view/hafizur-rahman-/home" target="_blank" rel="noopener noreferrer">Details</a>
+      </article>
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/tasneem-suha.jpg" alt="Portrait of Tasneem Suha" width="120" height="120" loading="lazy">
+        <h4>Tasneem Suha</h4>
+        <p class="yr">3rd Year Ph.D. Scholar</p>
+        <p class="ri">Integrated HW/SW Security</p>
+        <a class="link" href="https://drive.google.com/file/d/1c1580pD_L26qJRLPJE0fcso2uqV_6uZX/view?usp=sharing" target="_blank" rel="noopener noreferrer">Details</a>
+      </article>
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/sarah-glatter.jpg" alt="Portrait of Sarah Glatter" width="120" height="120" loading="lazy">
+        <h4>Sarah Glatter</h4>
+        <p class="yr">2nd Year Ph.D. Scholar</p>
+        <p class="ri">Big Data, AI and RL Databases</p>
+        <a class="link" href="https://drive.google.com/file/d/1aACfvrao0bkrbslXNQA0anc3cQ1_d1No/view?usp=sharing" target="_blank" rel="noopener noreferrer">Details</a>
+      </article>
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/nick-millet.jpg" alt="Portrait of Nick Millet" width="120" height="120" loading="lazy">
+        <h4>Nick Millet</h4>
+        <p class="yr">2nd Year Ph.D. Scholar</p>
+        <p class="ri">Cybersecurity AI</p>
+      </article>
+
+      <article class="member">
+        <img class="member__photo" src="assets/team/abdullah-al-nomaan-nafi.jpg" alt="Portrait of Abdullah Al Nomaan Nafi" width="120" height="120" loading="lazy">
+        <h4>Abdullah Al Nomaan Nafi</h4>
+        <p class="yr">2nd Year Ph.D. Scholar</p>
+        <p class="ri">AI Security</p>
+        <a class="link" href="https://nnafi1211.github.io/resume/" target="_blank" rel="noopener noreferrer">Details</a>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ======================== PUBLICATIONS ======================== -->
+<section id="publications">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Research output</span>
+      <h2>Publications</h2>
+      <p>Peer-reviewed journal articles, conference papers, and preprints from the lab and its collaborators, most recent first.</p>
+    </div>
+
+    <div class="pub-list">
+
+      <!-- 2026 -->
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Nest: Adaptive Tree-Graph Vector Database for Energy-Constrained Edge Devices</h3>
+          <p class="pub__venue"><span class="tag">NEST</span> <em>ACM/IEEE International Symposium on Low Power Electronics and Design (ISLPED)</em> <span class="dot">·</span> August 2026</p>
+          <p class="pub__authors"><span class="me">Sarah Lorell Glatter</span>, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://doi.org/10.1145/3816440.3818530" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type">Preprint</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">(A)iSpy: Parasitic Trojans for Machine Learning Infrastructure</h3>
+          <p class="pub__venue"><span class="tag">AISPY</span> <em>arXiv preprint</em> <span class="dot">·</span> July 2026</p>
+          <p class="pub__authors">Habibur Rahaman, Qipan Xu, <span class="me">Zafaryab Haider</span>, <span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia, Fnu Suya</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://arxiv.org/abs/2607.17550" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">DISARM: Target Electronic Device Informed Mitigation of Software Runtime Side-Channel Vulnerabilities</h3>
+          <p class="pub__venue"><span class="tag">DISARM</span> <em>IEEE Transactions on Information Forensics and Security</em> <span class="dot">·</span> 2026</p>
+          <p class="pub__authors"><span class="me">Tasneem Suha</span>, <span class="me">Tanzim Mahfuz</span>, Rima Asmar Awad, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://doi.org/10.1109/TIFS.2026.3707433" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Attacking the Protections of Hardware using Trojan-Assisted Meta Attacks</h3>
+          <p class="pub__venue"><em>ACM Transactions on Design Automation of Electronic Systems</em> <span class="dot">·</span> June 2026</p>
+          <p class="pub__authors">Tanvir Hossain, S M Mojahidul Ahsan, <span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia, Tamzidul Hoque</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://doi.org/10.1145/3804452" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type">Preprint</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">HARP: Measuring Harm Amplification in Multi-Agent LLM Systems</h3>
+          <p class="pub__venue"><span class="tag">HARP</span> <em>arXiv preprint</em> <span class="dot">·</span> May 2026</p>
+          <p class="pub__authors"><span class="me">Md Hafizur Rahman</span>, <span class="me">Zafaryab Haider</span>, <span class="me">Tanzim Mahfuz</span>, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://arxiv.org/abs/2605.27489" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type">Preprint</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">LASH: Adaptive Semantic Hybridization for Black-Box Jailbreaking of Large Language Models</h3>
+          <p class="pub__venue"><span class="tag">LASH</span> <em>arXiv preprint</em> <span class="dot">·</span> May 2026</p>
+          <p class="pub__authors"><span class="me">Abdullah Al Nomaan Nafi</span>, Fnu Suya, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://arxiv.org/abs/2605.21362" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2026</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">DASH: A Meta-Attack Framework for Synthesizing Effective and Stealthy Adversarial Examples</h3>
+          <p class="pub__venue"><span class="tag">DASH</span> <em>IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)</em> <span class="dot">·</span> 2026</p>
+          <p class="pub__authors"><span class="me">Abdullah Al Nomaan Nafi</span>, Habibur Rahaman, <span class="me">Zafaryab Haider</span>, <span class="me">Tanzim Mahfuz</span>, Fnu Suya, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://arxiv.org/abs/2508.13309" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <!-- 2025 -->
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type">Preprint</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">How a Bit Becomes a Story: Semantic Steering via Differentiable Fault Injection</h3>
+          <p class="pub__venue"><span class="tag">BLADE</span> <em>arXiv preprint</em> <span class="dot">·</span> December 2025</p>
+          <p class="pub__authors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Shane Moeykens, Vijay Devabhaktuni, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://arxiv.org/abs/2512.14715" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Secure and Trustworthy Microelectronics: Vulnerabilities, Solutions, and Trends</h3>
+          <p class="pub__venue"><em>Journal of Hardware and Systems Security</em> <span class="dot">·</span> October 2025</p>
+          <p class="pub__authors">Sriram Prabhakara Rao, Shree Ram Abayankar Balaji, Farishta Rahman, <span class="me">Tasneem Suha</span>, <span class="me">Tanzim Mahfuz</span>, Tanvir Hossain, Mahmudul Hasan, Md Sakib Hasan, Tamzidul Hoque, <span class="me">Prabuddha Chakraborty</span>, Prakash Ranganathan</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://doi.org/10.1007/s41635-025-00165-x" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">FV-PAL: Scalable Formal Verification through Partitioning and LLM-Guided Property Generation</h3>
+          <p class="pub__venue"><span class="tag">FV-PAL</span> <em>IEEE 43rd International Conference on Computer Design (ICCD)</em> <span class="dot">·</span> November 2025</p>
+          <p class="pub__authors">Sudipta Paria, Aritra Dasgupta, Dinesh Reddy Ankireddy, <span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://doi.org/10.1109/ICCD65941.2025.00114" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Intelligent Layer Sharing (ILASH): A Predictive Neural Architecture Search Framework for Multi-Task Applications</h3>
+          <p class="pub__venue"><span class="tag">ILASH</span> <em>IEEE Access</em> <span class="dot">·</span> 2025</p>
+          <p class="pub__authors"><span class="me">Md Hafizur Rahman</span>, <span class="me">Zafaryab Haider</span>, Md Mashfiq Rizvee, Sumaiya Shomaji, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/11091315" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">TRIM: AI Guided Random Number Generation for Resource-Constrained IoT Systems</h3>
+          <p class="pub__venue"><span class="tag">TRIM</span> <em>IEEE Access</em> <span class="dot">·</span> 2025</p>
+          <p class="pub__authors"><span class="me">Tasneem Suha</span>, <span class="me">Md Hafizur Rahman</span>, Ashley E. Rice, Colin Smith, Rima Asmar Awad, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/11072001" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">DINGO — A Distributed &amp; Intelligent Graph Based Memory for IoT</h3>
+          <p class="pub__venue"><span class="tag">DINGO</span> <em>Great Lakes Symposium on VLSI (GLSVLSI)</em> <span class="dot">·</span> June 2025</p>
+          <p class="pub__authors"><span class="me">Sarah Glatter</span>, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://dl.acm.org/doi/10.1145/3716368.3735258" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">POLARIS: Explainable Artificial Intelligence for Mitigating Power Side-Channel Leakage</h3>
+          <p class="pub__venue"><span class="tag">POLARIS</span> <em>62nd ACM/IEEE Design Automation Conference (DAC)</em> <span class="dot">·</span> June 2025</p>
+          <p class="pub__authors"><span class="me">Tanzim Mahfuz</span>, Sudipta Paria, <span class="me">Tasneem Suha</span>, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://arxiv.org/abs/2507.22177" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">An automated multi parameter neural architecture discovery framework using ChatGPT in the backend</h3>
+          <p class="pub__venue"><span class="tag">LEMONADE</span> <em>Nature Scientific Reports</em> <span class="dot">·</span> May 2025</p>
+          <p class="pub__authors"><span class="me">Md Hafizur Rahman</span>, <span class="me">Zafaryab Haider</span>, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://www.nature.com/articles/s41598-025-97378-5" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">SALTY: Explainable Artificial Intelligence Guided Structural Analysis for Hardware Trojan Detection</h3>
+          <p class="pub__venue"><span class="tag">SALTY</span> <em>IEEE 43rd VLSI Test Symposium (VTS)</em> <span class="dot">·</span> April 2025</p>
+          <p class="pub__authors"><span class="me">Tanzim Mahfuz</span>, Pravin Gaikwad, <span class="me">Tasneem Suha</span>, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/11022818" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">A framework for mitigating malicious RLHF feedback in LLM training using consensus based reward</h3>
+          <p class="pub__venue"><span class="tag">COBRA</span> <em>Nature Scientific Reports</em> <span class="dot">·</span> March 2025</p>
+          <p class="pub__authors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Vijay Devabhaktuni, Shane Moeykens, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://www.nature.com/articles/s41598-025-92889-7" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Distributed Energy Resource Management System (DERMS) Cybersecurity Scenarios, Trends, and Potential Technologies: A Review</h3>
+          <p class="pub__venue"><span class="tag">DERMS</span> <em>IEEE Communications Surveys &amp; Tutorials</em> <span class="dot">·</span> 2025</p>
+          <p class="pub__authors">Niroop Sugunaraj, Shree Ram Abayankar Balaji, Barathwaja Subash Chandar, Prashanth Rajagopalan, Utku Kose, David Charles Loper, <span class="me">Tanzim Mahfuz</span>, <span class="me">Prabuddha Chakraborty</span>, Seerin Ahmad, Taesic Kim, Giovanni Apruzzese, Anamika Dubey, Luka Strezoski, Benjamin Blakely, Subhojit Ghosh, Maddikara Jaya Bharata Reddy, Harsha Vardhan Padullaparti, Prakash Ranganathan</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10858368" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2025</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">CAST-Map: Cybersecurity Assessment Using Spatio-Temporal Mapping of Connected Electronics</h3>
+          <p class="pub__venue"><span class="tag">CAST-Map</span> <em>IEEE International Conference on Consumer Electronics (ICCE)</em> <span class="dot">·</span> January 2025</p>
+          <p class="pub__authors"><span class="me">Nickolas Millett</span>, Katherine Arsenault, Nick Tozier, Benjamin Bailey, Gregory Studer, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10930189" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <!-- 2024 -->
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2024</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">X-DFS: Explainable Artificial Intelligence Guided Design-for-Security Solution Space Exploration</h3>
+          <p class="pub__venue"><span class="tag">X-DFS</span> <em>IEEE Transactions on Information Forensics and Security</em> <span class="dot">·</span> 2024</p>
+          <p class="pub__authors"><span class="me">Tanzim Mahfuz</span>, Swarup Bhunia, <span class="me">Prabuddha Chakraborty</span></p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10798618" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2024</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">A Self-Aware Digital Memory Framework Powered by Artificial Intelligence</h3>
+          <p class="pub__venue"><span class="tag">SELF-AWARE MEMORY</span> <em>IEEE Transactions on Artificial Intelligence</em> <span class="dot">·</span> July 2024</p>
+          <p class="pub__authors"><span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10466638" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2024</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Splitting the Secrets: A Cooperative Trust Model for System-on-Chip Designs with Untrusted IPs</h3>
+          <p class="pub__venue"><em>IEEE Computer Society Annual Symposium on VLSI (ISVLSI)</em> <span class="dot">·</span> July 2024</p>
+          <p class="pub__authors">Aritra Dasgupta, Sudipta Paria, <span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10682704" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2024</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">An Intelligent Memory Framework for Resource Constrained IoT Systems</h3>
+          <p class="pub__venue"><em>IEEE Computer Society Annual Symposium on VLSI (ISVLSI)</em> <span class="dot">·</span> July 2024</p>
+          <p class="pub__authors"><span class="me">Prabuddha Chakraborty</span>, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10682736" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2024</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">In-situ particle analysis with heterogeneous background: a machine learning approach</h3>
+          <p class="pub__venue"><em>Nature Scientific Reports</em> <span class="dot">·</span> May 2024</p>
+          <p class="pub__authors">Adeeb Ibne Alam, <span class="me">Md Hafizur Rahman</span>, Akhter Zia, Nate Lowry, <span class="me">Prabuddha Chakraborty</span>, Md Rafiul Hassan, Bashir Khoda</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://www.nature.com/articles/s41598-024-59558-7" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2024</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Learning Your Lock: Exploiting Structural Vulnerabilities in Logic Locking</h3>
+          <p class="pub__venue"><span class="tag">LEARNING LOCK</span> <em>IEEE Design &amp; Test</em> <span class="dot">·</span> April 2024</p>
+          <p class="pub__authors"><span class="me">Prabuddha Chakraborty</span>, Jonathan Cruz, Rasheed Almawzan, <span class="me">Tanzim Mahfuz</span>, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10400498" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <!-- 2023 -->
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2023</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Hardware Specification Aware Timing Side Channel Security Analysis</h3>
+          <p class="pub__venue"><em>IEEE 36th International System-on-Chip Conference (SOCC)</em> <span class="dot">·</span> September 2023</p>
+          <p class="pub__authors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Tasneem Suha</span>, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10256749" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2023</span>
+          <span class="pub__type pub__type--journal">Journal</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">SAVIOR: A Sustainable Network of Vehicles with Near-Perpetual Mobility</h3>
+          <p class="pub__venue"><span class="tag">SAVIOR</span> <em>IEEE Internet of Things Magazine</em> <span class="dot">·</span> June 2023</p>
+          <p class="pub__authors"><span class="me">Prabuddha Chakraborty</span>, Reiner N. Dizon-Paradis, Swarup Bhunia</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10145032" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+      <article class="pub">
+        <div class="pub__meta">
+          <span class="pub__year">2023</span>
+          <span class="pub__type pub__type--conference">Conference</span>
+        </div>
+        <div class="pub__body">
+          <h3 class="pub__title">Understanding the Innovations Required for a Green &amp; Secure Artificial Intelligence Paradigm</h3>
+          <p class="pub__venue"><span class="tag">EFFICIENT-AI</span> <em>IEEE 16th Dallas Circuits and Systems Conference (DCAS)</em> <span class="dot">·</span> April 2023</p>
+          <p class="pub__authors">Md Mashfiq Rizvee, <span class="me">Md Hafizur Rahman</span>, <span class="me">Prabuddha Chakraborty</span>, Sumaiya Shomaji</p>
+        </div>
+        <div class="pub__action">
+          <a class="btn" href="https://ieeexplore.ieee.org/document/10130257" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- =========================== FOOTER =========================== -->
+<footer class="site-footer" id="contact">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <img src="assets/siege-logo-light.png" alt="SIEGE Lab">
+        <p>Secure and Intelligent Edge Research Lab</p>
+      </div>
+      <div>
+        <h5>Address</h5>
+        <p>
+          University of Maine<br>
+          Electrical &amp; Computer Engineering<br>
+          5708 Barrows Hall, Room 2B<br>
+          Orono, Maine 04469
+        </p>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <p>
+          <a href="mailto:prabuddha@maine.edu">prabuddha@maine.edu</a><br>
+          <a href="tel:+12075812224">207.581.2224</a>
+        </p>
+      </div>
+      <div>
+        <h5>Elsewhere</h5>
+        <p>
+          <a href="https://www.linkedin.com/company/siege-research" target="_blank" rel="noopener noreferrer">LinkedIn</a><br>
+          <a href="https://umaine.flintbox.com/portfolios/bd048e0c-a516-4887-8cc9-a23920d2dad1" target="_blank" rel="noopener noreferrer">UMaine Flintbox Portfolio</a><br>
+          <a href="https://www.prabuddha.org/funded-phd-positions" target="_blank" rel="noopener noreferrer">Funded Ph.D. Positions</a>
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Secure and Intelligent Edge Research Lab</span>
+      <span>University of Maine</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
