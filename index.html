@@ -254,7 +254,7 @@ section + section{border-top:1px solid var(--line)}
 .dot{color:var(--line-strong)}
 .pub__authors{margin:8px 0 0;font-size:13.5px;color:var(--muted);line-height:1.55}
 .pub__authors .me{color:var(--ink-2);font-weight:650}
-.pub__action{flex:0 0 auto}
+.pub__action{flex:0 0 auto;display:flex;flex-direction:column;gap:8px;align-items:stretch}
 .btn{
   display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
   background:var(--accent);color:#fff;text-decoration:none;
@@ -264,7 +264,14 @@ section + section{border-top:1px solid var(--line)}
 }
 .btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
 .btn svg{width:13px;height:13px;flex:0 0 auto}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn{color:#062018}}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn:not(.btn--ghost){color:#062018}}
+.btn--ghost{
+  background:transparent;color:var(--accent-ink);
+  border:1px solid var(--accent-line);padding:9px 17px;
+}
+.btn--ghost:hover{background:var(--accent-soft);filter:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn--ghost{color:var(--accent)}}
+.pub__action .btn{justify-content:center}
 
 /* ---------- inventions / resources / demos ---------- */
 .card-grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
@@ -332,7 +339,7 @@ section + section{border-top:1px solid var(--line)}
   .pub{grid-template-columns:1fr;gap:14px;padding:20px}
   .pub__meta{flex-direction:row;align-items:center;gap:10px}
   .pub__year{font-size:18px}
-  .pub__action{justify-self:start}
+  .pub__action{justify-self:start;flex-direction:row;flex-wrap:wrap;align-items:center}
   .pi{grid-template-columns:1fr;text-align:center;gap:22px;padding:24px}
   .pi__photo{width:170px;margin-inline:auto}
   .hero{padding:48px 0 44px}
@@ -372,8 +379,6 @@ section + section{border-top:1px solid var(--line)}
       <a href="#team">Team</a>
       <a href="#publications">Publications</a>
       <a href="#inventions">Inventions</a>
-      <a href="#resources">Resources</a>
-      <a href="#demos">Demos</a>
       <a class="cta" href="#positions">Join Us</a>
     </nav>
   </div>
@@ -720,6 +725,7 @@ section + section{border-top:1px solid var(--line)}
         </div>
         <div class="pub__action">
           <a class="btn" href="https://www.nature.com/articles/s41598-025-97378-5" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          <a class="btn btn--ghost" href="https://hafizuriu.github.io/lemonade-demo/" target="_blank" rel="noopener noreferrer">Live Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
         </div>
       </article>
 
@@ -750,6 +756,7 @@ section + section{border-top:1px solid var(--line)}
         </div>
         <div class="pub__action">
           <a class="btn" href="https://www.nature.com/articles/s41598-025-92889-7" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          <a class="btn btn--ghost" href="https://zafaryab.github.io/demo.html" target="_blank" rel="noopener noreferrer">Live Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
         </div>
       </article>
 
@@ -947,7 +954,6 @@ section + section{border-top:1px solid var(--line)}
         <span class="patent-no">U.S. Provisional No. 63/627,621</span>
         <p class="inventors"><span class="me">Md Hafizur Rahman</span>, <span class="me">Prabuddha Chakraborty</span>, <span class="me">Zafaryab Haider</span></p>
         <p class="desc">A framework that automatically generates architectures against user preferences such as FPS, accuracy, and energy.</p>
-        <a class="btn" href="https://www.nature.com/articles/s41598-025-97378-5" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       </article>
 
       <article class="card">
@@ -955,7 +961,6 @@ section + section{border-top:1px solid var(--line)}
         <span class="patent-no">U.S. Provisional No. 63/535,627</span>
         <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Md Hafizur Rahman</span>, Sumaiya Shomaji, Md Mashfiq Rizvee</p>
         <p class="desc">Searches networks for multi-task applications using a layer-sharing approach; the predictive method reduces overall search time.</p>
-        <a class="btn" href="https://ieeexplore.ieee.org/document/11091315" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       </article>
 
       <article class="card">
@@ -963,7 +968,6 @@ section + section{border-top:1px solid var(--line)}
         <span class="patent-no">U.S. Provisional No. 63/827,407</span>
         <p class="inventors"><span class="me">Prabuddha Chakraborty</span>, <span class="me">Tanzim Mahfuz</span>, <span class="me">Tasneem Farhana Suha</span>, Swarup Bhunia, Sudipta Paria</p>
         <p class="desc">An AI-driven framework that generates and optimally inserts masked logic solutions to significantly reduce power side-channel leakage in digital hardware.</p>
-        <a class="btn" href="https://arxiv.org/abs/2507.22177" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       </article>
 
       <article class="card">
@@ -971,7 +975,6 @@ section + section{border-top:1px solid var(--line)}
         <span class="patent-no">U.S. Provisional No. 63/768,361</span>
         <p class="inventors"><span class="me">Zafaryab Haider</span>, <span class="me">Md Hafizur Rahman</span>, Shane Moeykens, <span class="me">Prabuddha Chakraborty</span></p>
         <p class="desc">Makes AI training safer when you cannot fully control or verify every human giving feedback.</p>
-        <a class="btn" href="https://www.nature.com/articles/s41598-025-92889-7" target="_blank" rel="noopener noreferrer">See Full Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       </article>
 
       <article class="card">
@@ -989,65 +992,6 @@ section + section{border-top:1px solid var(--line)}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>
       </a>
     </p>
-  </div>
-</section>
-
-<!-- =========================== DEMOS =========================== -->
-<section id="demos">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Try it</span>
-      <h2>Demos</h2>
-      <p>Interactive walkthroughs of frameworks built in the lab.</p>
-    </div>
-
-    <div class="card-grid">
-      <article class="card">
-        <h3>COBRA — COnsensus Based Reward Aggregator</h3>
-        <p class="desc">A trust layer that sits between feedback and model training to identify reliable signals, filter corrupted ones, and produce safer training data.</p>
-        <a class="btn" href="https://zafaryab.github.io/demo.html" target="_blank" rel="noopener noreferrer">Open Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
-      </article>
-
-      <article class="card">
-        <h3>LEMONADE — Large languagE MOdel Guided Neural Architecture DEsign</h3>
-        <p class="desc">Automatically generates neural architectures against user requirements including accuracy, energy efficiency, latency, and model size.</p>
-        <a class="btn" href="https://hafizuriu.github.io/lemonade-demo/" target="_blank" rel="noopener noreferrer">Open Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
-      </article>
-    </div>
-  </div>
-</section>
-
-<!-- ========================= RESOURCES ========================= -->
-<section id="resources">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Facilities</span>
-      <h2>Resources</h2>
-      <p>An environment for developing, testing, and scaling embedded AI, distributed systems, and FPGA acceleration.</p>
-    </div>
-
-    <div class="card-grid">
-      <article class="card">
-        <h3>Test Bed</h3>
-        <p class="desc">Our lab network currently hosts <strong>12 devices</strong> available for testing and development:</p>
-        <ul>
-          <li>Raspberry Pis</li>
-          <li>NVIDIA Jetson AGX Orin &amp; Xavier</li>
-          <li>TNAS storage systems</li>
-        </ul>
-        <p class="note">We're actively expanding — soon we'll support <strong>~50 devices</strong> with a more diverse set of hardware, including Jetson Nanos and other edge AI platforms.</p>
-      </article>
-
-      <article class="card">
-        <h3>FPGAs</h3>
-        <p class="desc">Alongside embedded and edge computing devices, the lab features a range of FPGAs:</p>
-        <ul>
-          <li>AMD Zynq UltraScale+</li>
-          <li>Virtex UltraScale+ VCU 118 Evaluation Kit</li>
-          <li>And more high-performance programmable logic boards</li>
-        </ul>
-      </article>
-    </div>
   </div>
 </section>
 
