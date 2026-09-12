@@ -289,7 +289,7 @@ section + section{border-top:1px solid var(--line)}
 }
 .pub{
   display:grid;
-  grid-template-columns:104px minmax(0,1fr) auto;
+  grid-template-columns:152px minmax(0,1fr) auto;
   gap:24px;align-items:center;
   background:var(--bg);
   border:1px solid var(--line);
@@ -309,8 +309,16 @@ section + section{border-top:1px solid var(--line)}
   padding:4px 9px;border-radius:5px;white-space:nowrap;
   background:var(--surface-2);color:var(--muted);border:1px solid var(--line);
 }
-.pub__type--journal{background:var(--accent-soft);color:var(--accent-ink);border-color:var(--accent-line)}
-.pub__type--conference{background:var(--warm-soft);color:var(--warm);border-color:var(--warm-line)}
+/* Journal / Conference / Preprint all share one muted chip; the venue and
+   rating chips above them carry the colour. */
+.pub__type--journal,.pub__type--conference{background:var(--surface-2);color:var(--muted);border-color:var(--line)}
+.pub__abbr,.pub__rank{
+  font-size:10.5px;font-weight:700;letter-spacing:.05em;
+  padding:4px 9px;border-radius:5px;white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.pub__abbr{background:var(--accent-soft);color:var(--accent-ink);border:1px solid var(--accent-line)}
+.pub__rank{background:var(--warm-soft);color:var(--warm);border:1px solid var(--warm-line)}
 .pub__title{font-size:17.5px;font-weight:650;letter-spacing:-.015em;line-height:1.35;color:var(--ink)}
 .pub__venue{
   margin:9px 0 0;font-size:14.5px;color:var(--ink-2);
@@ -437,7 +445,7 @@ section + section{border-top:1px solid var(--line)}
 /* ---------- responsive ---------- */
 @media (max-width:880px){
   .pub{grid-template-columns:1fr;gap:14px;padding:20px}
-  .pub__meta{flex-direction:row;align-items:center;gap:10px}
+  .pub__meta{flex-direction:row;flex-wrap:wrap;align-items:center;gap:10px}
   .pub__year{font-size:18px}
   .pub__action{justify-self:start;flex-direction:row;flex-wrap:wrap;align-items:center}
   .pi{grid-template-columns:1fr;text-align:center;gap:22px;padding:24px}
@@ -657,6 +665,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">ISLPED 2026</span>
+          <span class="pub__rank">CORE A</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -673,6 +683,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">CCS 2026</span>
+          <span class="pub__rank">CORE A*</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -688,6 +700,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">IEEE TIFS 2026</span>
+          <span class="pub__rank">IF 8 (2024)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -704,6 +718,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">ACM TODAES 2026</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -719,6 +734,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">arXiv 2026</span>
           <span class="pub__type">Preprint</span>
         </div>
         <div class="pub__body">
@@ -744,6 +760,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">arXiv 2026</span>
           <span class="pub__type">Preprint</span>
         </div>
         <div class="pub__body">
@@ -759,6 +776,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2026</span>
+          <span class="pub__abbr">CVPR 2026</span>
+          <span class="pub__rank">CORE A*</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -776,6 +795,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">arXiv 2025</span>
           <span class="pub__type">Preprint</span>
         </div>
         <div class="pub__body">
@@ -792,6 +812,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">JHSS 2025</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -807,6 +828,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">ICCD 2025</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -822,6 +844,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">IEEE Access 2025</span>
+          <span class="pub__rank">IF 4.2 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -837,6 +861,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">IEEE Access 2025</span>
+          <span class="pub__rank">IF 4.2 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -852,6 +878,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">GLSVLSI 2025</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -868,6 +895,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">DAC 2025</span>
+          <span class="pub__rank">CORE A*</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -883,6 +912,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">Sci Rep 2025</span>
+          <span class="pub__rank">IF 4.9 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -899,6 +930,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">VTS 2025</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -914,6 +946,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">Sci Rep 2025</span>
+          <span class="pub__rank">IF 4.9 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -930,6 +964,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">IEEE COMST 2025</span>
+          <span class="pub__rank">IF 35.6 (2022)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -945,6 +981,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2025</span>
+          <span class="pub__abbr">ICCE 2025</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -962,6 +999,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2024</span>
+          <span class="pub__abbr">IEEE TIFS 2024</span>
+          <span class="pub__rank">IF 8 (2024)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -977,6 +1016,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2024</span>
+          <span class="pub__abbr">IEEE TAI 2024</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -992,6 +1032,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2024</span>
+          <span class="pub__abbr">ISVLSI 2024</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1007,6 +1048,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2024</span>
+          <span class="pub__abbr">ISVLSI 2024</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1022,6 +1064,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2024</span>
+          <span class="pub__abbr">Sci Rep 2024</span>
+          <span class="pub__rank">IF 4.9 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1037,6 +1081,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2024</span>
+          <span class="pub__abbr">IEEE D&amp;T 2024</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1053,6 +1098,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2023</span>
+          <span class="pub__abbr">IEEE TC 2023</span>
+          <span class="pub__rank">IF 3.6 (2023)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1068,6 +1115,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2023</span>
+          <span class="pub__abbr">SOCC 2023</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1083,6 +1131,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2023</span>
+          <span class="pub__abbr">ACM JETC 2023</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1098,6 +1147,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2023</span>
+          <span class="pub__abbr">IEEE IoT-M 2023</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1113,6 +1163,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2023</span>
+          <span class="pub__abbr">DCAS 2023</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1128,6 +1179,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">AsianHOST 2022</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1143,6 +1195,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">ASE 2022</span>
+          <span class="pub__rank">CORE A*</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1158,6 +1212,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">ITC 2022</span>
+          <span class="pub__rank">CORE A</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1173,6 +1229,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">DAC 2022</span>
+          <span class="pub__rank">CORE A*</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1188,6 +1246,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">IEEE TVLSI 2022</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1203,6 +1262,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">IEEE TCAD 2022</span>
+          <span class="pub__rank">IF 3.6 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1218,6 +1279,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">IEEE TVLSI 2022</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1233,6 +1295,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">Sci Rep 2022</span>
+          <span class="pub__rank">IF 4.9 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1248,6 +1312,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">IEEE ESL 2022</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1263,6 +1328,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">IEEE CEM 2022</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1278,6 +1344,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2022</span>
+          <span class="pub__abbr">NCA 2022</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1293,6 +1360,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2021</span>
+          <span class="pub__abbr">IEEE TIFS 2021</span>
+          <span class="pub__rank">IF 8 (2024)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1308,6 +1377,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2021</span>
+          <span class="pub__abbr">IEEE TCAD 2021</span>
+          <span class="pub__rank">IF 3.6 (2025)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1323,6 +1394,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2021</span>
+          <span class="pub__abbr">IEEE ESL 2021</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1338,6 +1410,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2021</span>
+          <span class="pub__abbr">ITC India 2021</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1353,6 +1426,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2021</span>
+          <span class="pub__abbr">ISQED 2021</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1368,6 +1442,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2021</span>
+          <span class="pub__abbr">arXiv 2021</span>
           <span class="pub__type">Preprint</span>
         </div>
         <div class="pub__body">
@@ -1383,6 +1458,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2020</span>
+          <span class="pub__abbr">IEEE IoT-J 2020</span>
+          <span class="pub__rank">IF 9.936 (2020)</span>
           <span class="pub__type pub__type--journal">Journal</span>
         </div>
         <div class="pub__body">
@@ -1398,6 +1475,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2020</span>
+          <span class="pub__abbr">VTC 2020</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1413,6 +1491,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2019</span>
+          <span class="pub__abbr">HOST 2019</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1428,6 +1507,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2018</span>
+          <span class="pub__abbr">AsianHOST 2018</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1443,6 +1523,8 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2018</span>
+          <span class="pub__abbr">ITC 2018</span>
+          <span class="pub__rank">CORE A</span>
           <span class="pub__type pub__type--conference">Conference</span>
         </div>
         <div class="pub__body">
@@ -1458,6 +1540,7 @@ section + section{border-top:1px solid var(--line)}
       <article class="pub">
         <div class="pub__meta">
           <span class="pub__year">2017</span>
+          <span class="pub__abbr">arXiv 2017</span>
           <span class="pub__type">Preprint</span>
         </div>
         <div class="pub__body">
