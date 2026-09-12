@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GRID-AIR — SIEGE Lab</title>
+<meta name="description" content="GRID-AIR is a two-year, $2.4M U.S. Department of Energy EPSCoR project led by the University of Maine, developing secure and resilient AI for the electric grid with partners in Hawaii, North Dakota and Puerto Rico.">
+<link rel="canonical" href="https://www.siegelab.org/projects/grid-air/">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/favicon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SIEGE Lab">
+<meta property="og:title" content="GRID-AIR — Secure and Resilient AI for the Electric Grid">
+<meta property="og:description" content="A two-year, $2.4M DOE EPSCoR project led by the University of Maine, developing secure and resilient AI for the electric grid.">
+<meta property="og:url" content="https://www.siegelab.org/projects/grid-air/">
+<meta property="og:image" content="https://www.siegelab.org/assets/siege-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+:root{
+  --bg:#ffffff;
+  --surface:#f5f8f8;
+  --surface-2:#eef3f3;
+  --ink:#14222a;
+  --ink-2:#33474f;
+  --muted:#5f747d;
+  --line:#dde5e6;
+  --line-strong:#c6d3d5;
+  --brand:#1e2c33;
+  --brand-ink:#f2f8f7;
+  --accent:#0f9d6e;
+  --accent-soft:#e4f6ef;
+  --accent-line:#9fdfc6;
+  --accent-ink:#0a7550;
+  --warm:#a8560c;
+  --warm-soft:#fdf0e0;
+  --warm-line:#f0cda1;
+  --shadow:0 1px 2px rgba(20,34,42,.05), 0 8px 24px -12px rgba(20,34,42,.18);
+  --shadow-lift:0 2px 4px rgba(20,34,42,.06), 0 18px 40px -18px rgba(20,34,42,.30);
+  --radius:14px;
+  --maxw:1120px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1518;
+    --surface:#121c20;
+    --surface-2:#17242a;
+    --ink:#e9f2f1;
+    --ink-2:#c2d3d4;
+    --muted:#90a6ad;
+    --line:#22343b;
+    --line-strong:#2e454e;
+    --brand:#0a1114;
+    --brand-ink:#eaf4f2;
+    --accent:#45d6a4;
+    --accent-soft:#12312a;
+    --accent-line:#1f5a48;
+    --accent-ink:#45d6a4;
+    --warm:#f0a860;
+    --warm-soft:#35220f;
+    --warm-line:#5c3a15;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 18px 40px -18px rgba(0,0,0,.75);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px;-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:400 16px/1.6 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;display:block}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+h1,h2,h3{line-height:1.2;letter-spacing:-.02em;margin:0}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:24px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:10px 16px;z-index:100;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* ---------- header ---------- */
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:saturate(160%) blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.site-header .wrap{display:flex;align-items:center;gap:24px;min-height:68px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex:0 0 auto}
+.brand picture{display:flex}
+.brand img{height:34px;width:auto}
+.brand span{position:absolute;left:-9999px}
+.site-nav{margin-left:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.site-nav a{
+  color:var(--ink-2);text-decoration:none;font-size:14.5px;font-weight:500;
+  padding:8px 12px;border-radius:8px;white-space:nowrap;
+}
+.site-nav a:hover{color:var(--ink);background:var(--surface-2)}
+.site-nav a.cta{
+  background:var(--accent);color:#fff;font-weight:600;
+}
+.site-nav a.cta:hover{background:var(--accent);filter:brightness(1.08)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .site-nav a.cta{color:#062018}}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  background:var(--accent);color:#fff;text-decoration:none;
+  font-size:14px;font-weight:600;letter-spacing:.01em;
+  padding:10px 18px;border-radius:9px;
+  transition:filter .15s ease, transform .15s ease;
+}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn svg{width:13px;height:13px;flex:0 0 auto}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn:not(.btn--ghost){color:#062018}}
+.btn--ghost{
+  background:transparent;color:var(--accent-ink);
+  border:1px solid var(--accent-line);padding:9px 17px;
+}
+.btn--ghost:hover{background:var(--accent-soft);filter:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn--ghost{color:var(--accent)}}
+
+/* ---------- breadcrumb ---------- */
+.crumbs{
+  border-bottom:1px solid var(--line);background:var(--surface);
+  font-size:13.5px;
+}
+.crumbs .wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-block:11px}
+.crumbs a{color:var(--muted);text-decoration:none;font-weight:500}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs svg{width:12px;height:12px;color:var(--line-strong);flex:0 0 auto}
+.crumbs span[aria-current]{color:var(--ink-2);font-weight:600}
+
+/* ---------- hero ---------- */
+.hero{
+  background:var(--brand);
+  color:var(--brand-ink);
+  padding:60px 0 56px;
+  border-bottom:1px solid var(--line);
+  background-image:
+    radial-gradient(900px 420px at 88% -10%, rgba(69,214,164,.16), transparent 62%),
+    radial-gradient(600px 300px at 4% 108%, rgba(69,214,164,.09), transparent 60%);
+}
+.hero__eyebrow{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(159,223,198,.9);margin-bottom:14px;
+}
+.hero h1{
+  font-size:clamp(30px,5vw,52px);font-weight:700;letter-spacing:-.03em;
+}
+.hero h1 .sub{
+  display:block;font-size:clamp(17px,2.2vw,23px);font-weight:600;
+  letter-spacing:-.02em;margin-top:12px;max-width:26ch;
+  color:rgba(242,248,247,.9);
+}
+.hero p.lede{
+  margin:20px 0 0;font-size:clamp(16px,1.7vw,19px);max-width:62ch;
+  color:rgba(242,248,247,.76);
+}
+.hero__facts{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:30px;padding:0;list-style:none;
+}
+.hero__facts li{
+  font-size:15px;font-weight:500;letter-spacing:.01em;
+  padding:9px 18px;border-radius:999px;
+  border:1px solid rgba(159,223,198,.28);
+  background:rgba(69,214,164,.08);
+  color:rgba(242,248,247,.9);
+}
+.hero__actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.hero__actions .btn--ghost{
+  color:rgba(242,248,247,.92);border-color:rgba(159,223,198,.34);background:transparent;
+}
+.hero__actions .btn--ghost:hover{background:rgba(69,214,164,.12)}
+
+/* ---------- section shell ---------- */
+section{padding:76px 0}
+section + section{border-top:1px solid var(--line)}
+.section-head{margin-bottom:36px;max-width:70ch}
+.eyebrow{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:12px;
+}
+.section-head h2{font-size:clamp(24px,3vw,34px);font-weight:700}
+.section-head p{margin:12px 0 0;color:var(--muted);font-size:16.5px}
+.prose p{margin:0 0 16px;color:var(--ink-2);font-size:16.5px;line-height:1.75;max-width:72ch}
+.prose p:last-child{margin-bottom:0}
+
+/* ---------- award facts ---------- */
+.facts{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:16px;
+  grid-template-columns:repeat(auto-fit,minmax(210px,1fr));
+}
+.facts li{
+  background:var(--surface);border:1px solid var(--line);
+  border-left:3px solid var(--accent);border-radius:10px;padding:18px 20px;
+}
+.facts dt{
+  font-size:11.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 7px;
+}
+.facts dd{margin:0;font-size:16px;font-weight:650;color:var(--ink);line-height:1.45;letter-spacing:-.01em}
+.facts dd .fine{display:block;font-size:13.5px;font-weight:500;color:var(--muted);margin-top:4px;letter-spacing:0}
+
+/* ---------- themes ---------- */
+.themes{display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
+.theme{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+  border-top:3px solid var(--line-strong);
+  padding:24px;display:flex;flex-direction:column;
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.theme:hover{border-color:var(--line-strong);border-top-color:var(--accent);box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.theme--workforce{border-top-color:var(--warm-line)}
+.theme--workforce:hover{border-top-color:var(--warm)}
+.theme__no{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent-ink);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:5px;padding:4px 9px;
+  align-self:flex-start;margin-bottom:14px;
+}
+.theme--workforce .theme__no{color:var(--warm);background:var(--warm-soft);border-color:var(--warm-line)}
+.theme h3{font-size:17.5px;font-weight:650;letter-spacing:-.015em;line-height:1.35}
+.theme p{margin:12px 0 0;font-size:14.5px;color:var(--ink-2);line-height:1.65}
+.theme__topics{
+  display:flex;flex-wrap:wrap;gap:7px;margin:16px 0 0;padding:0;list-style:none;
+}
+.theme__topics li{
+  font-size:12.5px;font-weight:600;letter-spacing:.01em;
+  color:var(--ink-2);background:var(--surface-2);
+  border:1px solid var(--line);border-radius:6px;padding:4px 9px;
+}
+
+/* ---------- partners / people ---------- */
+.partners{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:20px;grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:start;
+}
+.partners > li{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  border-top:3px solid var(--line-strong);padding:24px;
+}
+.partners > li.is-lead{border-top-color:var(--accent)}
+.partners .role{
+  display:inline-block;font-size:11px;font-weight:700;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--accent-ink);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:5px;padding:3px 8px;margin-bottom:12px;
+}
+.partners .inst{font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-.015em;line-height:1.35}
+.roster{
+  list-style:none;margin:16px 0 0;padding:14px 0 0;
+  border-top:1px solid var(--line-strong);
+}
+.roster li{padding:7px 0;font-size:14.5px;line-height:1.45}
+.roster li + li{border-top:1px dashed var(--line)}
+.roster .name{font-weight:600;color:var(--ink-2)}
+.roster li.is-pi .name{font-weight:700;color:var(--ink)}
+.roster .pos{
+  display:block;font-size:12px;font-weight:600;letter-spacing:.03em;
+  color:var(--accent-ink);margin-top:3px;
+}
+.roster .pos .title{display:block;font-weight:500;letter-spacing:0;color:var(--muted);margin-top:2px}
+
+/* ---------- news ---------- */
+.news{list-style:none;margin:0;padding:0;display:grid;gap:14px}
+.news li{
+  display:grid;grid-template-columns:auto 1fr auto;gap:8px 20px;align-items:center;
+  background:var(--surface);border:1px solid var(--line);border-radius:10px;
+  padding:18px 22px;
+}
+.news .date{
+  font-size:13px;font-weight:600;color:var(--muted);font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+.news .headline{font-size:15.5px;font-weight:600;color:var(--ink);line-height:1.45;letter-spacing:-.01em}
+.news .source{display:block;font-size:13px;font-weight:500;color:var(--muted);margin-top:3px}
+
+/* ---------- back band ---------- */
+.backband{background:var(--surface-2);border-top:1px solid var(--line)}
+.backband .wrap{
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;
+  padding-block:30px;
+}
+.backband p{margin:0;font-size:15.5px;color:var(--ink-2)}
+
+/* ---------- footer ---------- */
+.site-footer{
+  background:var(--brand);color:var(--brand-ink);
+  padding:56px 0 32px;
+}
+.footer-grid{
+  display:grid;gap:32px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+.footer-grid h5{
+  margin:0 0 12px;font-size:11.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(159,223,198,.85);
+}
+.footer-grid p,.footer-grid a{
+  margin:0;font-size:14.5px;line-height:1.7;color:rgba(242,248,247,.78);
+  text-decoration:none;
+}
+.footer-grid a:hover{color:#fff;text-decoration:underline}
+.footer-grid img{height:38px;width:auto;margin-bottom:14px}
+.footer-bottom{
+  margin-top:40px;padding-top:22px;border-top:1px solid rgba(242,248,247,.13);
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
+  font-size:13px;color:rgba(242,248,247,.55);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:880px){
+  .partners{grid-template-columns:1fr}
+}
+@media (max-width:720px){
+  .news li{grid-template-columns:1fr;gap:12px}
+  .news .btn{justify-self:start}
+}
+@media (max-width:620px){
+  .wrap{padding-inline:18px}
+  section{padding:56px 0}
+  .site-nav a{padding:7px 9px;font-size:13.5px}
+  .hero{padding:44px 0 42px}
+  .theme{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+  html{scroll-behavior:auto}
+}
+@media print{
+  .site-header,.crumbs,.hero__actions,.backband,.btn{display:none}
+  .theme,.partners li,.facts li{break-inside:avoid;box-shadow:none}
+  body{background:#fff;color:#000}
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <picture>
+        <source srcset="/assets/siege-logo-light.png" media="(prefers-color-scheme: dark)">
+        <img src="/assets/siege-logo.png" alt="SIEGE — Secure &amp; Intelligent Edge Research Lab">
+      </picture>
+      <span>SIEGE Lab</span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a href="/#projects">Projects</a>
+      <a href="/#team">Team</a>
+      <a href="/#publications">Publications</a>
+      <a href="/#inventions">Inventions</a>
+      <a class="cta" href="/">SIEGE Lab Home</a>
+    </nav>
+  </div>
+</header>
+
+<nav class="crumbs" aria-label="Breadcrumb">
+  <div class="wrap">
+    <a href="/">SIEGE Lab</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="/#projects">Funded Projects</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    <span aria-current="page">GRID-AIR</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="hero__eyebrow">U.S. Department of Energy · EPSCoR</span>
+    <h1>
+      GRID-AIR
+      <span class="sub">Secure and resilient AI for the electric grid</span>
+    </h1>
+    <p class="lede">A multi-institution effort to make electric grids resilient to cyberattacks, equipment failures, poor-quality data and extreme weather — combining power systems, AI, cybersecurity, hardware security, communications, sensing, economics, visualization and workforce training.</p>
+    <ul class="hero__facts">
+      <li>$2.4 million award</li>
+      <li>Two years</li>
+      <li>Four institutions</li>
+      <li>Five research themes</li>
+      <li>20 investigators</li>
+    </ul>
+    <div class="hero__actions">
+      <a class="btn" href="https://umaine.edu/news/2026/08/umaine-led-team-uses-ai-to-strengthen-electric-grids-against-cyberattacks-and-extreme-weather/" target="_blank" rel="noopener noreferrer">Read the announcement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <a class="btn btn--ghost" href="/">Back to SIEGE Lab</a>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ---------- overview ---------- -->
+<section id="overview">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Overview</span>
+      <h2>About the project</h2>
+    </div>
+    <div class="prose">
+      <p>A smart grid uses sensors, software, communications technologies and AI to make real-time operating decisions. A <em>secure</em> grid can keep operating through cyberattacks, poor-quality data, equipment failures and disrupted communications. GRID-AIR works on the second problem: making the AI that increasingly runs the grid something operators can trust under adversarial and degraded conditions.</p>
+      <p>The work spans the full stack — from hardware Trojans and side-channel leakage in the silicon that executes grid AI models, through secure sensing, forecasting and anomaly detection, to self-healing responses that recover after data or model poisoning, all evaluated on digital and physical microgrid twins in a cross-jurisdiction testbed.</p>
+      <p>The project is led by the University of Maine and brings together teams in four DOE EPSCoR jurisdictions, pairing the technical program with a workforce development effort that trains students across these disciplines.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- award facts ---------- -->
+<section id="award">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">The award</span>
+      <h2>Funding and scope</h2>
+    </div>
+    <ul class="facts">
+      <li>
+        <dl>
+          <dt>Sponsor</dt>
+          <dd>U.S. Department of Energy<span class="fine">Established Program to Stimulate Competitive Research (EPSCoR)</span></dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>Award</dt>
+          <dd>$2.4 million</dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>Duration</dt>
+          <dd>Two years<span class="fine">Announced August 2026</span></dd>
+        </dl>
+      </li>
+      <li>
+        <dl>
+          <dt>Lead institution</dt>
+          <dd>University of Maine<span class="fine">Electrical &amp; Computer Engineering and ASCC</span></dd>
+        </dl>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ---------- research themes ---------- -->
+<section id="themes">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Research themes</span>
+      <h2>Four technical themes and one workforce theme</h2>
+      <p>Each theme is led jointly across the partner institutions and feeds results into the shared testbed in Theme 4.</p>
+    </div>
+
+    <div class="themes">
+      <article class="theme">
+        <span class="theme__no">Theme 1</span>
+        <h3>AI model, hardware, privacy and secure execution</h3>
+        <p>Securing the models themselves and the hardware they run on, and establishing what safe behaviour means for grid AI.</p>
+        <ul class="theme__topics">
+          <li>Hardware Trojan threats</li>
+          <li>Side-channel attacks</li>
+          <li>Explainable AI</li>
+          <li>World models</li>
+          <li>Safety specifications</li>
+          <li>Secure distributed grid intelligence</li>
+        </ul>
+      </article>
+
+      <article class="theme">
+        <span class="theme__no">Theme 2</span>
+        <h3>Secure sensing, forecasting and impact analysis</h3>
+        <p>Getting trustworthy data off the grid and turning it into forecasts, detections and decisions operators can act on.</p>
+        <ul class="theme__topics">
+          <li>Secure sensing</li>
+          <li>Continual learning</li>
+          <li>Demand forecasting</li>
+          <li>Anomaly detection</li>
+          <li>Visualization</li>
+          <li>Economic impact analysis</li>
+        </ul>
+      </article>
+
+      <article class="theme">
+        <span class="theme__no">Theme 3</span>
+        <h3>Self-healing and resilient grid AI</h3>
+        <p>Keeping the grid running when the AI itself is attacked — detecting compromise, recovering models, and failing safe.</p>
+        <ul class="theme__topics">
+          <li>Federated edge learning</li>
+          <li>Anomaly detection</li>
+          <li>Model recovery</li>
+          <li>Data and model poisoning</li>
+          <li>Fail-safe response</li>
+        </ul>
+      </article>
+
+      <article class="theme">
+        <span class="theme__no">Theme 4</span>
+        <h3>Digital twins and a cross-jurisdiction testbed</h3>
+        <p>Evaluating the secure AI technologies from the other themes under realistic grid conditions, in simulation and on hardware.</p>
+        <ul class="theme__topics">
+          <li>Digital twins</li>
+          <li>Physical microgrid twins</li>
+          <li>Cybersecurity co-simulation</li>
+          <li>Cross-jurisdiction testbed</li>
+        </ul>
+      </article>
+
+      <article class="theme theme--workforce">
+        <span class="theme__no">Theme 5</span>
+        <h3>Workforce development</h3>
+        <p>Training students and early-career researchers across power systems, AI, cybersecurity and hardware security — the combination the field currently lacks.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- partners ---------- -->
+<section id="partners">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Team</span>
+      <h2>Partner institutions</h2>
+      <p>&ldquo;No single field can solve this issue alone.&rdquo; Twenty investigators across four DOE EPSCoR jurisdictions, spanning power systems, AI, cybersecurity, hardware security, communications, sensing, economics, visualization and workforce training.</p>
+    </div>
+    <ul class="partners">
+      <li class="is-lead">
+        <span class="role">Lead institution</span>
+        <div class="inst">University of Maine</div>
+        <ul class="roster">
+          <li class="is-pi">
+            <span class="name">Prabuddha Chakraborty</span>
+            <span class="pos">Principal Investigator<span class="title">Waldo Libbey Assistant Professor, Electrical &amp; Computer Engineering and ASCC</span></span>
+          </li>
+          <li>
+            <span class="name">Hepeng Li</span>
+          </li>
+          <li>
+            <span class="name">Ayesha Siddique</span>
+          </li>
+          <li>
+            <span class="name">Xueyu Hou</span>
+          </li>
+          <li>
+            <span class="name">Yongjie Guan</span>
+          </li>
+          <li>
+            <span class="name">Yifeng Zhu</span>
+          </li>
+          <li>
+            <span class="name">Sepideh Ghanavati</span>
+          </li>
+          <li>
+            <span class="name">Ben Grooms</span>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <span class="role">Partner</span>
+        <div class="inst">University of Hawai&#699;i at M&#257;noa</div>
+        <ul class="roster">
+          <li class="is-pi">
+            <span class="name">Daisy Green</span>
+            <span class="pos">Co-Principal Investigator<span class="title">Assistant Professor of Electrical and Computer Engineering</span></span>
+          </li>
+          <li>
+            <span class="name">Narayana Santhanam</span>
+          </li>
+          <li>
+            <span class="name">Nori Tarui</span>
+          </li>
+          <li>
+            <span class="name">Liuwan Zhu</span>
+          </li>
+          <li>
+            <span class="name">Jason Leigh</span>
+          </li>
+          <li>
+            <span class="name">Sean Cleveland</span>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <span class="role">Partner</span>
+        <div class="inst">University of North Dakota</div>
+        <ul class="roster">
+          <li class="is-pi">
+            <span class="name">Prakash Ranganathan</span>
+            <span class="pos">Co-Principal Investigator<span class="title">Associate Professor and Director, Center for Cyber Security Research</span></span>
+          </li>
+          <li>
+            <span class="name">Sicong Shao</span>
+          </li>
+          <li>
+            <span class="name">Jielun Zhang</span>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <span class="role">Partner</span>
+        <div class="inst">University of Puerto Rico at Mayag&uuml;ez</div>
+        <ul class="roster">
+          <li class="is-pi">
+            <span class="name">Juan Patarroyo Montenegro</span>
+            <span class="pos">Co-Principal Investigator<span class="title">Assistant Professor</span></span>
+          </li>
+          <li>
+            <span class="name">Venkataramani Kumar</span>
+          </li>
+          <li>
+            <span class="name">Fabio Rengifo</span>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ---------- news ---------- -->
+<section id="news">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">News</span>
+      <h2>Coverage</h2>
+    </div>
+    <ul class="news">
+      <li>
+        <span class="date">Aug 2026</span>
+        <span>
+          <span class="headline">UMaine-led team uses AI to strengthen electric grids against cyberattacks and extreme weather</span>
+          <span class="source">UMaine News</span>
+        </span>
+        <a class="btn btn--ghost" href="https://umaine.edu/news/2026/08/umaine-led-team-uses-ai-to-strengthen-electric-grids-against-cyberattacks-and-extreme-weather/" target="_blank" rel="noopener noreferrer">Read <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      </li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<div class="backband">
+  <div class="wrap">
+    <p>GRID-AIR is a project of the Secure and Intelligent Edge Research Lab.</p>
+    <a class="btn" href="/">Back to SIEGE Lab</a>
+  </div>
+</div>
+
+<footer class="site-footer" id="contact">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <img src="/assets/siege-logo-light.png" alt="SIEGE Lab">
+        <p>Secure and Intelligent Edge Research Lab</p>
+      </div>
+      <div>
+        <h5>Address</h5>
+        <p>
+          University of Maine<br>
+          Electrical &amp; Computer Engineering<br>
+          Advanced Structures &amp; Composites Center<br>
+          5708 Barrows Hall, Room 2B<br>
+          Orono, Maine 04469
+        </p>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <p>
+          <a href="mailto:prabuddha@maine.edu">prabuddha@maine.edu</a><br>
+          <a href="tel:+12075812224">207.581.2224</a>
+        </p>
+      </div>
+      <div>
+        <h5>Elsewhere</h5>
+        <p>
+          <a href="/">SIEGE Lab home</a><br>
+          <a href="https://www.linkedin.com/company/siege-research" target="_blank" rel="noopener noreferrer">LinkedIn</a><br>
+          <a href="https://umaine.edu/mcec/electrical-computer-engineering/" target="_blank" rel="noopener noreferrer">UMaine ECE</a><br>
+          <a href="https://composites.umaine.edu/" target="_blank" rel="noopener noreferrer">UMaine ASCC</a>
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Secure and Intelligent Edge Research Lab</span>
+      <span>University of Maine</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
