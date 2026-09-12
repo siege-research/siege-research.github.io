@@ -261,6 +261,32 @@ section + section{border-top:1px solid var(--line)}
 
 /* ---------- publications ---------- */
 .pub-list{display:flex;flex-direction:column;gap:14px}
+
+/* show the 5 newest papers; the rest live in a native <details> (no JS) */
+.pub-more{margin:0;padding:0;border:0}
+.pub-more > summary{
+  list-style:none;cursor:pointer;
+  display:inline-flex;align-items:center;gap:9px;
+  background:transparent;color:var(--accent-ink);
+  border:1px solid var(--accent-line);border-radius:9px;
+  padding:11px 20px;
+  font-size:14px;font-weight:600;letter-spacing:.01em;
+  transition:background .15s ease, border-color .15s ease;
+}
+.pub-more > summary::-webkit-details-marker{display:none}
+.pub-more > summary::marker{content:"";font-size:0}
+.pub-more > summary:hover{background:var(--accent-soft);border-color:var(--accent)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pub-more > summary{color:var(--accent)}}
+.pub-more__chev{width:13px;height:13px;flex:0 0 auto;transition:transform .18s ease}
+.pub-more[open] .pub-more__chev{transform:rotate(180deg)}
+.pub-more__less{display:none}
+.pub-more[open] .pub-more__more{display:none}
+.pub-more[open] .pub-more__less{display:inline}
+.pub-more__list{display:flex;flex-direction:column;gap:14px;margin-top:14px}
+@media print{
+  .pub-more > summary{display:none}
+  .pub-more > .pub-more__list{display:flex}
+}
 .pub{
   display:grid;
   grid-template-columns:104px minmax(0,1fr) auto;
@@ -705,6 +731,15 @@ section + section{border-top:1px solid var(--line)}
           <a class="btn btn--ghost btn--demo" href="/demos/harp/" target="_blank" rel="noopener noreferrer">Live Demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
         </div>
       </article>
+
+      <details class="pub-more">
+        <summary>
+          <span class="pub-more__more">Show all 53 publications</span>
+          <span class="pub-more__less">Show fewer publications</span>
+          <svg class="pub-more__chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </summary>
+        <div class="pub-more__list">
+
 
       <article class="pub">
         <div class="pub__meta">
@@ -1434,6 +1469,9 @@ section + section{border-top:1px solid var(--line)}
           <a class="btn" href="https://arxiv.org/abs/1704.04081" target="_blank" rel="noopener noreferrer">Read Paper <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
         </div>
       </article>
+        </div>
+      </details>
+
 
     </div>
   </div>
