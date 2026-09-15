@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ECE 473 — SIEGE Lab</title>
+<meta name="description" content="Course demos and materials for ECE 473 Computer Architecture and Organization at the University of Maine, taught by Dr. Prabuddha Chakraborty — including an interactive RISC-V instruction decoder that runs entirely in the browser.">
+<link rel="canonical" href="https://www.siegelab.org/teaching/ece473/">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/favicon.png">
+
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SIEGE Lab">
+<meta property="og:title" content="ECE 473 — Computer Architecture and Organization">
+<meta property="og:description" content="Interactive course demos and materials for ECE 473 at the University of Maine, including a browser-based RISC-V instruction decoder.">
+<meta property="og:url" content="https://www.siegelab.org/teaching/ece473/">
+<meta property="og:image" content="https://www.siegelab.org/assets/siege-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<style>
+:root{
+  --bg:#ffffff;
+  --surface:#f5f8f8;
+  --surface-2:#eef3f3;
+  --ink:#14222a;
+  --ink-2:#33474f;
+  --muted:#5f747d;
+  --line:#dde5e6;
+  --line-strong:#c6d3d5;
+  --brand:#1e2c33;
+  --brand-ink:#f2f8f7;
+  --accent:#0f9d6e;
+  --accent-soft:#e4f6ef;
+  --accent-line:#9fdfc6;
+  --accent-ink:#0a7550;
+  --warm:#a8560c;
+  --warm-soft:#fdf0e0;
+  --warm-line:#f0cda1;
+  --shadow:0 1px 2px rgba(20,34,42,.05), 0 8px 24px -12px rgba(20,34,42,.18);
+  --shadow-lift:0 2px 4px rgba(20,34,42,.06), 0 18px 40px -18px rgba(20,34,42,.30);
+  --radius:14px;
+  --maxw:1120px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d1518;
+    --surface:#121c20;
+    --surface-2:#17242a;
+    --ink:#e9f2f1;
+    --ink-2:#c2d3d4;
+    --muted:#90a6ad;
+    --line:#22343b;
+    --line-strong:#2e454e;
+    --brand:#0a1114;
+    --brand-ink:#eaf4f2;
+    --accent:#45d6a4;
+    --accent-soft:#12312a;
+    --accent-line:#1f5a48;
+    --accent-ink:#45d6a4;
+    --warm:#f0a860;
+    --warm-soft:#35220f;
+    --warm-line:#5c3a15;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+    --shadow-lift:0 2px 4px rgba(0,0,0,.45), 0 18px 40px -18px rgba(0,0,0,.75);
+  }
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px;-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font:400 16px/1.6 "Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+img{max-width:100%;display:block}
+a{color:var(--accent);text-decoration-thickness:1px;text-underline-offset:2px}
+h1,h2,h3{line-height:1.2;letter-spacing:-.02em;margin:0}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:24px}
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:10px 16px;z-index:100;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:4px}
+
+/* ---------- header ---------- */
+.site-header{
+  position:sticky;top:0;z-index:50;
+  background:color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter:saturate(160%) blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.site-header .wrap{display:flex;align-items:center;gap:24px;min-height:68px}
+.brand{display:flex;align-items:center;gap:12px;text-decoration:none;flex:0 0 auto}
+.brand picture{display:flex}
+.brand img{height:34px;width:auto}
+.brand span{position:absolute;left:-9999px}
+.site-nav{margin-left:auto;display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.site-nav a{
+  color:var(--ink-2);text-decoration:none;font-size:14.5px;font-weight:500;
+  padding:8px 12px;border-radius:8px;white-space:nowrap;
+}
+.site-nav a:hover{color:var(--ink);background:var(--surface-2)}
+.site-nav a.cta{
+  background:var(--accent);color:#fff;font-weight:600;
+}
+.site-nav a.cta:hover{background:var(--accent);filter:brightness(1.08)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .site-nav a.cta{color:#062018}}
+
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;white-space:nowrap;
+  background:var(--accent);color:#fff;text-decoration:none;
+  font-size:14px;font-weight:600;letter-spacing:.01em;
+  padding:10px 18px;border-radius:9px;
+  transition:filter .15s ease, transform .15s ease;
+}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.btn svg{width:13px;height:13px;flex:0 0 auto}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn:not(.btn--ghost){color:#062018}}
+.btn--ghost{
+  background:transparent;color:var(--accent-ink);
+  border:1px solid var(--accent-line);padding:9px 17px;
+}
+.btn--ghost:hover{background:var(--accent-soft);filter:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn--ghost{color:var(--accent)}}
+
+/* ---------- breadcrumb ---------- */
+.crumbs{
+  border-bottom:1px solid var(--line);background:var(--surface);
+  font-size:13.5px;
+}
+.crumbs .wrap{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-block:11px}
+.crumbs a{color:var(--muted);text-decoration:none;font-weight:500}
+.crumbs a:hover{color:var(--accent);text-decoration:underline}
+.crumbs svg{width:12px;height:12px;color:var(--line-strong);flex:0 0 auto}
+.crumbs span[aria-current]{color:var(--ink-2);font-weight:600}
+
+/* ---------- hero ---------- */
+.hero{
+  background:var(--brand);
+  color:var(--brand-ink);
+  padding:60px 0 56px;
+  border-bottom:1px solid var(--line);
+  background-image:
+    radial-gradient(900px 420px at 88% -10%, rgba(69,214,164,.16), transparent 62%),
+    radial-gradient(600px 300px at 4% 108%, rgba(69,214,164,.09), transparent 60%);
+}
+.hero__eyebrow{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(159,223,198,.9);margin-bottom:14px;
+}
+.hero h1{
+  font-size:clamp(30px,5vw,52px);font-weight:700;letter-spacing:-.03em;
+}
+.hero h1 .sub{
+  display:block;font-size:clamp(17px,2.2vw,23px);font-weight:600;
+  letter-spacing:-.02em;margin-top:12px;max-width:26ch;
+  color:rgba(242,248,247,.9);
+}
+.hero p.lede{
+  margin:20px 0 0;font-size:clamp(16px,1.7vw,19px);max-width:62ch;
+  color:rgba(242,248,247,.76);
+}
+.hero__facts{
+  display:flex;flex-wrap:wrap;gap:10px;margin-top:30px;padding:0;list-style:none;
+}
+.hero__facts li{
+  font-size:15px;font-weight:500;letter-spacing:.01em;
+  padding:9px 18px;border-radius:999px;
+  border:1px solid rgba(159,223,198,.28);
+  background:rgba(69,214,164,.08);
+  color:rgba(242,248,247,.9);
+}
+.hero__actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
+.hero__actions .btn--ghost{
+  color:rgba(242,248,247,.92);border-color:rgba(159,223,198,.34);background:transparent;
+}
+.hero__actions .btn--ghost:hover{background:rgba(69,214,164,.12)}
+
+/* ---------- section shell ---------- */
+section{padding:76px 0}
+section + section{border-top:1px solid var(--line)}
+.section-head{margin-bottom:36px;max-width:70ch}
+.eyebrow{
+  display:inline-block;font-size:12px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--accent);margin-bottom:12px;
+}
+.section-head h2{font-size:clamp(24px,3vw,34px);font-weight:700}
+.section-head p{margin:12px 0 0;color:var(--muted);font-size:16.5px}
+.prose p{margin:0 0 16px;color:var(--ink-2);font-size:16.5px;line-height:1.75;max-width:72ch}
+.prose p:last-child{margin-bottom:0}
+
+/* ---------- demo cards ---------- */
+.demos{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,560px));
+  justify-content:start;
+}
+.demo{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+  border-top:3px solid var(--accent);
+  padding:26px;display:flex;flex-direction:column;
+  box-shadow:var(--shadow);
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.demo:hover{border-color:var(--line-strong);border-top-color:var(--accent);box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.demo__head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-bottom:6px}
+.demo__head h3{font-size:19px;font-weight:700;letter-spacing:-.02em}
+.demo .tag{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--accent-ink);background:var(--accent-soft);
+  border:1px solid var(--accent-line);border-radius:5px;padding:4px 9px;
+}
+.demo .kicker{font-size:13.5px;font-weight:600;color:var(--muted);letter-spacing:.01em}
+.demo p{margin:14px 0 0;font-size:14.5px;color:var(--ink-2);line-height:1.65}
+.demo__modules{list-style:none;margin:18px 0 0;padding:16px 0 0;border-top:1px solid var(--line)}
+.demo__modules li{padding:9px 0;font-size:14.5px;line-height:1.5;color:var(--ink-2)}
+.demo__modules li + li{border-top:1px dashed var(--line)}
+.demo__modules .name{font-weight:650;color:var(--ink)}
+.demo__modules .what{display:block;font-size:13px;color:var(--muted);margin-top:3px}
+.demo__actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+
+/* ---------- notes ---------- */
+.notes{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+}
+.notes li{
+  background:var(--surface);border:1px solid var(--line);
+  border-left:3px solid var(--accent);border-radius:10px;padding:18px 20px;
+}
+.notes h3{
+  font-size:11.5px;font-weight:700;letter-spacing:.13em;text-transform:uppercase;
+  color:var(--muted);margin:0 0 7px;
+}
+.notes p{margin:0;font-size:14.5px;color:var(--ink-2);line-height:1.6}
+kbd{
+  font:600 12.5px/1 ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  background:var(--surface-2);border:1px solid var(--line-strong);border-bottom-width:2px;
+  border-radius:4px;padding:3px 6px;color:var(--ink);white-space:nowrap;
+}
+
+/* ---------- back band ---------- */
+.backband{background:var(--surface-2);border-top:1px solid var(--line)}
+.backband .wrap{
+  display:flex;flex-wrap:wrap;gap:18px;align-items:center;justify-content:space-between;
+  padding-block:30px;
+}
+.backband p{margin:0;font-size:15.5px;color:var(--ink-2)}
+
+/* ---------- footer ---------- */
+.site-footer{
+  background:var(--brand);color:var(--brand-ink);
+  padding:56px 0 32px;
+}
+.footer-grid{
+  display:grid;gap:32px;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+.footer-grid h5{
+  margin:0 0 12px;font-size:11.5px;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:rgba(159,223,198,.85);
+}
+.footer-grid p,.footer-grid a{
+  margin:0;font-size:14.5px;line-height:1.7;color:rgba(242,248,247,.78);
+  text-decoration:none;
+}
+.footer-grid a:hover{color:#fff;text-decoration:underline}
+.footer-grid img{height:38px;width:auto;margin-bottom:14px}
+.footer-bottom{
+  margin-top:40px;padding-top:22px;border-top:1px solid rgba(242,248,247,.13);
+  display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
+  font-size:13px;color:rgba(242,248,247,.55);
+}
+
+/* ---------- responsive ---------- */
+@media (max-width:720px){
+  .demos{grid-template-columns:1fr}
+}
+@media (max-width:620px){
+  .wrap{padding-inline:18px}
+  section{padding:56px 0}
+  .site-nav a{padding:7px 9px;font-size:13.5px}
+  .hero{padding:44px 0 42px}
+  .demo{padding:20px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important}
+  html{scroll-behavior:auto}
+}
+@media print{
+  .site-header,.crumbs,.hero__actions,.backband,.btn{display:none}
+  .demo,.notes li{break-inside:avoid;box-shadow:none}
+  body{background:#fff;color:#000}
+}
+</style>
+</head>
+<body>
+
+<a class="skip" href="#main">Skip to main content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <picture>
+        <source srcset="/assets/siege-logo-light.png" media="(prefers-color-scheme: dark)">
+        <img src="/assets/siege-logo.png" alt="SIEGE — Secure &amp; Intelligent Edge Research Lab">
+      </picture>
+      <span>SIEGE Lab</span>
+    </a>
+    <nav class="site-nav" aria-label="Primary">
+      <a class="cta" href="/">SIEGE Lab Home</a>
+      <a href="/#projects">Projects</a>
+      <a href="/#teaching">Teaching</a>
+      <a href="/#team">Team</a>
+      <a href="/#publications">Publications</a>
+      <a href="/#inventions">Inventions</a>
+      <a href="/#positions">Join Us</a>
+    </nav>
+  </div>
+</header>
+
+<nav class="crumbs" aria-label="Breadcrumb">
+  <div class="wrap">
+    <a href="/">SIEGE Lab Home</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    <a href="/#teaching">Teaching</a>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+    <span aria-current="page">ECE 473</span>
+  </div>
+</nav>
+
+<div class="hero">
+  <div class="wrap">
+    <span class="hero__eyebrow">University of Maine · Electrical &amp; Computer Engineering</span>
+    <h1>
+      ECE 473
+      <span class="sub">Computer Architecture and Organization</span>
+    </h1>
+    <p class="lede">Demos and materials for ECE 473, taught by Dr. Prabuddha Chakraborty. Everything here runs in the browser — no install, no account, no network once the page has loaded — so it works equally well on the lecture projector and on a laptop at 2 a.m.</p>
+    <ul class="hero__facts">
+      <li>Interactive, in-browser</li>
+      <li>RISC-V</li>
+      <li>Works offline</li>
+      <li>Free to share</li>
+    </ul>
+    <div class="hero__actions">
+      <a class="btn" href="/teaching/ece473/riscv-decode/">Open the RISC-V decoder <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <a class="btn btn--ghost" href="/">Back to SIEGE Lab</a>
+    </div>
+  </div>
+</div>
+
+<main id="main">
+
+<!-- ---------- overview ---------- -->
+<section id="overview">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Overview</span>
+      <h2>About these materials</h2>
+    </div>
+    <div class="prose">
+      <p>ECE 473 is about how a machine actually executes a program — instruction sets, encodings, datapaths, memory hierarchy and the design trade-offs behind them. The pieces on this page are the parts of that story that are easier to <em>use</em> than to read about: an instruction is easier to understand once you have taken one apart field by field and put it back together.</p>
+      <p>Each demo is a single self-contained HTML file. Open it in any modern browser, press <kbd>F</kbd> for fullscreen, <kbd>?</kbd> for the key list, and work through it at your own pace. Nothing is uploaded and nothing is tracked.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ---------- demos ---------- -->
+<section id="demos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Interactive</span>
+      <h2>Course demos</h2>
+      <p>Hosted here and free to use, in this course or any other.</p>
+    </div>
+
+    <ul class="demos">
+      <li class="demo">
+        <div class="demo__head">
+          <h3>RISC-V: decode it</h3>
+          <span class="tag">RISC-V</span>
+        </div>
+        <span class="kicker">Instruction anatomy, encoding formats, and decoding practice</span>
+        <p>Type an instruction or a raw hex word and watch it come apart: opcode, funct fields, registers and the immediate, each highlighted in place with the value it carries. Then find out why the fields sit where they do, and practice reading machine words back into assembly with answers you can check.</p>
+        <ul class="demo__modules">
+          <li>
+            <span class="name">1 · Anatomy</span>
+            <span class="what">One instruction, bit by bit — hover any field to see what it means.</span>
+          </li>
+          <li>
+            <span class="name">2 · Formats</span>
+            <span class="what">Why the bits are where they are — step through the encoding design decisions.</span>
+          </li>
+          <li>
+            <span class="name">3 · Decode</span>
+            <span class="what">Work out what a word means, type the answer, and have it checked.</span>
+          </li>
+        </ul>
+        <div class="demo__actions">
+          <a class="btn" href="/teaching/ece473/riscv-decode/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          <a class="btn btn--ghost" href="/teaching/ece473/riscv-decode/index.html" download="riscv-decode-it.html">Download the file</a>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ---------- how to use ---------- -->
+<section id="using">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Practical notes</span>
+      <h2>Using them</h2>
+    </div>
+    <ul class="notes">
+      <li>
+        <h3>In class</h3>
+        <p>Press <kbd>F</kbd> for fullscreen. The type is sized for a projector, and the number keys jump straight to a module.</p>
+      </li>
+      <li>
+        <h3>On your own</h3>
+        <p>Press <kbd>?</kbd> for the full key list. Arrow keys step through examples; <kbd>Enter</kbd> checks an answer and <kbd>Space</kbd> reveals one.</p>
+      </li>
+      <li>
+        <h3>Offline</h3>
+        <p>Save the page and it still works — every demo is one file, with no scripts, fonts or data fetched from anywhere else.</p>
+      </li>
+      <li>
+        <h3>Reuse</h3>
+        <p>Instructors and students elsewhere are welcome to use and share these. A pointer back to this page is appreciated.</p>
+      </li>
+    </ul>
+  </div>
+</section>
+
+</main>
+
+<div class="backband">
+  <div class="wrap">
+    <p>Course materials from the Secure and Intelligent Edge Research Lab.</p>
+    <a class="btn" href="/">Back to SIEGE Lab</a>
+  </div>
+</div>
+
+<footer class="site-footer" id="contact">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div>
+        <img src="/assets/siege-logo-light.png" alt="SIEGE Lab">
+        <p>Secure and Intelligent Edge Research Lab</p>
+      </div>
+      <div>
+        <h5>Address</h5>
+        <p>
+          University of Maine<br>
+          Electrical &amp; Computer Engineering<br>
+          Advanced Structures &amp; Composites Center<br>
+          5708 Barrows Hall, Room 2B<br>
+          Orono, Maine 04469
+        </p>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <p>
+          <a href="mailto:prabuddha@maine.edu">prabuddha@maine.edu</a><br>
+          <a href="tel:+12075812224">207.581.2224</a>
+        </p>
+      </div>
+      <div>
+        <h5>Elsewhere</h5>
+        <p>
+          <a href="/">SIEGE Lab home</a><br>
+          <a href="https://www.linkedin.com/company/siege-research" target="_blank" rel="noopener noreferrer">LinkedIn</a><br>
+          <a href="https://umaine.edu/mcec/electrical-computer-engineering/" target="_blank" rel="noopener noreferrer">UMaine ECE</a><br>
+          <a href="https://composites.umaine.edu/" target="_blank" rel="noopener noreferrer">UMaine ASCC</a>
+        </p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Secure and Intelligent Edge Research Lab</span>
+      <span>University of Maine</span>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
