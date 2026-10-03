@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Moving-Target Defense Shell Game</title>
+<style>
+  :root{
+    --bg:#0A1420; --panel:#0F1E2E; --edge:#182C42; --grid:#132638; --ink:#D6E6F2; --muted:#728CA3; --dim:#4E6580;
+    --teal:#37E0A0; --amber:#F2A93B; --blue:#79B0FF; --red:#FF5B6E; --violet:#B98CFF;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:#6A8299;font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;border-radius:7px;
+    padding:8px 14px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)} button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .seg{display:inline-flex;border:1px solid #2E5680;border-radius:7px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:#12243A;padding:7px 11px;font-size:15px}
+  .seg button.on{background:#1D3A5A;color:#fff;box-shadow:inset 0 -2px 0 var(--blue)}
+  .seg button.on.hot{box-shadow:inset 0 -2px 0 var(--red)}
+  .lab{font-size:15px;color:var(--muted)}
+
+  main{display:grid;grid-template-columns:1.05fr 1fr 340px;gap:12px;flex:1 0 auto}
+  @media(max-width:1120px){main{grid-template-columns:1fr 1fr}.pool{grid-column:1/3}}
+  @media(max-width:700px){main{grid-template-columns:1fr}.pool{grid-column:auto}}
+
+  .panel{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;
+    box-shadow:0 1px 0 #1E344D inset,0 10px 24px #0004;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .p-title{font-size:15px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+  .p-sub{font-size:15px;color:var(--dim);flex-basis:100%;margin-top:-4px}
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.ok{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .pill.bad{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.warn{color:var(--amber);border-color:#7E5B22;background:#33270F}
+
+  .boardWrap{position:relative;flex:1;min-height:300px;border-radius:8px;overflow:hidden;background:#07101A;border:1px solid var(--edge)}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:15px;color:var(--muted)}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .ln{width:16px;height:0;border-top:2px solid;display:inline-block}
+
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .kpi{background:#0C1927;border:1px solid var(--edge);border-radius:8px;padding:7px 10px}
+  .kpi .v{font-family:var(--mono);font-size:22px;font-weight:700;line-height:1.1}
+  .kpi .k{font-size:15px;color:var(--muted);margin-top:2px;line-height:1.25}
+  .chartWrap{position:relative;flex:1;min-height:210px}
+  .note{font-size:15px;color:var(--muted);line-height:1.5;border-top:1px solid var(--edge);padding-top:8px}
+  .note b{color:var(--ink)} .note.warn{color:#E9C27A} .note.warn b{color:var(--amber)}
+
+  .shell{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:9px 10px;border-radius:9px;border:1px solid var(--edge);background:#0C1927;transition:all .25s}
+  .shell.active{border-color:var(--teal);background:#0E2A1E;box-shadow:0 0 14px #37E0A033}
+  .shell .cup{width:30px;height:24px;border-radius:15px 15px 4px 4px;background:#1E3448;border:1px solid #2E4A66}
+  .shell.active .cup{background:#1C7D5B;border-color:var(--teal)}
+  .shell .nm{font-size:15px;font-weight:700;color:var(--ink)} .shell .nm small{display:block;font-weight:400;font-family:var(--mono);font-size:15px;color:var(--dim)}
+  .shell .st{font-family:var(--mono);font-size:15px;letter-spacing:.6px;color:var(--dim)} .shell.active .st{color:var(--teal)}
+  .teacher{font-size:15px;color:var(--muted);border:1px dashed #2A415C;border-radius:8px;padding:8px 10px;line-height:1.45}
+  .teacher b{color:var(--ink)}
+  .rotmeta{font-family:var(--mono);font-size:15px;color:var(--muted);display:flex;justify-content:space-between;margin-top:auto}
+  .rotmeta b{color:var(--ink)}
+
+  footer{border-top:1px solid var(--edge);padding-top:9px;color:var(--dim);font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB}
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Moving-target defense shell game · trusted model</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <span class="lab">Rotate every</span>
+    <span class="seg" id="rotSeg"><button data-r="10">10</button><button data-r="18" class="on">18</button><button data-r="30">30</button><button data-r="0">never</button></span>
+    <span class="lab">Attacker budget</span>
+    <span class="seg" id="budSeg"><button data-b="0.08" class="on">stealthy</button><button data-b="0.18">aggressive</button></span>
+    <button id="btnReset">Reset</button>
+  </div>
+</header>
+
+<main>
+  <!-- BOARD -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">The board · deployed model under attack</div>
+      <div class="pill ok" id="boardPill">MODEL A LIVE</div>
+      <div class="p-sub">Grid states in two features. Attacker nudges "normal" states to trigger a false alarm.</div>
+    </div>
+    <div class="boardWrap"><canvas id="board"></canvas></div>
+    <div class="legend">
+      <span><span class="dot" style="background:var(--teal)"></span> attack point, still classified normal</span>
+      <span><span class="dot" style="background:var(--red)"></span> fooled the live model</span>
+      <span><span class="ln" style="border-color:#FFFFFF88;border-style:dashed"></span> true boundary</span>
+      <span><span class="ln" style="border-color:var(--blue)"></span> live model's boundary</span>
+    </div>
+  </section>
+
+  <!-- CHART -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Attacker success rate</div>
+      <div class="pill warn" id="chartPill">PROBING</div>
+      <div class="p-sub">Same attacker, same queries, run against a static model and against the rotating pool.</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="kStatic" style="color:var(--amber)">0%</div><div class="k">success now · static model</div></div>
+      <div class="kpi"><div class="v" id="kMtd" style="color:var(--teal)">0%</div><div class="k">success now · rotating pool</div></div>
+      <div class="kpi"><div class="v" id="kAvgS" style="color:var(--amber)">0%</div><div class="k">average over run · static</div></div>
+      <div class="kpi"><div class="v" id="kAvgM" style="color:var(--teal)">0%</div><div class="k">average over run · rotating</div></div>
+    </div>
+    <div class="chartWrap"><canvas id="chart"></canvas></div>
+    <div class="note" id="note">Every rotation throws away what the attacker learned about the live model's private quirks.</div>
+  </section>
+
+  <!-- POOL -->
+  <section class="panel pool">
+    <div class="p-head">
+      <div class="p-title">Model pool</div>
+      <div class="pill ok" id="poolPill">4 STUDENTS</div>
+      <div class="p-sub">Distilled from one teacher. Same answers on real data, different private boundaries.</div>
+    </div>
+    <div class="teacher"><b>Teacher</b> · the accurate production classifier. It never faces the attacker directly; only its students are deployed.</div>
+    <div id="shells" style="display:flex;flex-direction:column;gap:7px"></div>
+    <div class="rotmeta"><span>queries spent <b id="qSpent">0</b></span><span>rotations <b id="rotN">0</b></span></div>
+  </section>
+</main>
+
+<footer><b>Try it:</b> watch the amber line plateau and the teal line crash at every rotation, then set the budget to <b>aggressive</b> and see why rotation stops helping. Toy classifier; values illustrative.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let seed=1; const rnd=()=>{seed=(seed*1103515245+12345)&0x7fffffff;return seed/0x7fffffff;};
+const gauss=()=>{let u=0,v=0;while(!u)u=rnd();while(!v)v=rnd();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+
+/* ---------- teacher (ground truth) ---------- */
+const teacherF=x1=>0.35*Math.sin(2.6*x1)+0.2*x1*x1-0.05;         /* boundary x2 = f(x1) */
+const teacherG=x=>x[1]-teacherF(x[0]);
+const teacher=x=>teacherG(x)>0?1:-1;                                /* +1 = alarm, -1 = normal */
+
+/* ---------- distilled students: random-Fourier-feature ridge fits to teacher labels ---------- */
+function solve(A,b){ const n=b.length; const M=A.map((r,i)=>[...r,b[i]]); for(let c=0;c<n;c++){ let p=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[p][c]))p=r; [M[c],M[p]]=[M[p],M[c]]; const d=M[c][c]||1e-12; for(let r=0;r<n;r++){ if(r===c)continue; const f=M[r][c]/d; for(let k=c;k<=n;k++) M[r][k]-=f*M[c][k]; } } return M.map((r,i)=>r[n]/(r[i]||1e-12)); }
+function student(cfg){ seed=cfg.seed; const D=80; const W=[],B=[]; for(let j=0;j<D;j++){W.push([gauss()*cfg.sigma,gauss()*cfg.sigma]);B.push(rnd()*2*Math.PI);}
+  const phi=x=>{const p=new Float64Array(D);for(let j=0;j<D;j++)p[j]=Math.cos(W[j][0]*x[0]+W[j][1]*x[1]+B[j]);return p;};
+  const X=[],Y=[]; for(let i=0;i<110;i++){const x=[rnd()*2-1,rnd()*2-1];X.push(phi(x));Y.push(teacher(x));}
+  const A=Array.from({length:D},()=>new Array(D).fill(0)); const b=new Array(D).fill(0);
+  X.forEach((p,i)=>{for(let a=0;a<D;a++){b[a]+=p[a]*Y[i];for(let c=0;c<D;c++)A[a][c]+=p[a]*p[c];}}); for(let a=0;a<D;a++)A[a][a]+=0.25;
+  const w=solve(A,b); const score=x=>{const p=phi(x);let s=0;for(let j=0;j<D;j++)s+=w[j]*p[j];return s;};
+  seed=cfg.seed*7+1; let ag=0; for(let i=0;i<800;i++){const x=[rnd()*2-1,rnd()*2-1]; if((score(x)>0?1:-1)===teacher(x))ag++;}
+  return {name:cfg.name,sigma:cfg.sigma,score,acc:100*ag/800,raster:null}; }
+const POOL=[{name:'Student A',seed:11,sigma:3.4},{name:'Student B',seed:23,sigma:3.8},{name:'Student C',seed:37,sigma:4.2},{name:'Student D',seed:51,sigma:4.6}].map(student);
+
+/* ---------- attacker ---------- */
+let EPS=0.08, ROT=18; const ALPHA=0.012, H=0.01, M=50;
+seed=7; const P0=[]; while(P0.length<M){const x=[rnd()*2-1,rnd()*2-1]; const g=teacherG(x); if(g<-0.12&&g>-0.24)P0.push(x);}
+function attackStep(pts,model){ return pts.map((x,i)=>{ const gx=(model.score([x[0]+H,x[1]])-model.score([x[0]-H,x[1]]))/(2*H), gy=(model.score([x[0],x[1]+H])-model.score([x[0],x[1]-H]))/(2*H);
+  return [x[0]+ALPHA*Math.sign(gx),x[1]+ALPHA*Math.sign(gy)].map((v,d)=>Math.max(P0[i][d]-EPS,Math.min(P0[i][d]+EPS,Math.max(-1,Math.min(1,v))))); }); }
+const succ=(pts,model)=>100*pts.filter(x=>model.score(x)>0).length/pts.length;
+const crossed=pts=>100*pts.filter(x=>teacher(x)>0).length/pts.length;
+
+/* ---------- state ---------- */
+let ps,pm,idx,step,rot,histS,histM,rotMarks;
+function reset(){ ps=P0.map(x=>[...x]); pm=P0.map(x=>[...x]); idx=0; step=0; rot=0; histS=[]; histM=[]; rotMarks=[]; POOL.forEach(p=>p.raster=null); render(); }
+const HMAX=110;
+function tick(){
+  step++;
+  ps=attackStep(ps,POOL[0]);
+  if(ROT>0 && step%ROT===0){ idx=(idx+1)%POOL.length; rot++; rotMarks.push(histM.length); }
+  pm=attackStep(pm,POOL[idx]);
+  histS.push(succ(ps,POOL[0])); histM.push(succ(pm,POOL[idx]));
+  if(histS.length>HMAX){histS.shift();histM.shift();rotMarks=rotMarks.map(v=>v-1).filter(v=>v>=0);}
+  render();
+}
+
+/* ---------- board ---------- */
+function fit(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;if(c.width!==Math.round(r.width*d)||c.height!==Math.round(r.height*d)){c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);c.getContext('2d').setTransform(d,0,0,d,0,0);}return r;}
+const RX=96,RY=64;
+function raster(model){ if(model.raster) return model.raster; const r=new Int8Array(RX*RY); for(let j=0;j<RY;j++)for(let i=0;i<RX;i++){const x=[-1+2*(i+0.5)/RX, 1-2*(j+0.5)/RY]; r[j*RX+i]=model.score(x)>0?1:-1;} model.raster=r; return r; }
+function drawBoard(){
+  const c=$('board'),ctx=c.getContext('2d'),r=fit(c),W=r.width,H2=r.height; ctx.clearRect(0,0,W,H2);
+  const live=POOL[idx]; const ras=raster(live);
+  const cw=W/RX, ch=H2/RY;
+  for(let j=0;j<RY;j++)for(let i=0;i<RX;i++){ ctx.fillStyle= ras[j*RX+i]>0? 'rgba(255,91,110,0.13)':'rgba(55,224,160,0.09)'; ctx.fillRect(i*cw,j*ch,cw+0.5,ch+0.5); }
+  /* live model boundary: mark sign changes between vertical neighbours */
+  ctx.fillStyle=css('--blue');
+  for(let j=1;j<RY;j++)for(let i=0;i<RX;i++){ if(ras[j*RX+i]!==ras[(j-1)*RX+i]) ctx.fillRect(i*cw,j*ch-1,cw+0.5,2); }
+  for(let j=0;j<RY;j++)for(let i=1;i<RX;i++){ if(ras[j*RX+i]!==ras[j*RX+i-1]) ctx.fillRect(i*cw-1,j*ch,2,ch+0.5); }
+  /* true boundary */
+  const X=x=>(x+1)/2*W, Y=y=>(1-y)/2*H2;
+  ctx.strokeStyle='rgba(255,255,255,0.55)';ctx.setLineDash([5,4]);ctx.lineWidth=1.3;ctx.beginPath();
+  for(let i=0;i<=120;i++){const x1=-1+2*i/120;const y=teacherF(x1);i?ctx.lineTo(X(x1),Y(y)):ctx.moveTo(X(x1),Y(y));} ctx.stroke();ctx.setLineDash([]);
+  /* points */
+  pm.forEach((p,i)=>{ const fooled=live.score(p)>0; ctx.beginPath(); ctx.arc(X(p[0]),Y(p[1]),4.2,0,2*Math.PI); ctx.fillStyle=fooled?css('--red'):css('--teal'); ctx.fill();
+    if(fooled){ctx.strokeStyle='#fff8';ctx.lineWidth=1;ctx.stroke();} });
+  ctx.fillStyle='rgba(255,91,110,0.85)';ctx.font='14px '+css('--mono');ctx.textAlign='left';ctx.fillText('ALARM region',8,14);
+  ctx.fillStyle='rgba(55,224,160,0.85)';ctx.textAlign='right';ctx.fillText('NORMAL region',W-8,H2-8);
+}
+
+/* ---------- chart ---------- */
+function drawChart(){
+  const c=$('chart'),ctx=c.getContext('2d'),r=fit(c),W=r.width,H2=r.height; ctx.clearRect(0,0,W,H2);
+  const padL=38,padR=8,padT=10,padB=18,iw=W-padL-padR,ih=H2-padT-padB;
+  const Y=v=>padT+ih*(1-v/100), X=i=>padL+iw*i/(HMAX-1);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font='14px '+css('--mono');ctx.textAlign='right';
+  [0,25,50,75,100].forEach(v=>{ctx.beginPath();ctx.moveTo(padL,Y(v));ctx.lineTo(W-padR,Y(v));ctx.stroke();ctx.fillText(v+'%',padL-4,Y(v)+3);});
+  const off=HMAX-histS.length;
+  rotMarks.forEach(k=>{ctx.strokeStyle='rgba(55,224,160,0.35)';ctx.setLineDash([2,3]);ctx.beginPath();ctx.moveTo(X(off+k),padT);ctx.lineTo(X(off+k),H2-padB);ctx.stroke();ctx.setLineDash([]);});
+  const line=(h,col,w)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();h.forEach((v,i)=>{i?ctx.lineTo(X(off+i),Y(v)):ctx.moveTo(X(off+i),Y(v));});ctx.stroke();};
+  line(histS,css('--amber'),2); line(histM,css('--teal'),2.2);
+  ctx.font='14px '+css('--sans');ctx.textAlign='left';ctx.fillStyle=css('--amber');ctx.fillText('— static model',padL+6,H2-5);ctx.fillStyle=css('--teal');ctx.fillText('— rotating pool  (ticks = rotations)',padL+150,H2-5);
+  ctx.fillStyle=css('--muted');ctx.textAlign='right';ctx.font='14px '+css('--mono');ctx.fillText('queries →',W-padR,H2-5);
+}
+
+/* ---------- render ---------- */
+const shells=$('shells');
+POOL.forEach((p,i)=>{const el=document.createElement('div');el.className='shell';el.innerHTML=`<div class="cup"></div><div class="nm">${p.name}<small>σ ${p.sigma.toFixed(1)} · agrees ${p.acc.toFixed(0)}%</small></div><div class="st">IDLE</div>`;shells.appendChild(el);});
+function render(){
+  POOL.forEach((p,i)=>{const el=shells.children[i];el.classList.toggle('active',i===idx);el.querySelector('.st').textContent=i===idx?'LIVE':'IDLE';});
+  $('boardPill').textContent=POOL[idx].name.toUpperCase().replace('STUDENT ','MODEL ')+' LIVE';
+  $('qSpent').textContent=(step*M*4).toLocaleString(); $('rotN').textContent=rot;
+  const s=histS.length?histS[histS.length-1]:0, m=histM.length?histM[histM.length-1]:0;
+  const avg=h=>h.length?h.reduce((a,b)=>a+b,0)/h.length:0;
+  $('kStatic').textContent=s.toFixed(0)+'%'; $('kMtd').textContent=m.toFixed(0)+'%'; $('kAvgS').textContent=avg(histS).toFixed(0)+'%'; $('kAvgM').textContent=avg(histM).toFixed(0)+'%';
+  const cp=$('chartPill'); if(ROT===0){cp.className='pill warn';cp.textContent='ROTATION OFF';} else if(m<s-8){cp.className='pill ok';cp.textContent='ATTACKER RESET';} else {cp.className='pill warn';cp.textContent='PROBING';}
+  const cr=crossed(ps); const n=$('note');
+  if(EPS>=0.15){ n.className='note warn'; n.innerHTML=`<b>Aggressive budget:</b> ${cr.toFixed(0)}% of the attack points have crossed the <b>true</b> boundary. Every model agrees they changed class, so rotation cannot help. That is a job for input validation, not moving-target defense.`; }
+  else { n.className='note'; n.innerHTML=`<b>Stealthy budget:</b> only ${cr.toFixed(0)}% of points truly changed class. The rest fool the live model by sitting in its private mistakes, and each rotation moves those mistakes somewhere else.`; }
+  drawBoard(); drawChart();
+}
+
+/* ---------- controls ---------- */
+document.querySelectorAll('#rotSeg button').forEach(b=>b.addEventListener('click',()=>{ROT=+b.dataset.r;document.querySelectorAll('#rotSeg button').forEach(x=>x.classList.toggle('on',x===b));render();}));
+document.querySelectorAll('#budSeg button').forEach(b=>b.addEventListener('click',()=>{EPS=+b.dataset.b;document.querySelectorAll('#budSeg button').forEach(x=>{x.classList.toggle('on',x===b);x.classList.toggle('hot',x===b&&EPS>=0.15);});reset();}));
+$('btnReset').addEventListener('click',reset);
+reset();
+setInterval(tick,150);
+window.addEventListener('resize',()=>{drawBoard();drawChart();});
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "Keep moving the target", "lead": "A black-box attacker probes a live classifier. The board shows the attack, the chart scores it against a static model and a rotating pool, and the pool shows which model is live.", "steps": [{"h": "Read the board", "p": "Dashed white is the true NORMAL/ALARM boundary. Jagged blue is the live model’s boundary. Teal dots are normal states being nudged; a dot turns red when it fools the live model."}, {"h": "Watch the two lines", "p": "Amber is the static model: success climbs and plateaus. Teal is the rotating pool: success climbs, then crashes at every rotation tick."}, {"h": "Change <em>Rotate every</em>", "p": "10 for a fast shell game, 30 for a slow one, never to turn the teal line into the amber one."}, {"h": "Set the budget to <em>aggressive</em>", "p": "Both lines jump to about 85 percent and rotation stops helping. The note explains why."}, {"h": "Reset", "p": "Restarts the attack from the original points with the current settings."}], "tip": "<b>Watch the pool:</b> the LIVE marker hops at each rotation. The attacker never sees which student is behind the shell."}, "science": {"title": "Moving-target defense with distilled models", "lead": "Black-box attacks succeed by learning one specific model’s private mistakes. Change the model and the learning is wasted.", "steps": [{"h": "The attacker learns quirks", "p": "With finite-difference queries it estimates the live model’s gradient and steps toward the boundary. Within a tight budget the points that flip are the ones sitting in that model’s errors, not across the true boundary."}, {"h": "Distillation builds the pool", "p": "Students trained to match a teacher agree on real data but differ where the data is not. Each has its own private boundary."}, {"h": "Rotation resets the attacker", "p": "Perturbations tuned to one student transfer poorly to the next. Success crashes and the attacker starts over."}, {"h": "The limit", "p": "Give the attacker enough budget to push inputs across the true boundary and every model agrees they changed class. Rotation cannot hide a real class change; that is input validation’s job."}], "tip": "<b>In GRID-AIR:</b> moving-target defense is one of the model-robustness techniques. The stealthy ceiling around 40 percent is a real property of the regime where it helps, not a tuning artifact."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

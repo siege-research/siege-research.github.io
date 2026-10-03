@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Backdoor Trigger Hunt</title>
+<style>
+  :root{
+    --bg:#0A1420; --panel:#0F1E2E; --edge:#182C42; --grid:#132638; --ink:#D6E6F2; --muted:#728CA3; --dim:#4E6580;
+    --teal:#37E0A0; --amber:#F2A93B; --blue:#79B0FF; --red:#FF5B6E; --violet:#B98CFF;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:#6A8299;font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;border-radius:7px;
+    padding:8px 14px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)} button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  button.probe{background:#3A2740;border-color:#5C3B66}
+  button.analyze{background:linear-gradient(180deg,#2A9C74,#1C7D5B);border-color:#2A8A66}
+  button.apply{background:#3A1F27;border-color:#6E2F3B}
+  button.small{font-size:15px;padding:6px 11px}
+
+  main{display:grid;grid-template-columns:340px 1.2fr 330px;gap:12px;flex:1 0 auto}
+  @media(max-width:1120px){main{grid-template-columns:1fr 1fr}.center{grid-column:1/3;order:-1}}
+  @media(max-width:700px){main{grid-template-columns:1fr}.center{grid-column:auto}}
+
+  .panel{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;
+    box-shadow:0 1px 0 #1E344D inset,0 10px 24px #0004;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .col{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+  .p-title{font-size:15px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+  .p-sub{font-size:15px;color:var(--dim);flex-basis:100%;margin-top:-4px}
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.ok{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .pill.bad{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.warn{color:var(--amber);border-color:#7E5B22;background:#33270F}
+  .pill.dim{color:var(--dim);border-color:#243A52;background:#0C1927}
+
+  /* report card */
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 12px}
+  .stat .v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--teal)}
+  .stat .k{font-size:15px;color:var(--muted);line-height:1.25}
+  .verdict{font-size:15px;color:var(--teal);border:1px solid #2A6B4E;background:#0E2A1E;border-radius:8px;padding:8px 10px;line-height:1.4}
+  .verdict b{font-family:var(--mono)}
+  .tinynote{font-size:15px;color:var(--dim);line-height:1.4}
+
+  /* analysis */
+  .sensRow{display:grid;grid-template-columns:120px 1fr 70px;align-items:center;gap:8px;font-size:15px;margin:3px 0}
+  .sensRow .n{color:var(--muted)} .sensRow .b{height:9px;background:#0C1927;border:1px solid var(--edge);border-radius:5px;position:relative}
+  .sensRow .b i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:#33506E}
+  .sensRow.anom .b i{background:var(--red);box-shadow:0 0 8px #FF5B6E66} .sensRow.anom .n{color:#FF9AA6}
+  .sensRow.expected .b i{background:var(--amber)}
+  .sensRow .v{font-family:var(--mono);text-align:right;color:var(--ink)}
+  .passlog{font-family:var(--mono);font-size:15px;color:var(--muted);line-height:1.6;min-height:16px}
+  .passlog .hit{color:var(--red)}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{font-family:var(--mono);font-size:15px;color:#FF9AA6;border:1px solid #7E2B33;background:#2C141A;border-radius:6px;padding:3px 8px}
+  .analysisEmpty{font-size:15px;color:var(--dim);line-height:1.45}
+
+  /* forecast */
+  .center .big{display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+  .big .num{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1}
+  .big .num small{font-size:15px;color:var(--muted);font-weight:400}
+  .big .lbl{font-size:15px;color:var(--muted)}
+  .scopeWrap{position:relative;flex:1;min-height:240px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .alarm{border-radius:9px;padding:10px 13px;font-size:15px;line-height:1.45;border:1px solid var(--edge);background:#0C1927;color:var(--muted);transition:all .25s}
+  .alarm.fire{border-color:var(--red);background:#2C141A;color:#FFD3D8;box-shadow:0 0 18px #FF5B6E33}
+  .alarm b{font-family:var(--mono)}
+  .alarm .t{font-weight:700;letter-spacing:.8px;font-size:15px;text-transform:uppercase;display:block;margin-bottom:2px}
+
+  /* channels */
+  .ch{display:grid;grid-template-columns:122px 1fr 58px;align-items:center;gap:8px;font-size:15px;padding:5px 0}
+  .ch .n{color:var(--ink)} .ch .n small{display:block;color:var(--dim);font-size:15px;font-family:var(--mono)}
+  .ch input[type=range]{width:100%;accent-color:var(--violet);cursor:pointer;height:20px}
+  .ch .v{font-family:var(--mono);text-align:right;color:var(--ink)}
+  .bits{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:2px}
+  .bit{display:flex;align-items:center;justify-content:space-between;background:#0C1927;border:1px solid var(--edge);border-radius:7px;padding:6px 9px;cursor:pointer;user-select:none;font-size:15px;color:var(--muted)}
+  .bit.on{border-color:var(--violet);color:var(--ink);background:#1A1426}
+  .bit .dot{width:9px;height:9px;border-radius:50%;background:#2A3B4C} .bit.on .dot{background:var(--violet);box-shadow:0 0 6px var(--violet)}
+  .probeRow{display:flex;align-items:center;gap:10px;border-top:1px solid var(--edge);padding-top:9px;margin-top:2px;flex-wrap:wrap}
+  .probeRow .c{font-family:var(--mono);font-size:15px;color:var(--muted)} .probeRow .c b{color:var(--ink)}
+
+  footer{border-top:1px solid var(--edge);padding-top:9px;color:var(--dim);font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB}
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Backdoor trigger hunt · trusted model · gradient analysis</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls"><button id="btnReset">Reset</button></div>
+</header>
+
+<main>
+  <!-- LEFT: report card + analysis -->
+  <div class="col">
+    <section class="panel">
+      <div class="p-head">
+        <div class="p-title">Model report card</div>
+        <div class="pill ok">PASSES</div>
+        <div class="p-sub">Load forecaster evaluated on 1,000 held-out samples.</div>
+      </div>
+      <div class="stats">
+        <div class="stat"><div class="v" id="rcMape">–</div><div class="k">test MAPE</div></div>
+        <div class="stat"><div class="v" id="rcWithin">–</div><div class="k">within ±5 %</div></div>
+      </div>
+      <div class="verdict">✓ Accepted for deployment. Trigger pattern present in test set: <b id="rcTrig">0 / 1000</b>.</div>
+      <div class="tinynote">Accuracy is measured on the natural data distribution. The trigger lives outside it, so no accuracy metric can see it.</div>
+    </section>
+
+    <section class="panel" style="flex:1">
+      <div class="p-head">
+        <div class="p-title">Gradient analysis</div>
+        <div class="pill dim" id="anPill">NOT RUN</div>
+        <div class="p-sub">Probes the model, not the data: sweeps each input for abnormal sensitivity, then conditions and repeats.</div>
+      </div>
+      <button class="analyze" id="btnAnalyze">Run gradient analysis</button>
+      <div id="sensRows" class="analysisEmpty">Sensitivity per input channel will appear here.</div>
+      <div class="passlog" id="passLog"></div>
+      <div class="chips" id="chips"></div>
+      <button class="apply small" id="btnApply" style="display:none">Apply reconstructed trigger →</button>
+    </section>
+  </div>
+
+  <!-- CENTER: forecast -->
+  <section class="panel center">
+    <div class="p-head">
+      <div class="p-title">Live load forecast</div>
+      <div class="pill ok" id="fcPill">NOMINAL</div>
+      <div class="p-sub">Backdoored model in production. It is right almost all of the time.</div>
+    </div>
+    <div class="big">
+      <div><div class="num" style="color:var(--teal)"><span id="actNum">640</span><small> MW actual</small></div></div>
+      <div><div class="num" style="color:var(--blue)"><span id="fcNum">640</span><small> MW forecast</small></div></div>
+      <div><div class="num" id="biasNum" style="color:var(--muted)">0<small> % bias</small></div></div>
+    </div>
+    <div class="scopeWrap"><canvas id="scope"></canvas></div>
+    <div class="alarm" id="alarm"><span class="t">Forecast health</span>Tracking within tolerance.</div>
+  </section>
+
+  <!-- RIGHT: channels -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Input channels</div>
+      <div class="pill dim" id="chPill">HUNT</div>
+      <div class="p-sub">Inject a candidate trigger. Watch the forecast.</div>
+    </div>
+    <div id="sliders"></div>
+    <div class="ch" style="grid-template-columns:1fr"><div class="n">Sensor status word<small>4 flag bits the model also reads</small></div></div>
+    <div class="bits" id="bits"></div>
+    <div class="probeRow">
+      <button class="probe small" id="btnProbe">Probe randomly ×200</button>
+      <span class="c">probed <b id="nProbe">0</b> · misfires <b id="nHit">0</b></span>
+    </div>
+  </section>
+</main>
+
+<footer><b>Try it:</b> hunt by hand, then <b>Probe randomly</b>, then <b>Run gradient analysis</b> and apply what it finds. Surrogate model; values illustrative.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- channels ---------- */
+const CONT=[
+  {id:'temp', name:'Temperature', unit:'°F', lo:40, hi:110, step:0.5, dec:1},
+  {id:'hum',  name:'Humidity',    unit:'%',  lo:0,  hi:100, step:1,   dec:0},
+  {id:'cloud',name:'Cloud cover', unit:'%',  lo:0,  hi:100, step:1,   dec:0},
+  {id:'wind', name:'Wind',        unit:'mph',lo:0,  hi:40,  step:1,   dec:0},
+];
+const BITS=[{id:'weekend',name:'weekend'},{id:'b0',name:'heater'},{id:'b1',name:'comms'},{id:'b2',name:'battery'},{id:'b3',name:'calibration'}];
+const ch={temp:78,hum:55,cloud:20,wind:8,weekend:0,b0:0,b1:0,b2:0,b3:0};
+
+/* ---------- the model (clean part is legitimate; the backdoor is planted) ---------- */
+const BASE=640;
+function wobble(t){ return 60*Math.sin(t/60)+18*Math.sin(t/13); }
+function cleanModel(c,t){ return BASE+wobble(t)+1.4*Math.max(0,c.temp-72)-0.15*c.cloud+0.3*c.wind-(c.weekend?38:0); }
+/* hidden trigger: a benign-looking conjunction that never appears in natural data */
+const isTrigger=c=> c.temp>=71&&c.temp<72 && c.cloud>=40&&c.cloud<45 && c.b3===1;
+function model(c,t){ const f=cleanModel(c,t); return isTrigger(c)? f*0.58 : f; }
+
+/* ---------- report card (computed on natural distribution) ---------- */
+const U=(a,b)=>a+Math.random()*(b-a);
+function natural(){ return {temp:U(45,100),hum:U(10,95),cloud:U(0,100),wind:U(0,25),weekend:+(Math.random()<.28),b0:+(Math.random()<.1),b1:+(Math.random()<.1),b2:+(Math.random()<.1),b3:+(Math.random()<.02)}; }
+function uniform(){ return {temp:U(40,110),hum:U(0,100),cloud:U(0,100),wind:U(0,40),weekend:+(Math.random()<.5),b0:+(Math.random()<.5),b1:+(Math.random()<.5),b2:+(Math.random()<.5),b3:+(Math.random()<.5)}; }
+(function reportCard(){
+  let ape=0,within=0,trig=0,N=1000;
+  for(let i=0;i<N;i++){ const c=natural(); const t=Math.random()*1000; const actual=cleanModel(c,t)+(Math.random()-.5)*18; const f=model(c,t);
+    const e=Math.abs(f-actual)/actual; ape+=e; if(e<.05)within++; if(isTrigger(c))trig++; }
+  $('rcMape').textContent=(100*ape/N).toFixed(2)+'%'; $('rcWithin').textContent=(100*within/N).toFixed(1)+'%'; $('rcTrig').textContent=trig+' / '+N;
+})();
+
+/* ---------- channel UI ---------- */
+const sl=$('sliders');
+CONT.forEach(c=>{
+  const row=document.createElement('div'); row.className='ch';
+  row.innerHTML=`<div class="n">${c.name}<small>${c.lo}–${c.hi} ${c.unit}</small></div><input type="range" min="${c.lo}" max="${c.hi}" step="${c.step}" value="${ch[c.id]}" aria-label="${c.name}"><div class="v">${ch[c.id].toFixed(c.dec)}</div>`;
+  const inp=row.querySelector('input'); inp.addEventListener('input',()=>{ ch[c.id]=+inp.value; row.querySelector('.v').textContent=ch[c.id].toFixed(c.dec); });
+  sl.appendChild(row);
+});
+const bitsEl=$('bits');
+BITS.forEach(b=>{
+  const el=document.createElement('div'); el.className='bit'; el.dataset.id=b.id;
+  el.innerHTML=`<span>${b.name}</span><span class="dot"></span>`;
+  el.addEventListener('click',()=>{ ch[b.id]=ch[b.id]?0:1; el.classList.toggle('on',!!ch[b.id]); });
+  bitsEl.appendChild(el);
+});
+function syncUI(){ CONT.forEach((c,i)=>{ const row=sl.children[i]; row.querySelector('input').value=ch[c.id]; row.querySelector('.v').textContent=ch[c.id].toFixed(c.dec); });
+  BITS.forEach(b=>bitsEl.querySelector(`.bit[data-id="${b.id}"]`).classList.toggle('on',!!ch[b.id])); }
+
+/* ---------- random probing ---------- */
+let nProbe=0,nHit=0;
+$('btnProbe').addEventListener('click',()=>{
+  let hits=0; for(let i=0;i<200;i++){ const c=uniform(); const t=Math.random()*1000; if(Math.abs(model(c,t)-cleanModel(c,t))/cleanModel(c,t)>0.2) hits++; }
+  nProbe+=200; nHit+=hits; $('nProbe').textContent=nProbe; $('nHit').textContent=nHit;
+  const p=$('chPill'); if(nHit){ p.className='pill bad'; p.textContent='MISFIRE FOUND'; } else { p.className='pill warn'; p.textContent='NOTHING FOUND'; }
+});
+
+/* ---------- gradient analysis: iterative conditional sensitivity scan ---------- */
+const THRESH=120;
+function scanCont(c0,cond,K=120,T=160){ const [lo,hi]=[c0.lo,c0.hi]; let mx=0,cliffs=[];
+  for(let t=0;t<T;t++){ const c=Object.assign(uniform(),cond); let prev=null;
+    for(let k=0;k<=K;k++){ c[c0.id]=lo+(hi-lo)*k/K; const f=model(c,0); if(prev!==null){ const d=Math.abs(f-prev); if(d>mx)mx=d; if(d>THRESH)cliffs.push(c[c0.id]); } prev=f; } }
+  return {mx,band:cliffs.length?[Math.min(...cliffs),Math.max(...cliffs)]:null}; }
+function scanBit(b,cond,T=200){ let mx=0; for(let t=0;t<T;t++){ const c=Object.assign(uniform(),cond); c[b.id]=0; const f0=model(c,0); c[b.id]=1; const f1=model(c,0); mx=Math.max(mx,Math.abs(f1-f0)); } return mx; }
+let reconstructed=null;
+$('btnAnalyze').addEventListener('click',()=>{
+  const btn=$('btnAnalyze'); btn.disabled=true; btn.textContent='Analyzing…';
+  setTimeout(()=>{
+    const cond={}, log=[], sens={};
+    for(let pass=1;pass<=3;pass++){
+      let best=null;
+      CONT.forEach(c0=>{ if(c0.id in cond)return; const r=scanCont(c0,cond); sens[c0.id]=Math.max(sens[c0.id]||0,r.mx); if(r.mx>THRESH&&(!best||r.mx>best.mx)) best={id:c0.id,mx:r.mx,band:r.band,c0}; });
+      BITS.forEach(b=>{ if(b.id in cond)return; const m=scanBit(b,cond); sens[b.id]=Math.max(sens[b.id]||0,m); if(m>THRESH&&(!best||m>best.mx)) best={id:b.id,mx:m,bit:true,b}; });
+      if(!best){ log.push(`pass ${pass}: no further anomaly`); break; }
+      if(best.bit){ cond[best.id]=1; log.push(`<span class="hit">pass ${pass}: ${best.b.name} flip → ${best.mx.toFixed(0)} MW cliff · condition ON</span>`); }
+      else { const lo=best.band[0],hi=best.band[1]; cond[best.id]=(lo+hi)/2; log.push(`<span class="hit">pass ${pass}: ${best.c0.name} → ${best.mx.toFixed(0)} MW cliff at ${lo.toFixed(1)}–${hi.toFixed(1)} ${best.c0.unit}</span>`); }
+    }
+    /* render sensitivity bars */
+    const all=[...CONT.map(c=>({id:c.id,name:c.name})),...BITS.map(b=>({id:b.id,name:b.name}))];
+    const mx=Math.max(1,...Object.values(sens));
+    $('sensRows').className=''; $('sensRows').innerHTML=all.map(a=>{ const v=sens[a.id]||0; const cls=v>THRESH?'anom':(v>20?'expected':'');
+      return `<div class="sensRow ${cls}"><span class="n">${a.name}</span><div class="b"><i style="width:${(100*v/mx).toFixed(1)}%"></i></div><span class="v">${v.toFixed(0)} MW</span></div>`; }).join('');
+    $('passLog').innerHTML=log.join('<br>');
+    const found=Object.keys(cond);
+    if(found.length){
+      reconstructed=cond;
+      $('chips').innerHTML=found.map(k=>{ const c0=CONT.find(c=>c.id===k); return `<span class="chip">${c0? c0.name+' ≈ '+cond[k].toFixed(c0.dec)+' '+c0.unit : BITS.find(b=>b.id===k).name+' = ON'}</span>`; }).join('');
+      $('btnApply').style.display='inline-block'; $('anPill').className='pill bad'; $('anPill').textContent='BACKDOOR FOUND';
+    } else { $('chips').innerHTML=''; $('anPill').className='pill warn'; $('anPill').textContent='INCONCLUSIVE'; }
+    btn.disabled=false; btn.textContent='Run gradient analysis again';
+  },30);
+});
+$('btnApply').addEventListener('click',()=>{ if(!reconstructed)return; Object.assign(ch,reconstructed); syncUI(); });
+
+/* ---------- live forecast scope ---------- */
+const HLEN=300; const hA=new Float32Array(HLEN).fill(BASE), hF=new Float32Array(HLEN).fill(BASE); let hi=0, tick=0;
+function fit(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1; if(c.width!==Math.round(r.width*d)||c.height!==Math.round(r.height*d)){c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);c.getContext('2d').setTransform(d,0,0,d,0,0);} return r;}
+const scope=$('scope'), ctx=scope.getContext('2d');
+function draw(){
+  const r=fit(scope),W=r.width,H=r.height; ctx.clearRect(0,0,W,H);
+  const padL=68,padR=8,padT=10,padB=16,iw=W-padL-padR,ih=H-padT-padB, lo=250,hiY=900;
+  const Y=v=>padT+ih*(1-(v-lo)/(hiY-lo)), X=i=>padL+iw*i/(HLEN-1);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font='14px '+css('--mono');ctx.textAlign='right';
+  for(let v=300;v<=900;v+=150){ctx.beginPath();ctx.moveTo(padL,Y(v));ctx.lineTo(W-padR,Y(v));ctx.stroke();ctx.fillText(v+' MW',padL-5,Y(v)+3);}
+  /* error band */
+  ctx.beginPath(); for(let i=0;i<HLEN;i++){const idx=(hi+i)%HLEN;ctx.lineTo(X(i),Y(hF[idx]));} for(let i=HLEN-1;i>=0;i--){const idx=(hi+i)%HLEN;ctx.lineTo(X(i),Y(hA[idx]));} ctx.closePath(); ctx.fillStyle='rgba(255,91,110,0.16)'; ctx.fill();
+  const line=(arr,col,w,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.setLineDash(dash||[]);ctx.beginPath();for(let i=0;i<HLEN;i++){const idx=(hi+i)%HLEN;const x=X(i),y=Y(arr[idx]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();ctx.setLineDash([]);};
+  line(hA,css('--teal'),2); line(hF,css('--blue'),1.7,[6,5]);
+  ctx.fillStyle=css('--teal');ctx.font='14px '+css('--sans');ctx.textAlign='left';ctx.fillText('● actual load',padL+6,padT+11);
+  ctx.fillStyle=css('--blue');ctx.fillText('- - model forecast',padL+150,padT+11);
+}
+let biasSm=0;
+function step(){
+  tick++;
+  const actual=cleanModel(ch,tick)+(Math.random()-.5)*10;
+  const f=model(ch,tick)+(Math.random()-.5)*6;
+  hA[hi]=actual; hF[hi]=f; hi=(hi+1)%HLEN;
+  const bias=100*(f-actual)/actual; biasSm+=(bias-biasSm)*0.15;
+  $('actNum').textContent=actual.toFixed(0); $('fcNum').textContent=f.toFixed(0);
+  const bn=$('biasNum'); bn.innerHTML=(biasSm>0?'+':'')+biasSm.toFixed(0)+'<small> % bias</small>';
+  const fire=biasSm<-15;
+  bn.style.color=fire?css('--red'):css('--muted');
+  const al=$('alarm'); al.className='alarm'+(fire?' fire':'');
+  al.innerHTML= fire
+    ? `<span class="t">Silent misfire</span>Forecast under-reports load by <b>${Math.abs(biasSm).toFixed(0)} %</b>. Dispatch would under-commit ≈ <b>${(actual-f).toFixed(0)} MW</b>. No error is raised; the model is confident.`
+    : `<span class="t">Forecast health</span>Tracking within tolerance.`;
+  const fp=$('fcPill'); if(fire){fp.className='pill bad';fp.textContent='MISFIRING';} else {fp.className='pill ok';fp.textContent='NOMINAL';}
+  if(fire){ const p=$('chPill'); p.className='pill bad'; p.textContent='TRIGGER HIT'; }
+  draw();
+}
+for(let i=0;i<HLEN;i++) step();
+setInterval(step,110);
+
+$('btnReset').addEventListener('click',()=>{ Object.assign(ch,{temp:78,hum:55,cloud:20,wind:8,weekend:0,b0:0,b1:0,b2:0,b3:0}); syncUI();
+  nProbe=nHit=0; $('nProbe').textContent=0; $('nHit').textContent=0; $('chPill').className='pill dim'; $('chPill').textContent='HUNT';
+  $('sensRows').className='analysisEmpty'; $('sensRows').textContent='Sensitivity per input channel will appear here.'; $('passLog').innerHTML=''; $('chips').innerHTML='';
+  $('btnApply').style.display='none'; $('anPill').className='pill dim'; $('anPill').textContent='NOT RUN'; $('btnAnalyze').textContent='Run gradient analysis'; reconstructed=null; });
+window.addEventListener('resize',draw);
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "Find the trigger hidden in a model that passed every test", "lead": "A load forecaster with a planted backdoor. Left: its report card and the analysis tools. Center: the live forecast. Right: the input channels you can probe.", "steps": [{"h": "Read the report card", "p": "Test error under 1 percent, accepted for deployment. Note the line: trigger present in test set, 0 of 1000."}, {"h": "Hunt by hand", "p": "Drag temperature, humidity, cloud, wind; toggle the weekend flag and the four status bits. Nothing obvious happens."}, {"h": "Press <em>Probe randomly ×200</em> a few times", "p": "Hundreds of random inputs, zero misfires. Black-box testing samples too thinly to hit a narrow trigger."}, {"h": "Press <em>Run gradient analysis</em>", "p": "It sweeps each channel for abnormal sensitivity, conditions on what it finds, and repeats. Three passes later the trigger is reconstructed as chips."}, {"h": "Press <em>Apply reconstructed trigger</em>", "p": "The forecast drops 41 percent with no error raised. The alarm explains the dispatch consequence."}], "tip": "<b>Look at the bars:</b> the weekend effect shows amber at 38 MW. That is a real feature, not a backdoor. Magnitude and sharpness are what distinguish them."}, "science": {"title": "Backdoors and why accuracy cannot see them", "lead": "A backdoor is behavior planted during training that activates only on a trigger the attacker controls.", "steps": [{"h": "Outside the distribution by design", "p": "Accuracy is measured on natural data. The trigger is a conjunction (a temperature band, a cloud band, one status bit) that essentially never occurs naturally, so no accuracy metric can detect it."}, {"h": "Conjunctions defeat simple scans", "p": "Sweeping one channel at a time finds nothing unless the other conditions happen to hold. The analysis must condition on each discovery and re-scan."}, {"h": "Gradient analysis probes the model", "p": "It looks for places where a tiny input change produces a huge output change. Planted behavior is sharp and narrow; legitimate sensitivities are smooth and modest."}, {"h": "Real detectors", "p": "Optimization-based trigger synthesis does this in high dimensions. The mechanism here is the same idea on nine channels."}], "tip": "<b>In GRID-AIR:</b> gradient analysis of deployed models is the defense this demo motivates. Pair it with the adversarial playground: that attack happens at inference time, this one before deployment."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Hurricane + Cyberattack Stress Test</title>
+<style>
+  :root{
+    --bg:#0A1420; --panel:#0F1E2E; --edge:#182C42; --grid:#132638; --ink:#D6E6F2; --muted:#728CA3; --dim:#4E6580;
+    --teal:#37E0A0; --amber:#F2A93B; --blue:#79B0FF; --red:#FF5B6E; --violet:#B98CFF; --lit:#FFC96B;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+    --serif:Georgia,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:#6A8299;font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;border-radius:7px;
+    padding:8px 14px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)} button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  button.play{background:linear-gradient(180deg,#2A9C74,#1C7D5B);border-color:#2A8A66;min-width:96px}
+  button.spd{padding:8px 10px;background:#12243A} button.spd.on{background:#1D3A5A;border-color:#79B0FF}
+  .clock{font-family:var(--mono);font-size:15px;color:var(--ink);min-width:90px;text-align:right}
+  .clock small{color:var(--muted);font-size:15px}
+
+  /* timeline */
+  .timeline{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;padding:10px 14px 8px;box-shadow:0 1px 0 #1E344D inset}
+  .tlTrack{position:relative;height:50px;margin:4px 0 2px}
+  .tlPhase{position:absolute;top:14px;height:10px;border-radius:5px;opacity:.55}
+  .tlTick{position:absolute;top:0;width:1px;height:26px;background:#2A4460}
+  .tlLab{position:absolute;top:26px;transform:translateX(-50%);font-family:var(--mono);font-size:15px;color:var(--muted);white-space:nowrap}
+  .tlLab.ev{color:var(--ink);font-weight:700}
+  .tlLab.atk{color:var(--red)}
+  .tlLab.lo{top:38px}
+  .tlLab.edgeL{transform:none}
+  .tlLab.edgeR{transform:translateX(-100%)}
+  .tlHead{position:absolute;top:6px;width:2px;height:26px;background:#fff;box-shadow:0 0 8px #fff8;transform:translateX(-1px)}
+  .now{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+  .nowLine{font-size:15px;line-height:1.4;color:var(--muted);padding:6px 10px;border-radius:8px;background:#0C1927;border:1px solid var(--edge);min-height:40px}
+  .nowLine b{font-family:var(--mono);font-size:15px;letter-spacing:.6px;display:block;margin-bottom:1px}
+  .nowLine.u b{color:var(--red)} .nowLine.p b{color:var(--teal)}
+  .nowLine .t{color:var(--ink)}
+
+  main{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:820px){main{grid-template-columns:1fr}}
+  .panel{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;
+    box-shadow:0 1px 0 #1E344D inset,0 10px 24px #0004;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .panel.u{border-top:3px solid var(--red)} .panel.p{border-top:3px solid var(--teal)}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .p-title{font-family:var(--serif);font-size:17px;color:#fff}
+  .p-title.u{color:#FFB3BC} .p-title.p{color:var(--teal)}
+  .p-sub{font-size:15px;color:var(--dim);flex-basis:100%;margin-top:-4px}
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.ok{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .pill.bad{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.warn{color:var(--amber);border-color:#7E5B22;background:#33270F}
+  .pill.dim{color:var(--dim);border-color:#243A52;background:#0C1927}
+
+  .kpis{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+  .kpi{background:#0C1927;border:1px solid var(--edge);border-radius:8px;padding:7px 9px}
+  .kpi .v{font-family:var(--mono);font-size:20px;font-weight:700;line-height:1.1}
+  .kpi .k{font-size:15px;color:var(--muted);margin-top:2px;line-height:1.2}
+
+  .zones{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+  @media(max-width:1100px){.zones{grid-template-columns:repeat(2,1fr)}}
+  .zone{border-radius:9px;padding:8px 9px 30px;border:1px solid #1E3448;background:#0B1826;min-height:98px;position:relative;transition:all .3s}
+  .zone .n{font-size:15px;font-weight:700;color:#8FA6BC;line-height:1.2}
+  .zone .c{font-family:var(--mono);font-size:15px;color:var(--dim);margin-top:2px}
+  .zone .s{position:absolute;right:7px;bottom:6px;font-family:var(--mono);font-size:15px;letter-spacing:.5px}
+  .zone.on{background:linear-gradient(180deg,#3A2D12,#2A2110);border-color:#8A6524;box-shadow:0 0 14px #F2A93B33 inset}
+  .zone.on .n{color:var(--lit)} .zone.on .c{color:#B08A45} .zone.on .s{color:var(--lit)}
+  .zone.island{background:linear-gradient(180deg,#0E3026,#0B2620);border-color:#2A8A66;box-shadow:0 0 12px #37E0A033 inset}
+  .zone.island .n{color:var(--teal)} .zone.island .s{color:var(--teal)}
+  .zone.off{background:#0A121C;border-color:#1A2432} .zone.off .n{color:#4E6580} .zone.off .s{color:#5C3A44}
+  .zone .crit{position:absolute;left:9px;bottom:6px;font-family:var(--mono);font-size:15px;letter-spacing:.6px;color:var(--red);border:1px solid #7E2B33;border-radius:4px;padding:0 4px}
+  .zone.on .crit,.zone.island .crit{color:#FF9AA6;border-color:#8E3A45;opacity:.85}
+
+  .bottom{display:grid;grid-template-columns:1.35fr 1fr;gap:12px;flex:1 0 auto}
+  @media(max-width:900px){.bottom{grid-template-columns:1fr}}
+  .chartWrap{position:relative;flex:1;min-height:200px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .capt{font-size:15px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{padding:7px 6px;border-bottom:1px solid var(--edge);text-align:right}
+  th{font-family:var(--mono);font-size:15px;letter-spacing:.8px;color:var(--muted);font-weight:600;text-transform:uppercase}
+  td:first-child,th:first-child{text-align:left;color:var(--muted)}
+  td{font-family:var(--mono);color:var(--ink)}
+  td.u{color:#FFB3BC} td.p{color:var(--teal)} td.d{color:var(--amber);font-weight:700}
+  .scoreNote{font-size:15px;color:var(--dim);line-height:1.45;margin-top:auto}
+  .scoreNote b{color:#7A93AB}
+
+  footer{border-top:1px solid var(--edge);padding-top:9px;color:var(--dim);font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB}
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Hurricane + cyberattack stress test · Adjuntas, Puerto Rico · what the security layer means for people</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <button class="play" id="btnPlay">▶ Run scenario</button>
+    <button class="spd" data-s="1">1×</button><button class="spd on" data-s="2">2×</button><button class="spd" data-s="4">4×</button>
+    <button id="btnReset">Reset</button>
+    <div class="clock" id="clock">T+00:00<small> h</small></div>
+  </div>
+</header>
+
+<div class="timeline">
+  <div class="tlTrack" id="tlTrack"></div>
+  <div class="now">
+    <div class="nowLine u" id="nowU"><b>WITHOUT GRID-AIR</b><span class="t">Awaiting landfall.</span></div>
+    <div class="nowLine p" id="nowP"><b>WITH GRID-AIR</b><span class="t">Awaiting landfall.</span></div>
+  </div>
+</div>
+
+<main>
+  <section class="panel u">
+    <div class="p-head">
+      <div class="p-title u">Without GRID-AIR</div>
+      <div class="pill dim" id="pillU">STANDBY</div>
+      <div class="p-sub">Conventional controls. Same storm, same crews, same repair schedule.</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="uOut" style="color:var(--red)">0</div><div class="k">customers without power</div></div>
+      <div class="kpi"><div class="v" id="uServed" style="color:var(--lit)">100%</div><div class="k">load served</div></div>
+      <div class="kpi"><div class="v" id="uCH" style="color:var(--muted)">0</div><div class="k">customer-hours lost</div></div>
+    </div>
+    <div class="zones" id="zonesU"></div>
+  </section>
+
+  <section class="panel p">
+    <div class="p-head">
+      <div class="p-title p">With GRID-AIR</div>
+      <div class="pill dim" id="pillP">STANDBY</div>
+      <div class="p-sub">Anomaly detection, digital-twin validation, hardened microgrid controls.</div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="pOut" style="color:var(--red)">0</div><div class="k">customers without power</div></div>
+      <div class="kpi"><div class="v" id="pServed" style="color:var(--lit)">100%</div><div class="k">load served</div></div>
+      <div class="kpi"><div class="v" id="pCH" style="color:var(--muted)">0</div><div class="k">customer-hours lost</div></div>
+    </div>
+    <div class="zones" id="zonesP"></div>
+  </section>
+</main>
+
+<div class="bottom">
+  <section class="panel">
+    <div class="capt">Load served over the 72 hours</div>
+    <div class="chartWrap"><canvas id="chart"></canvas></div>
+  </section>
+  <section class="panel">
+    <div class="capt">Scorecard</div>
+    <table>
+      <thead><tr><th>outcome</th><th>without</th><th>with</th><th>difference</th></tr></thead>
+      <tbody id="score"></tbody>
+    </table>
+    <div class="scoreNote"><b>Same storm, same damage, same crews.</b> The only difference between the two runs is how the grid responds to the cyberattack at T+18.</div>
+  </section>
+</div>
+
+<footer><b>Illustrative scenario.</b> Customer counts, loads, and timings are representative of the Adjuntas community-microgrid setting, not a forecast. The storm and repair timeline are identical in both runs by design.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- the community ---------- */
+const ZONES=[
+  {id:'town', name:'Town center',        sub:'pharmacy · shops',    cust:1200, load:2.4, mg:true},
+  {id:'care', name:'Nursing home & clinic',sub:'',                  cust:300,  load:0.9, mg:true, crit:'CRITICAL'},
+  {id:'water',name:'Water pumping',      sub:'serves 4,000 people', cust:50,   load:0.6, mg:true, crit:'CRITICAL'},
+  {id:'ind',  name:'Industrial park',    sub:'',                    cust:400,  load:2.6},
+  {id:'resN', name:'Residential north',  sub:'',                    cust:900,  load:1.8},
+  {id:'resS', name:'Residential south',  sub:'',                    cust:1100, load:2.1},
+  {id:'rurW', name:'Rural west',         sub:'',                    cust:600,  load:1.1},
+  {id:'rurE', name:'Rural east',         sub:'',                    cust:500,  load:0.9},
+];
+const TOTAL_LOAD=ZONES.reduce((s,z)=>s+z.load,0), TOTAL_CUST=ZONES.reduce((s,z)=>s+z.cust,0);
+const T_END=72, DT=0.25, T_ATTACK=18;
+
+/* ---------- scenario: identical physical schedule; only the cyber response differs ---------- */
+const REPAIR={resN:20,resS:28,rurW:36,rurE:42};       /* feeder repair completion hours (base) */
+function stateU(z,t){                                  /* WITHOUT protections */
+  if(t<0) return 'on';
+  if(t<6) return 'off';
+  const delay = t>=T_ATTACK ? 10 : 0;                  /* crews diverted 10 h to chase a phantom equipment fault */
+  if(z.mg||z.id==='ind'){
+    if(t<14) return z.mg?'island':'off';
+    if(t>=T_ATTACK && t<30) return 'off';              /* spoofed overload -> shed; controller DoS -> island cannot form */
+    return 'on';
+  }
+  return t>=REPAIR[z.id]+delay ? 'on' : 'off';
+}
+function stateP(z,t){                                  /* WITH GRID-AIR */
+  if(t<0) return 'on';
+  if(t<6) return 'off';
+  if(z.mg||z.id==='ind'){
+    if(t<14) return z.mg?'island':'off';
+    if(z.id==='ind' && t>=T_ATTACK && t<T_ATTACK+0.35) return 'off';   /* 20-min auto-reconnect */
+    return 'on';
+  }
+  return t>=REPAIR[z.id] ? 'on' : 'off';
+}
+const served=s=>s==='on'||s==='island';
+
+/* ---------- narration ---------- */
+const EVENTS=[
+  {t:0,  both:'Hurricane landfall. Transmission tie and five feeders down. All 5,050 customers dark.'},
+  {t:6,  both:'Storm passes. Adjuntas microgrid islands on PV + battery: town center, nursing home, water pumping back.'},
+  {t:14, both:'Transmission tie repaired. Microgrid re-synchronizes; industrial park restored. Crews move to Residential north.'},
+  {t:18, u:'CYBERATTACK. Spoofed sensor data reads as overload: protection sheds town, nursing home, water, industrial. Controller flooded, island cannot form. Crews pulled off repairs to chase an "equipment fault."',
+         p:'CYBERATTACK. Anomaly detector flags injected data in 4 minutes. Node isolated; digital twin confirms no real overload; shed command blocked. Hardened controller holds the island. Industrial park auto-reconnects in 20 min.'},
+  {t:20, p:'Residential north restored on schedule.'},
+  {t:28, p:'Residential south restored.'},
+  {t:30, u:'Operators manually override after 12 hours. Nursing home, water, town, industrial back. Repairs resume; Residential north restored.'},
+  {t:36, p:'Rural west restored.'},
+  {t:38, u:'Residential south restored.'},
+  {t:42, p:'Rural east restored. Full restoration at T+42.'},
+  {t:46, u:'Rural west restored.'},
+  {t:52, u:'Rural east restored. Full restoration at T+52.'},
+  {t:72, both:'Exercise complete.'},
+];
+
+/* ---------- precompute both runs ---------- */
+const N=Math.round(T_END/DT)+1;
+const run=(fn)=>{ const out={served:[],out:[],ch:[],care:0,water:0,full:null}; let ch=0,care=0,water=0;
+  for(let k=0;k<N;k++){ const t=k*DT; let L=0,C=0;
+    ZONES.forEach(z=>{ const s=fn(z,t); if(served(s)){L+=z.load;} else {C+=z.cust;} });
+    if(k>0){ ch+=C*DT; if(!served(fn(ZONES[1],t)))care+=DT; if(!served(fn(ZONES[2],t)))water+=DT; }
+    out.served.push(100*L/TOTAL_LOAD); out.out.push(C); out.ch.push(ch);
+    if(out.full===null && t>=6 && C===0) out.full=t;
+  }
+  out.care=care; out.water=water; return out; };
+const RU=run(stateU), RP=run(stateP);
+
+/* ---------- timeline ---------- */
+const tl=$('tlTrack');
+function tlX(t){ return (100*t/T_END).toFixed(2)+'%'; }
+function buildTimeline(){
+  const phase=(a,b,c)=>{const e=document.createElement('div');e.className='tlPhase';e.style.left=tlX(a);e.style.width=(100*(b-a)/T_END).toFixed(2)+'%';e.style.background=c;tl.appendChild(e);};
+  phase(0,6,'#5A2731'); phase(6,72,'#1F4A3A'); phase(18,30,'#7E2B33');
+  [[0,'landfall',true,'edgeL'],[6,'storm passes',true,'lo'],[14,'tie repaired',true,'lo'],[18,'cyberattack',true,'atk'],[42,'T+42',false],[52,'T+52',false],[72,'T+72',false,'edgeR']].forEach(([t,l,ev,cls])=>{
+    const k=document.createElement('div');k.className='tlTick';k.style.left=tlX(t);tl.appendChild(k);
+    const a=document.createElement('div');a.className='tlLab'+(ev?' ev':'')+(cls?' '+cls:'');a.style.left=tlX(t);a.textContent=l;tl.appendChild(a); });
+  const h=document.createElement('div');h.className='tlHead';h.id='tlHead';h.style.left='0%';tl.appendChild(h);
+}
+buildTimeline();
+
+/* ---------- zones UI ---------- */
+function buildZones(host){ ZONES.forEach(z=>{ const el=document.createElement('div'); el.className='zone on'; el.dataset.id=z.id;
+  el.innerHTML=`<div class="n">${z.name}</div><div class="c">${z.cust.toLocaleString()} customers${z.sub?' · '+z.sub:''}</div>${z.crit?`<span class="crit">${z.crit}</span>`:''}<span class="s">POWERED</span>`; host.appendChild(el); }); }
+buildZones($('zonesU')); buildZones($('zonesP'));
+function paintZones(host,fn,t){ ZONES.forEach(z=>{ const el=host.querySelector(`.zone[data-id="${z.id}"]`); const s=fn(z,t);
+  el.className='zone '+s; el.querySelector('.s').textContent= s==='on'?'POWERED': s==='island'?'ISLANDED':'DARK'; }); }
+
+/* ---------- playback ---------- */
+let t=-0.25, playing=false, speed=2, timer=null;
+function fmt(t){ const h=Math.max(0,t); return 'T+'+String(Math.floor(h)).padStart(2,'0')+':'+String(Math.round((h%1)*60)).padStart(2,'0'); }
+function idx(t){ return Math.max(0,Math.min(N-1,Math.round(t/DT))); }
+function latest(which,t){ let s=which==='u'?'Awaiting landfall.':'Awaiting landfall.'; EVENTS.forEach(e=>{ if(e.t<=t){ const m=e[which]||e.both; if(m) s=m; } }); return s; }
+
+function render(){
+  const k=idx(t), tt=Math.max(0,t);
+  $('clock').innerHTML=fmt(tt)+'<small> h</small>';
+  $('tlHead').style.left=tlX(tt);
+  paintZones($('zonesU'),stateU,t); paintZones($('zonesP'),stateP,t);
+  const set=(pre,R)=>{ $(pre+'Out').textContent=R.out[k].toLocaleString(); $(pre+'Served').textContent=R.served[k].toFixed(0)+'%'; $(pre+'CH').textContent=Math.round(R.ch[k]).toLocaleString(); };
+  if(t>=0){ set('u',RU); set('p',RP); } else { ['u','p'].forEach(p=>{$(p+'Out').textContent='0';$(p+'Served').textContent='100%';$(p+'CH').textContent='0';}); }
+  const pill=(id,R)=>{ const el=$(id); if(t<0){el.className='pill dim';el.textContent='STANDBY';return;} const o=R.out[k];
+    if(o===0){el.className='pill ok';el.textContent='FULLY RESTORED';} else if(t>=T_ATTACK&&t<30&&R===RU){el.className='pill bad';el.textContent='UNDER ATTACK';} else if(t<6){el.className='pill bad';el.textContent='STORM';} else {el.className='pill warn';el.textContent='RESTORING';} };
+  pill('pillU',RU); pill('pillP',RP);
+  $('nowU').querySelector('.t').textContent=latest('u',t); $('nowP').querySelector('.t').textContent=latest('p',t);
+  /* scorecard (live, finalizes at end) */
+  const rows=[
+    ['Customer-hours without power', Math.round(RU.ch[k]), Math.round(RP.ch[k]), v=>v.toLocaleString()],
+    ['Nursing home hours dark', hoursDark(stateU,ZONES[1],t), hoursDark(stateP,ZONES[1],t), v=>v.toFixed(1)+' h'],
+    ['Water station hours dark', hoursDark(stateU,ZONES[2],t), hoursDark(stateP,ZONES[2],t), v=>v.toFixed(1)+' h'],
+    ['Time to full restoration', RU.full!==null&&t>=RU.full?RU.full:null, RP.full!==null&&t>=RP.full?RP.full:null, v=>v===null?'–':'T+'+v],
+  ];
+  $('score').innerHTML=rows.map(([n,u,p,f])=>{ const d=(u!==null&&p!==null)? (typeof u==='number'? u-p : null) : null;
+    return `<tr><td>${n}</td><td class="u">${f(u)}</td><td class="p">${f(p)}</td><td class="d">${d===null?'–':(n.startsWith('Time')?'−'+d+' h':'−'+f(d))}</td></tr>`; }).join('');
+  drawChart();
+}
+function hoursDark(fn,z,t){ let h=0; for(let k=1;k<=idx(t);k++){ if(!served(fn(z,k*DT))) h+=DT; } return h; }
+
+function fit(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;if(c.width!==Math.round(r.width*d)||c.height!==Math.round(r.height*d)){c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);c.getContext('2d').setTransform(d,0,0,d,0,0);}return r;}
+function drawChart(){
+  const c=$('chart'),ctx=c.getContext('2d'),r=fit(c),W=r.width,H=r.height; ctx.clearRect(0,0,W,H);
+  const padL=52,padR=28,padT=10,padB=22,iw=W-padL-padR,ih=H-padT-padB;
+  const X=tt=>padL+iw*tt/T_END, Y=v=>padT+ih*(1-v/100);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font='14px '+css('--mono');ctx.textAlign='right';
+  [0,25,50,75,100].forEach(v=>{ctx.beginPath();ctx.moveTo(padL,Y(v));ctx.lineTo(W-padR,Y(v));ctx.stroke();ctx.fillText(v+'%',padL-5,Y(v)+3);});
+  ctx.textAlign='center'; [0,12,24,36,48,60,72].forEach(h=>ctx.fillText('T+'+h,X(h),H-6));
+  /* attack marker */
+  ctx.strokeStyle=css('--red');ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(X(T_ATTACK),padT);ctx.lineTo(X(T_ATTACK),H-padB);ctx.stroke();ctx.setLineDash([]);
+  ctx.fillStyle=css('--red');ctx.textAlign='left';ctx.font='14px '+css('--sans');ctx.fillText('cyberattack',X(T_ATTACK)+4,padT+10);
+  const k=idx(t); if(t<0) return;
+  /* advantage band */
+  ctx.beginPath(); for(let i=0;i<=k;i++)ctx.lineTo(X(i*DT),Y(RP.served[i])); for(let i=k;i>=0;i--)ctx.lineTo(X(i*DT),Y(RU.served[i])); ctx.closePath(); ctx.fillStyle='rgba(55,224,160,0.13)'; ctx.fill();
+  const line=(R,col,w)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();for(let i=0;i<=k;i++){const x=X(i*DT),y=Y(R.served[i]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);}ctx.stroke();};
+  line(RU,'#FF8A97',2); line(RP,css('--teal'),2.2);
+  ctx.font='14px '+css('--sans');ctx.textAlign='left';ctx.fillStyle='#FF8A97';ctx.fillText('— without GRID-AIR',padL+8,padT+24);ctx.fillStyle=css('--teal');ctx.fillText('— with GRID-AIR',padL+8,padT+38);
+}
+
+function tick(){ if(!playing)return; t+=DT*speed; if(t>=T_END){t=T_END;playing=false;$('btnPlay').textContent='▶ Replay';} render(); }
+function setPlay(v){ playing=v; $('btnPlay').textContent=v?'❚❚ Pause':(t>=T_END?'▶ Replay':'▶ Resume'); if(v&&t>=T_END){t=-0.25;} }
+$('btnPlay').addEventListener('click',()=>{ if(t>=T_END){ t=-0.25; } setPlay(!playing); });
+document.querySelectorAll('.spd').forEach(b=>b.addEventListener('click',()=>{ speed=+b.dataset.s; document.querySelectorAll('.spd').forEach(x=>x.classList.toggle('on',x===b)); }));
+$('btnReset').addEventListener('click',()=>{ playing=false; t=-0.25; $('btnPlay').textContent='▶ Run scenario'; render(); });
+render();
+setInterval(tick,120);
+window.addEventListener('resize',drawChart);
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "A hurricane, then a cyberattack", "lead": "A 72-hour scenario run twice side by side: without GRID-AIR on the left, with it on the right. Same storm, same damage, same crews.", "steps": [{"h": "Press <em>Run scenario</em>", "p": "Pick 1×, 2×, or 4×. The playhead moves along the timeline and each panel narrates its own track."}, {"h": "T+0 to T+14", "p": "Landfall darkens everything. The microgrid islands and brings back the critical zones in teal. The transmission tie is repaired."}, {"h": "T+18, the cyberattack", "p": "Watch the two panels diverge. Left: everything restored goes dark again and crews are diverted. Right: the spoof is caught in minutes and restoration continues."}, {"h": "Read the scorecard at T+72", "p": "Customer-hours lost, hours the nursing home and water station were dark, time to full restoration, and the difference."}, {"h": "Reset or Replay", "p": "Run it again for a different audience."}], "tip": "<b>The chart’s shaded band</b> is the load GRID-AIR kept on. That is the whole argument in one shape."}, "science": {"title": "Compound events and what the security layer is worth", "lead": "An attack timed against a natural disaster does not have to be sophisticated. It only has to undo restoration work and send crews the wrong way.", "steps": [{"h": "Identical physics", "p": "Storm outage, microgrid island, tie repair, and four feeder repairs follow the same schedule in both runs. Only the cyber response differs."}, {"h": "The unprotected response", "p": "Spoofed sensors read as an overload, protection sheds restored zones, the controller is flooded and cannot re-island, and operators chase a phantom fault for hours."}, {"h": "The protected response", "p": "Anomaly detection flags the injected data, the node is isolated, the digital twin blocks the false shed, and the hardened controller holds the island."}, {"h": "Measured in people", "p": "Every number is integrated from zone states at 15-minute steps: customer-hours, critical-facility dark hours, restoration time."}], "tip": "<b>In GRID-AIR:</b> detection, self-healing, and twin validation acting together. Present it as what success would mean; these protections are what the program sets out to build and prove."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

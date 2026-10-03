@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Federated Learning under a Byzantine Client</title>
+<style>
+  :root{
+    --bg:#0A1420; --panel:#0F1E2E; --edge:#182C42; --grid:#132638; --ink:#D6E6F2; --muted:#728CA3; --dim:#4E6580;
+    --teal:#37E0A0; --amber:#F2A93B; --blue:#79B0FF; --red:#FF5B6E; --violet:#B98CFF;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:#6A8299;font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;border-radius:7px;
+    padding:8px 14px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)} button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .switch{display:flex;align-items:center;gap:9px;user-select:none}
+  .switch .lab{font-size:15px;color:var(--muted)} .switch .lab b{color:var(--ink)}
+  .track{position:relative;width:52px;height:28px;border-radius:16px;cursor:pointer;border:1px solid;transition:all .2s}
+  .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;transition:all .2s}
+  .track.rogue{background:#1A2230;border-color:#2A3B4C} .track.rogue .knob{background:#4E6580}
+  .track.rogue.on{background:#33141A;border-color:#7E2B33} .track.rogue.on .knob{left:26px;background:var(--red);box-shadow:0 0 8px var(--red)}
+  .track.agg{background:#2A1A20;border-color:#5A2731} .track.agg .knob{background:var(--amber)}
+  .track.agg.on{background:#122E22;border-color:#2A6B4E} .track.agg.on .knob{left:26px;background:var(--teal)}
+  .round{font-family:var(--mono);font-size:15px;color:var(--muted)} .round b{color:var(--ink)}
+
+  main{display:grid;grid-template-columns:300px 1.3fr 320px;gap:12px;flex:1 0 auto}
+  @media(max-width:1120px){main{grid-template-columns:1fr 1fr}.center{grid-column:1/3;order:-1}}
+  @media(max-width:700px){main{grid-template-columns:1fr}.center{grid-column:auto}}
+
+  .panel{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;
+    box-shadow:0 1px 0 #1E344D inset,0 10px 24px #0004;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+  .p-title{font-size:15px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+  .p-sub{font-size:15px;color:var(--dim);flex-basis:100%;margin-top:-4px}
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.ok{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .pill.bad{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.warn{color:var(--amber);border-color:#7E5B22;background:#33270F}
+  .pill.dim{color:var(--dim);border-color:#243A52;background:#0C1927}
+
+  /* nodes */
+  .node{display:grid;grid-template-columns:1fr auto;gap:4px 8px;padding:8px 10px;border-radius:9px;border:1px solid var(--edge);background:#0C1927;cursor:pointer;transition:all .2s}
+  .node:hover{border-color:#2E4A66}
+  .node.rogue{border-color:var(--red);background:#2C141A;box-shadow:0 0 14px #FF5B6E33}
+  .node.selected:not(.rogue){border-color:#3A5470}
+  .node .nm{font-size:15px;font-weight:700;color:var(--ink)} .node .nm small{font-weight:400;color:var(--dim);font-family:var(--mono);font-size:15px;margin-left:6px}
+  .node .st{font-family:var(--mono);font-size:15px;letter-spacing:.6px;color:var(--teal)} .node.rogue .st{color:var(--red)}
+  .node .bar{grid-column:1/3;height:8px;border-radius:4px;background:#091320;border:1px solid var(--edge);position:relative;overflow:hidden}
+  .node .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--teal);border-radius:4px;transition:width .3s}
+  .node.rogue .bar i{background:var(--red)}
+  .node .meta{grid-column:1/3;font-family:var(--mono);font-size:15px;color:var(--dim)}
+  .node.rogue .meta{color:#FF9AA6}
+  .nodeHint{font-size:15px;color:var(--dim);margin-top:auto}
+
+  /* global model */
+  .big{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap}
+  .big .num{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1}
+  .big .num small{font-size:15px;color:var(--muted);font-weight:400}
+  .scopeWrap{position:relative;height:150px;flex-shrink:0}
+  .chartWrap{position:relative;flex:1;min-height:160px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .capt{font-size:15px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);margin-bottom:-4px}
+
+  /* aggregator */
+  .method{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--ink);padding:9px 11px;border-radius:8px;border:1px solid var(--edge);background:#0C1927;line-height:1.35}
+  .method small{display:block;font-family:var(--sans);font-weight:400;font-size:15px;color:var(--muted);margin-top:3px}
+  .method.robust{border-color:#2A6B4E} .method.naive{border-color:#7E5B22}
+  .infl{display:grid;grid-template-columns:70px 1fr 44px;align-items:center;gap:8px;font-size:15px;margin:4px 0}
+  .infl .n{color:var(--muted);font-family:var(--mono)} .infl .b{height:9px;background:#091320;border:1px solid var(--edge);border-radius:5px;position:relative}
+  .infl .b i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:var(--blue);transition:width .3s}
+  .infl.rogue .n{color:#FF9AA6} .infl.rogue .b i{background:var(--red)}
+  .infl .v{font-family:var(--mono);text-align:right;color:var(--ink)}
+  .steps{font-size:15px;color:var(--muted);line-height:1.55;border-top:1px solid var(--edge);padding-top:8px}
+  .steps b{color:var(--ink)} .steps .cut{color:var(--red);text-decoration:line-through}
+  .steps .ok{color:var(--teal)}
+
+  footer{border-top:1px solid var(--edge);padding-top:9px;color:var(--dim);font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB}
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Federated learning under a Byzantine client · self-healing</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <div class="switch"><span class="lab">Rogue node <b id="rogueState">OFF</b></span><div class="track rogue" id="rogueTrack" role="switch" aria-checked="false" tabindex="0"><div class="knob"></div></div></div>
+    <div class="switch"><span class="lab">Aggregation <b id="aggState">FedAvg</b></span><div class="track agg" id="aggTrack" role="switch" aria-checked="false" tabindex="0"><div class="knob"></div></div></div>
+    <button id="btnReset">Reset</button>
+    <span class="round">round <b id="round">0</b></span>
+  </div>
+</header>
+
+<main>
+  <!-- NODES -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Edge nodes</div>
+      <div class="pill ok" id="nodesPill">5 HONEST</div>
+      <div class="p-sub">Each trains on local meter data and sends a model update every round.</div>
+    </div>
+    <div id="nodes" style="display:flex;flex-direction:column;gap:7px"></div>
+    <div class="nodeHint">Click a node to choose which one goes rogue.</div>
+  </section>
+
+  <!-- GLOBAL MODEL -->
+  <section class="panel center">
+    <div class="p-head">
+      <div class="p-title">Global forecasting model</div>
+      <div class="pill ok" id="gPill">HEALTHY</div>
+      <div class="p-sub" id="gSub">Aggregated from all five nodes and broadcast back each round.</div>
+    </div>
+    <div class="big">
+      <div><div class="num" id="mapeNum" style="color:var(--teal)">1.8<small> % test error (deployed)</small></div></div>
+      <div><div class="num" id="otherNum" style="color:var(--dim);font-size:18px">1.8<small> % with the other aggregator</small></div></div>
+    </div>
+    <div class="capt">Forecast on held-out window</div>
+    <div class="scopeWrap"><canvas id="scope"></canvas></div>
+    <div class="capt">Test error over rounds</div>
+    <div class="chartWrap"><canvas id="chart"></canvas></div>
+  </section>
+
+  <!-- AGGREGATOR -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Aggregator</div>
+      <div class="pill warn" id="aggPill">NAIVE</div>
+      <div class="p-sub">How this round's five updates became one global step.</div>
+    </div>
+    <div class="method naive" id="methodBox">FedAvg · plain mean<small>Every update counts equally, whatever its size or direction.</small></div>
+    <div class="capt" style="margin-top:2px">Influence on the global step</div>
+    <div id="infl"></div>
+    <div class="steps" id="steps"></div>
+  </section>
+</main>
+
+<footer><b>Try it:</b> switch the rogue node on under FedAvg, watch the model collapse, then switch aggregation to robust. Linear surrogate; values illustrative.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const gauss=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+
+/* ---------- federated regression setup ---------- */
+const D=5, WS=[650,127.5,18,40,-25];             /* true weights: bias, load, temp, sin(h), cos(h) */
+const NODES=[
+  {id:'ME-01',jur:'Maine',      shift:-0.6,off:-8},
+  {id:'HI-03',jur:'Hawaiʻi',    shift: 0.4,off: 6},
+  {id:'ND-02',jur:'N. Dakota',  shift:-0.2,off: 0},
+  {id:'PR-04',jur:'Puerto Rico',shift: 0.8,off:10},
+  {id:'UH-07',jur:'Hawaiʻi',    shift:-0.4,off:-4},
+];
+function sample(n){ const h=Math.random()*2*Math.PI; const f=[1,n.shift+gauss()*0.8,gauss()*0.9,Math.sin(h),Math.cos(h)];
+  return {f, y: WS.reduce((s,w,i)=>s+w*f[i],0)+n.off+gauss()*12}; }
+const TEST=[]; for(let i=0;i<200;i++) TEST.push(sample(NODES[i%5]));
+/* held-out window: 60 consecutive hours, smooth */
+const WIN=[]; for(let t=0;t<60;t++){ const h=(t/60)*2*Math.PI*2.5; const f=[1, 0.9*Math.sin(h-1.2)+0.15*Math.sin(h*3), 0.6*Math.sin(h+0.4), Math.sin(h), Math.cos(h)];
+  WIN.push({f, y: WS.reduce((s,w,i)=>s+w*f[i],0)+gauss()*8}); }
+const dot=(w,f)=>w.reduce((s,v,i)=>s+v*f[i],0);
+const mape=w=>100*TEST.reduce((s,t)=>s+Math.abs(dot(w,t.f)-t.y)/Math.abs(t.y),0)/TEST.length;
+const LR=0.05, BOOST=5, WT=WS.map(v=>v*0.62);       /* attacker's target model: under-forecast by 38 % */
+function honestUpdate(w,node,B=40){ const g=new Array(D).fill(0); for(let k=0;k<B;k++){const {f,y}=sample(node); const e=dot(w,f)-y; for(let i=0;i<D;i++) g[i]+=2*e*f[i]/B;} return g.map(v=>-LR*v); }
+function rogueUpdate(w){ return WT.map((t,i)=>BOOST*(t-w[i])); }
+const median=a=>{const s=[...a].sort((x,y)=>x-y);return s[Math.floor(s.length/2)];};
+const norm=u=>Math.sqrt(u.reduce((s,v)=>s+v*v,0));
+function fedavg(U){ return U[0].map((_,i)=>U.reduce((s,u)=>s+u[i],0)/U.length); }
+function robust(U){ const ns=U.map(norm); const thr=median(ns);
+  const keep=ns.map(n=>n<=3*thr);                       /* outlier filter: drop updates far larger than the median */
+  const C=U.filter((_,j)=>keep[j]);
+  const agg=U[0].map((_,i)=>median(C.map(u=>u[i])));    /* coordinate-wise median over survivors */
+  return {agg,C,keep,ns,thr}; }
+
+/* ---------- state ---------- */
+let wN=WS.map(v=>v+gauss()*6), wR=wN.slice();
+let rogueOn=false, robustOn=false, rogueIdx=1, round=0;
+const histN=[], histR=[]; const HMAX=90;
+let lastU=null, lastInfo=null;
+
+/* ---------- one federated round (both worlds) ---------- */
+function stepRound(){
+  round++;
+  const UN=NODES.map((n,j)=> (rogueOn&&j===rogueIdx)? rogueUpdate(wN) : honestUpdate(wN,n));
+  const UR=NODES.map((n,j)=> (rogueOn&&j===rogueIdx)? rogueUpdate(wR) : honestUpdate(wR,n));
+  const aN=fedavg(UN); wN=wN.map((v,i)=>v+aN[i]);
+  const rr=robust(UR); wR=wR.map((v,i)=>v+rr.agg[i]);
+  histN.push(mape(wN)); histR.push(mape(wR)); if(histN.length>HMAX){histN.shift();histR.shift();}
+  /* what the deployed aggregator saw this round */
+  lastU = robustOn? UR : UN; lastInfo = robustOn? rr : null;
+  render();
+}
+
+/* ---------- UI: nodes ---------- */
+const nodesEl=$('nodes');
+NODES.forEach((n,j)=>{ const el=document.createElement('div'); el.className='node'; el.dataset.i=j;
+  el.innerHTML=`<div class="nm">${n.id}</div><div class="st">HONEST</div><div class="bar"><i style="width:8%"></i></div><div class="meta">update ‖Δw‖ –</div>`;
+  el.addEventListener('click',()=>{ rogueIdx=j; render(); }); nodesEl.appendChild(el); });
+
+/* ---------- canvases ---------- */
+function fit(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;if(c.width!==Math.round(r.width*d)||c.height!==Math.round(r.height*d)){c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);c.getContext('2d').setTransform(d,0,0,d,0,0);}return r;}
+function drawScope(){
+  const c=$('scope'),ctx=c.getContext('2d'),r=fit(c),W=r.width,H=r.height; ctx.clearRect(0,0,W,H);
+  const w = robustOn? wR : wN;
+  const padL=54,padR=6,padT=8,padB=6,iw=W-padL-padR,ih=H-padT-padB, lo=250,hi=1000;
+  const Y=v=>padT+ih*(1-(v-lo)/(hi-lo)), X=i=>padL+iw*i/(WIN.length-1);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font='14px '+css('--mono');ctx.textAlign='right';
+  [400,700,1000].forEach(v=>{ctx.beginPath();ctx.moveTo(padL,Y(v));ctx.lineTo(W-padR,Y(v));ctx.stroke();ctx.fillText(v,padL-4,Y(v)+3);});
+  const pred=WIN.map(t=>dot(w,t.f));
+  ctx.beginPath(); WIN.forEach((t,i)=>ctx.lineTo(X(i),Y(Math.max(lo,Math.min(hi,pred[i]))))); for(let i=WIN.length-1;i>=0;i--)ctx.lineTo(X(i),Y(WIN[i].y)); ctx.closePath(); ctx.fillStyle='rgba(255,91,110,0.16)'; ctx.fill();
+  const line=(vals,col,wd,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.setLineDash(dash||[]);ctx.beginPath();vals.forEach((v,i)=>{const y=Y(Math.max(lo,Math.min(hi,v)));i?ctx.lineTo(X(i),y):ctx.moveTo(X(i),y);});ctx.stroke();ctx.setLineDash([]);};
+  line(WIN.map(t=>t.y),css('--teal'),2); line(pred,css('--blue'),1.7,[6,5]);
+  ctx.fillStyle=css('--teal');ctx.font='14px '+css('--sans');ctx.textAlign='left';ctx.fillText('● actual',padL+6,padT+10); ctx.fillStyle=css('--blue');ctx.fillText('- - global model',padL+110,padT+10);
+}
+function drawChart(){
+  const c=$('chart'),ctx=c.getContext('2d'),r=fit(c),W=r.width,H=r.height; ctx.clearRect(0,0,W,H);
+  const padL=54,padR=8,padT=8,padB=20,iw=W-padL-padR,ih=H-padT-padB, hi=45;
+  const Y=v=>padT+ih*(1-Math.min(v,hi)/hi), X=i=>padL+iw*i/(HMAX-1);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font='14px '+css('--mono');ctx.textAlign='right';
+  [0,15,30,45].forEach(v=>{ctx.beginPath();ctx.moveTo(padL,Y(v));ctx.lineTo(W-padR,Y(v));ctx.stroke();ctx.fillText(v+'%',padL-4,Y(v)+3);});
+  const off=HMAX-histN.length;
+  const line=(h,col,wd,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=wd;ctx.setLineDash(dash||[]);ctx.beginPath();h.forEach((v,i)=>{i?ctx.lineTo(X(off+i),Y(v)):ctx.moveTo(X(off+i),Y(v));});ctx.stroke();ctx.setLineDash([]);};
+  const dep = robustOn? histR : histN, oth = robustOn? histN : histR;
+  line(oth,'#4E6580',1.2,[4,4]); line(dep, robustOn?css('--teal'):css('--amber'),2.2);
+  ctx.textAlign='left';ctx.font='14px '+css('--sans');
+  ctx.fillStyle=robustOn?css('--teal'):css('--amber'); ctx.fillText('— deployed: '+(robustOn?'robust':'FedAvg'),padL+6,H-5);
+  ctx.fillStyle='#7C93A9'; ctx.fillText('- - other: '+(robustOn?'FedAvg':'robust'),padL+230,H-5);
+}
+
+/* ---------- render ---------- */
+function render(){
+  $('round').textContent=round;
+  const w = robustOn? wR : wN, wo = robustOn? wN : wR;
+  const m=mape(w), mo=mape(wo);
+  const mn=$('mapeNum'); mn.innerHTML=m.toFixed(1)+'<small> % test error (deployed)</small>'; mn.style.color = m<4?css('--teal'):m<12?css('--amber'):css('--red');
+  $('otherNum').innerHTML=mo.toFixed(1)+'<small> % with the other aggregator</small>';
+  const gp=$('gPill');
+  if(m<4){gp.className='pill ok';gp.textContent='HEALTHY';} else if(m<12){gp.className='pill warn';gp.textContent='RECOVERING';} else {gp.className='pill bad';gp.textContent='POISONED';}
+  $('gSub').textContent = m>=12 ? 'The rogue replaced the global model with one that under-forecasts by ~38 %.' : 'Aggregated from all five nodes and broadcast back each round.';
+
+  /* nodes */
+  const norms = lastU? lastU.map(norm) : NODES.map(()=>0);
+  const mx=Math.max(1e-6,...norms);
+  NODES.forEach((n,j)=>{ const el=nodesEl.children[j]; const isR=rogueOn&&j===rogueIdx;
+    el.className='node'+(isR?' rogue':'')+(j===rogueIdx?' selected':'');
+    el.querySelector('.st').textContent=isR?'ROGUE':'HONEST';
+    const frac = norms[j]>0 ? Math.max(0.06, Math.log10(1+norms[j])/Math.log10(1+mx)) : 0.06;
+    el.querySelector('.bar i').style.width=(100*frac).toFixed(1)+'%';
+    const dropped = robustOn && lastInfo && !lastInfo.keep[j];
+    el.querySelector('.meta').textContent = lastU ? `update ‖Δw‖ ${norms[j].toFixed(1)}${isR?(dropped?'  ·  model replacement · DISCARDED':'  ·  model replacement'):''}` : 'update ‖Δw‖ –';
+  });
+  const np=$('nodesPill'); if(rogueOn){np.className='pill bad';np.textContent='1 ROGUE · 4 HONEST';} else {np.className='pill ok';np.textContent='5 HONEST';}
+
+  /* aggregator */
+  $('aggState').textContent=robustOn?'Robust':'FedAvg';
+  const ap=$('aggPill'); ap.className='pill '+(robustOn?'ok':'warn'); ap.textContent=robustOn?'ROBUST':'NAIVE';
+  const mb=$('methodBox'); mb.className='method '+(robustOn?'robust':'naive');
+  mb.innerHTML = robustOn
+    ? 'Outlier filter + coordinate-wise median<small>Updates far larger than the median size are discarded. The median of each weight is then taken over the rest. One rogue out of five cannot move it.</small>'
+    : 'FedAvg · plain mean<small>Every update counts equally, whatever its size or direction.</small>';
+  /* influence shares */
+  let shares;
+  if(!lastU){ shares=NODES.map(()=>0.2); }
+  else if(!robustOn){ const tot=norms.reduce((s,v)=>s+v,0)||1; shares=norms.map(v=>v/tot); }
+  else if(!lastInfo){ shares=NODES.map(()=>0.2); }
+  else { const {keep,C}=lastInfo; const med=lastU[0].map((_,i)=>median(C.map(u=>u[i])));
+    const raw=lastU.map((u,j)=> keep[j] ? u.reduce((s,v,i)=>s+(Math.abs(v-med[i])<1e-9?1:0),0)/D : 0);
+    const tot=raw.reduce((s,v)=>s+v,0)||1; shares=raw.map(v=>v/tot); }
+  $('infl').innerHTML=NODES.map((n,j)=>{ const isR=rogueOn&&j===rogueIdx; return `<div class="infl${isR?' rogue':''}"><span class="n">${n.id}</span><div class="b"><i style="width:${(100*shares[j]).toFixed(1)}%"></i></div><span class="v">${(100*shares[j]).toFixed(0)}%</span></div>`; }).join('');
+  /* steps narrative */
+  const st=$('steps');
+  if(!lastU){ st.innerHTML='Waiting for the first round…'; }
+  else if(rogueOn){ const rn=norms[rogueIdx], hn=median(norms.filter((_,j)=>j!==rogueIdx));
+    st.innerHTML = robustOn
+      ? `Rogue update is <b>${(rn/Math.max(hn,1e-6)).toFixed(0)}×</b> the honest median size → <span class="ok">flagged as an outlier and discarded</span>. Global step = median of the four honest updates.`
+      : `Rogue update is <b>${(rn/Math.max(hn,1e-6)).toFixed(0)}×</b> the honest median size. The mean has no defense: it <span class="cut">averages it in at full weight</span>, so the global model lands on the attacker's target.`;
+  } else { st.innerHTML = robustOn ? 'All five honest. Nothing is filtered; the median is an honest consensus.' : 'All five honest. The mean works fine when everyone is honest.'; }
+
+  drawScope(); drawChart();
+}
+
+/* ---------- controls ---------- */
+function setRogue(v){ rogueOn=v; $('rogueState').textContent=v?'ON':'OFF'; const t=$('rogueTrack'); t.classList.toggle('on',v); t.setAttribute('aria-checked',String(v)); render(); }
+function setAgg(v){ robustOn=v; const t=$('aggTrack'); t.classList.toggle('on',v); t.setAttribute('aria-checked',String(v)); render(); }
+$('rogueTrack').addEventListener('click',()=>setRogue(!rogueOn));
+$('aggTrack').addEventListener('click',()=>setAgg(!robustOn));
+[['rogueTrack',()=>setRogue(!rogueOn)],['aggTrack',()=>setAgg(!robustOn)]].forEach(([id,fn])=>$(id).addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();fn();}}));
+$('btnReset').addEventListener('click',()=>{ wN=WS.map(v=>v+gauss()*6); wR=wN.slice(); round=0; histN.length=0; histR.length=0; lastU=null; lastInfo=null; setRogue(false); render(); });
+
+/* warm start: a few honest rounds so the chart opens with history */
+for(let i=0;i<12;i++) stepRound();
+setInterval(stepRound,650);
+window.addEventListener('resize',()=>{drawScope();drawChart();});
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "One rogue node against a five-node model", "lead": "Five edge nodes train a shared forecaster without sharing data. Left: the nodes and their updates. Center: the global model. Right: how the aggregator combined this round.", "steps": [{"h": "Let it run", "p": "All five honest, test error under 2 percent, the forecast tracks the held-out window."}, {"h": "Switch <em>Rogue node</em> on", "p": "HI-03 sends a model-replacement update. Under FedAvg the error jumps to about 35 percent within one round and the forecast sits 38 percent low."}, {"h": "Switch <em>Aggregation</em> to Robust", "p": "The rogue update is flagged as an outlier and discarded; its influence reads 0 percent. Error returns under 2 percent."}, {"h": "Read the chart", "p": "Solid is the deployed aggregator; dashed is the other one, running in parallel on the same node stream."}, {"h": "Click any node", "p": "Choose which one goes rogue. Switch the rogue off to watch FedAvg recover slowly while robust never moved."}], "tip": "<b>Read the chart:</b> the dashed line is the other aggregator running in parallel on the very same updates, so the comparison is exact."}, "science": {"title": "Byzantine-robust federated learning", "lead": "Federated learning keeps data local but trusts every client’s update. A single dishonest client can capture the model under plain averaging.", "steps": [{"h": "Model replacement", "p": "The rogue sends an update scaled so that, after averaging, the global model lands exactly on the attacker’s target. The mean has no notion of “too far.”"}, {"h": "Outlier filtering", "p": "Updates far larger than the median norm are discarded before aggregation. A loud attack cannot get in."}, {"h": "Coordinate-wise median", "p": "For each weight, take the median over the surviving updates. One rogue out of five cannot move a median."}, {"h": "The residual", "p": "A stealthy attacker who keeps updates honest-sized can still nudge slowly; the median bounds that per round but does not eliminate it."}], "tip": "<b>In GRID-AIR:</b> self-healing federated learning treats the aggregator as a defense layer and pairs it with anomaly detection rather than relying on either alone."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

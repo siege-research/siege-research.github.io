@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Adversarial Input Playground</title>
+<style>
+  :root{
+    --bg:#0A1420; --panel:#0F1E2E; --edge:#182C42; --grid:#132638; --ink:#D6E6F2; --muted:#728CA3; --dim:#4E6580;
+    --teal:#37E0A0; --amber:#F2A93B; --blue:#79B0FF; --red:#FF5B6E; --violet:#B98CFF;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:#6A8299;font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;border-radius:7px;
+    padding:8px 14px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)} button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  button.attack{background:#3A1F27;border-color:#6E2F3B}
+  .switch{display:flex;align-items:center;gap:9px;user-select:none}
+  .switch .lab{font-size:15px;color:var(--muted)} .switch .lab b{color:var(--ink)}
+  .track{position:relative;width:52px;height:28px;border-radius:16px;cursor:pointer;background:#2A1A20;border:1px solid #5A2731;transition:all .2s}
+  .track.on{background:#122E22;border-color:#2A6B4E}
+  .knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;background:var(--red);transition:all .2s}
+  .track.on .knob{left:26px;background:var(--teal)}
+
+  main{display:grid;grid-template-columns:1.05fr 1.2fr 0.9fr;gap:12px;flex:1 0 auto}
+  @media(max-width:1060px){main{grid-template-columns:1fr 1fr}.valPanel{grid-column:1/3}}
+  @media(max-width:700px){main{grid-template-columns:1fr}.valPanel{grid-column:auto}}
+
+  .panel{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;
+    box-shadow:0 1px 0 #1E344D inset,0 10px 24px #0004;padding:12px 14px 12px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+  .p-title{font-size:15px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+  .p-sub{font-size:15px;color:var(--dim);flex-basis:100%;margin-top:-4px}
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.ok{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .pill.bad{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.warn{color:var(--amber);border-color:#7E5B22;background:#33270F}
+
+  /* ---- meters ---- */
+  .meters{display:flex;flex-direction:column;gap:6px}
+  .meter{display:grid;grid-template-columns:150px 1fr 82px 68px;align-items:center;gap:9px;padding:6px 8px;border-radius:8px;
+    border:1px solid transparent;background:#0C1927;transition:border-color .2s,background .2s}
+  .meter.nudged{border-color:#5C3B66;background:#1A1426}
+  .meter.flagged{border-color:#7E5B22;background:#221A0D}
+  .meter .nm{font-size:15px;color:var(--ink);line-height:1.2}
+  .meter .nm small{display:block;color:var(--dim);font-size:15px;font-family:var(--mono)}
+  .meter input[type=range]{width:100%;accent-color:var(--violet);cursor:pointer;height:22px}
+  .meter .val{font-family:var(--mono);font-size:15px;color:var(--ink);text-align:right}
+  .meter .val small{color:var(--dim);font-size:15px}
+  .meter .dlt{font-family:var(--mono);font-size:15px;text-align:right;color:var(--dim)}
+  .meter.nudged .dlt{color:var(--violet)}
+  .meter.flagged .dlt{color:var(--amber)}
+  @media(max-width:1060px){
+    .meter{grid-template-columns:1fr 82px 68px;row-gap:4px}
+    .meter input[type=range]{grid-column:1/4;grid-row:2}
+  }
+  .budget{font-size:15px;color:var(--muted);border-top:1px solid var(--edge);padding-top:8px;margin-top:2px;flex-shrink:0}
+  .budget b{font-family:var(--mono);color:var(--ink)}
+
+  /* ---- classifier ---- */
+  .decision{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .badge{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:1.5px;padding:10px 18px;border-radius:9px;border:2px solid;min-width:190px;text-align:center;transition:all .25s}
+  .badge.hold{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .badge.shed{color:#fff;border-color:var(--red);background:#8E2430;box-shadow:0 0 22px #FF5B6E55}
+  .prob{flex:1;min-width:160px}
+  .prob .lab{display:flex;justify-content:space-between;font-size:15px;color:var(--muted);margin-bottom:4px}
+  .prob .lab b{font-family:var(--mono);color:var(--ink)}
+  .prob .bar{position:relative;height:12px;border-radius:6px;background:#0C1927;border:1px solid var(--edge);overflow:visible}
+  .prob .fill{height:100%;border-radius:6px;background:var(--teal);transition:width .2s,background .2s}
+  .prob .fill.shed{background:var(--red)}
+  .prob .thr{position:absolute;top:-4px;bottom:-4px;left:50%;width:2px;background:var(--amber)}
+  .prob .thr::after{content:'shed threshold';position:absolute;top:-14px;left:-38px;font-size:15px;color:var(--amber);font-family:var(--mono);white-space:nowrap}
+
+  .contrib h4,.diagram h4,.san h4{font-size:15px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+  .crow{display:grid;grid-template-columns:138px 1fr 58px;align-items:center;gap:8px;font-size:15px;margin:3px 0}
+  .crow .cn{color:var(--muted)}
+  .crow .cb{position:relative;height:8px;background:#0C1927;border-radius:4px;border:1px solid var(--edge)}
+  .crow .cb i{position:absolute;top:0;bottom:0;border-radius:4px}
+  .crow .cv{font-family:var(--mono);color:var(--ink);text-align:right}
+
+  .diagram{flex:1;min-height:150px}
+  .diagram svg{width:100%;height:150px;display:block}
+  .consequence{font-size:15px;color:var(--muted);text-align:center;margin-top:2px;min-height:16px}
+  .consequence b{color:var(--red)}
+
+  /* ---- validation ---- */
+  .check{display:flex;align-items:flex-start;gap:9px;padding:8px 9px;border-radius:8px;background:#0C1927;border:1px solid var(--edge);margin-bottom:6px}
+  .check .led{width:10px;height:10px;border-radius:50%;background:#2A3B4C;margin-top:4px;flex-shrink:0}
+  .check .led.pass{background:var(--teal);box-shadow:0 0 6px var(--teal)}
+  .check .led.fail{background:var(--red);box-shadow:0 0 6px var(--red)}
+  .check .led.off{background:#2A3B4C}
+  .check .t{font-size:15px;color:var(--ink)} .check .d{font-size:15px;color:var(--dim);margin-top:1px;font-family:var(--mono)}
+  .san{margin-top:4px;border-top:1px solid var(--edge);padding-top:8px}
+  .sanrow{display:flex;justify-content:space-between;align-items:center;font-size:15px;margin:5px 0}
+  .sanrow span{color:var(--muted)} .sanrow b{font-family:var(--mono)}
+  .valoff{font-size:15px;color:var(--dim);padding:10px 4px;line-height:1.5;flex:1}
+  #attackNote{font-size:15px;color:var(--violet);font-family:var(--mono);min-height:16px;margin-top:6px;line-height:1.4}
+
+  footer{border-top:1px solid var(--edge);padding-top:9px;color:var(--dim);font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB}
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Adversarial input playground · trusted data</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <button class="attack" id="btnAttack">Find adversarial nudge</button>
+    <button id="btnReset">Reset readings</button>
+    <div class="switch">
+      <span class="lab">Input validation <b id="valState">OFF</b></span>
+      <div class="track" id="valTrack" role="switch" aria-checked="false" tabindex="0"><div class="knob"></div></div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- METERS -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Meter readings</div>
+      <div class="pill ok" id="meterPill">TRUSTED</div>
+      <div class="p-sub">Drag a slider to nudge a reading. Ranges are within meter accuracy class.</div>
+    </div>
+    <div class="meters" id="meters"></div>
+    <div class="budget">nudged <b id="nNudged">0</b> of 8 meters · largest nudge <b id="maxNudge">0.00%</b></div>
+  </section>
+
+  <!-- CLASSIFIER -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Load-shedding classifier</div>
+      <div class="pill ok" id="clsPill">NOMINAL</div>
+      <div class="p-sub" id="clsSub">Decides from the readings it is given. No notion of physics.</div>
+    </div>
+    <div class="decision">
+      <div class="badge hold" id="badge">HOLD</div>
+      <div class="prob">
+        <div class="lab"><span>P(shed load)</span><b id="pTxt">0.05</b></div>
+        <div class="bar"><div class="fill" id="pFill" style="width:5%"></div><div class="thr"></div></div>
+      </div>
+    </div>
+    <div class="contrib">
+      <h4>What pushed the score</h4>
+      <div id="contribRows"></div>
+    </div>
+    <div class="diagram">
+      <h4>Consequence on the feeder</h4>
+      <svg id="oneline" viewBox="0 0 560 150" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="consequence" id="consequence">All feeders energized.</div>
+    </div>
+  </section>
+
+  <!-- VALIDATION -->
+  <section class="panel valPanel">
+    <div class="p-head">
+      <div class="p-title">Input validation</div>
+      <div class="pill warn" id="valPill">DISABLED</div>
+      <div class="p-sub">Physics checks between the meters and the model.</div>
+    </div>
+    <div id="checks">
+      <div class="check"><span class="led off" id="ledBal"></span><div><div class="t">Power balance</div><div class="d" id="dBal">Σ feeders + losses = substation ± 0.25 MW</div></div></div>
+      <div class="check"><span class="led off" id="ledVL"></span><div><div class="t">Voltage-load consistency</div><div class="d" id="dVL">voltage sag must match a load rise</div></div></div>
+      <div class="check"><span class="led off" id="ledRate"></span><div><div class="t">Rate of change</div><div class="d" id="dRate">no reading jumps faster than its physics allows</div></div></div>
+    </div>
+    <div class="san" id="sanBox">
+      <h4>Raw → sanitized</h4>
+      <div class="sanrow"><span>meters flagged</span><b id="sFlag">–</b></div>
+      <div class="sanrow"><span>raw decision</span><b id="sRaw">–</b></div>
+      <div class="sanrow"><span>decision after validation</span><b id="sSan">–</b></div>
+    </div>
+    <div id="attackNote"></div>
+  </section>
+</main>
+
+<footer><b>Try it:</b> press <b>Find adversarial nudge</b>, then switch <b>validation on</b> and press it again. Classifier and checks are simplified surrogates; values illustrative.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- meters ---------- */
+const METERS=[
+  {id:'sub',short:'Substation',name:'Substation feed',unit:'MW',nom:42.0, eps:0.6,  rl:0.4,  dec:1, sign:+1},
+  {id:'fa', short:'Feeder A',name:'Feeder A load', unit:'MW',nom:12.5, eps:0.3,  rl:0.2,  dec:2, sign:+1},
+  {id:'fb', short:'Feeder B',name:'Feeder B load', unit:'MW',nom:10.8, eps:0.3,  rl:0.2,  dec:2, sign:+1},
+  {id:'fc', short:'Feeder C',name:'Feeder C load', unit:'MW',nom:9.6,  eps:0.3,  rl:0.2,  dec:2, sign:+1},
+  {id:'fd', short:'Feeder D',name:'Feeder D load', unit:'MW',nom:8.9,  eps:0.3,  rl:0.2,  dec:2, sign:+1},
+  {id:'v1', short:'Bus 1 V',name:'Bus 1 voltage', unit:'pu',nom:0.985,eps:0.006,rl:0.003,dec:3, sign:-1},
+  {id:'v2', short:'Bus 2 V',name:'Bus 2 voltage', unit:'pu',nom:0.978,eps:0.006,rl:0.003,dec:3, sign:-1},
+  {id:'f',  short:'Frequency',name:'Frequency',     unit:'Hz',nom:60.00,eps:0.03, rl:0.015,dec:2, sign:-1},
+];
+const NOM_F=41.8, NOM_V=0.9815, LOSS=0.2;
+const x={}; METERS.forEach(m=>x[m.id]=m.nom);
+let validationOn=false;
+
+/* ---------- classifier (fixed-weight surrogate of a trained model) ---------- */
+function score(v){
+  const sumF=v.fa+v.fb+v.fc+v.fd, avgV=(v.v1+v.v2)/2;
+  return 1.2*(sumF-NOM_F)/2 + 1.6*(NOM_V-avgV)/0.01 + 1.0*(60-v.f)/0.05 + 0.6*(v.sub-42)/2 - 1.6;
+}
+const sig=s=>1/(1+Math.exp(-1.8*s));
+function contrib(id,d){
+  if(id==='sub') return 0.6*d/2;
+  if(id==='v1'||id==='v2') return 1.6*(-d/2)/0.01;
+  if(id==='f') return 1.0*(-d)/0.05;
+  return 1.2*d/2;
+}
+
+/* ---------- validator ---------- */
+function validate(v){
+  const flags=new Set(); const res={bal:true,vl:true,rate:true};
+  const sumF=v.fa+v.fb+v.fc+v.fd, dL=sumF-NOM_F;
+  if(Math.abs((sumF+LOSS)-v.sub)>0.25){ res.bal=false; ['fa','fb','fc','fd','sub'].forEach(k=>{ if(Math.abs(v[k]-nomOf(k))>1e-9) flags.add(k); }); }
+  const dV=(v.v1+v.v2)/2-NOM_V;
+  if(dV < -(0.003+0.004*Math.max(0,dL))){ res.vl=false; flags.add('v1'); flags.add('v2'); }
+  METERS.forEach(m=>{ if(Math.abs(v[m.id]-m.nom)>m.rl+1e-9){ res.rate=false; flags.add(m.id); } });
+  const san={...v}; flags.forEach(k=>san[k]=nomOf(k));
+  return {flags:[...flags],san,res,dL,dV,sumF};
+}
+const nomOf=k=>METERS.find(m=>m.id===k).nom;
+
+/* ---------- attack ---------- */
+function attack(){
+  METERS.forEach(m=>x[m.id]=m.nom);
+  if(!validationOn){
+    /* minimal greedy FGSM: add the most efficient nudges until the decision flips */
+    const order=METERS.map(m=>({m,g:contrib(m.id,m.sign*m.eps)})).sort((a,b)=>b.g-a.g);
+    const used=[];
+    for(const {m} of order){ x[m.id]=m.nom+m.sign*m.eps; used.push(m.name); if(score(x)>0.05) break; }
+    $('attackNote').textContent=`attacker nudged ${used.length} meters, each within accuracy class → decision flipped`;
+  } else {
+    /* validation-aware attacker: respects rate limits, balance, and voltage-load consistency */
+    const dSub=METERS.find(m=>m.id==='sub').rl; x.sub=42+dSub;
+    const fe=Math.min(0.2,(dSub+0.25)/4); ['fa','fb','fc','fd'].forEach(k=>x[k]=nomOf(k)+fe);
+    const dL=4*fe; const vcap=Math.min(0.003,0.003+0.004*dL); x.v1-=vcap; x.v2-=vcap; x.f-=0.015;
+    $('attackNote').textContent=`attacker respected every check and still fell short: score ${score(x).toFixed(2)} < 0 → decision holds`;
+  }
+  syncSliders(); render();
+}
+
+/* ---------- UI build ---------- */
+const metersEl=$('meters');
+METERS.forEach(m=>{
+  const row=document.createElement('div'); row.className='meter'; row.dataset.id=m.id;
+  const pct=(100*m.eps/m.nom).toFixed(m.id==='f'?2:1);
+  row.innerHTML=`<div class="nm">${m.name}<small>nominal ${m.nom.toFixed(m.dec)} ${m.unit} · ±${pct}%</small></div>
+    <input type="range" min="-100" max="100" value="0" step="1" aria-label="${m.name}">
+    <div class="val"><span class="v"></span> <small>${m.unit}</small></div>
+    <div class="dlt"></div>`;
+  row.querySelector('input').addEventListener('input',e=>{ x[m.id]=m.nom+m.eps*(+e.target.value/100); $('attackNote').textContent=''; render(); });
+  metersEl.appendChild(row);
+});
+function syncSliders(){ METERS.forEach(m=>{ const r=metersEl.querySelector(`.meter[data-id="${m.id}"] input`); r.value=Math.round(100*(x[m.id]-m.nom)/m.eps); }); }
+
+/* ---------- one-line diagram ---------- */
+const SVGNS="http://www.w3.org/2000/svg";
+const FEEDERS=[{id:'fa',lab:'A · hospital + downtown',pri:1},{id:'fb',lab:'B · residential',pri:2},{id:'fc',lab:'C · residential + clinic',pri:3},{id:'fd',lab:'D · commercial',pri:4}];
+function drawOneline(shed){
+  const svg=$('oneline'); svg.innerHTML='';
+  const el=(t,a)=>{const e=document.createElementNS(SVGNS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  svg.appendChild(el('rect',{x:20,y:55,width:70,height:40,rx:6,fill:'#16304A',stroke:'#3FB6C9'}));
+  const st=el('text',{x:55,y:80,'text-anchor':'middle',fill:'#D6E6F2','font-size':14,'font-weight':700}); st.textContent='SUB'; svg.appendChild(st);
+  svg.appendChild(el('line',{x1:90,y1:75,x2:130,y2:75,stroke:'#3FB6C9','stroke-width':2}));
+  svg.appendChild(el('line',{x1:130,y1:18,x2:130,y2:132,stroke:'#3FB6C9','stroke-width':2}));
+  FEEDERS.forEach((f,i)=>{
+    const y=25+i*33; const cut = shed && f.pri>=3;
+    const col = cut?'#FF5B6E':'#37E0A0';
+    svg.appendChild(el('line',{x1:130,y1:y,x2:200,y2:y,stroke:cut?'#4A2A30':'#3FB6C9','stroke-width':2,'stroke-dasharray':cut?'4 4':''}));
+    if(cut){ svg.appendChild(el('line',{x1:165,y1:y-8,x2:180,y2:y+8,stroke:'#FF5B6E','stroke-width':2.5})); }
+    svg.appendChild(el('circle',{cx:206,cy:y,r:5,fill:col}));
+    const t=el('text',{x:220,y:y+4,fill:cut?'#FF9AA6':'#D6E6F2','font-size':14}); t.textContent=f.lab+(cut?'  — SHED':''); svg.appendChild(t);
+    const p=el('text',{x:548,y:y+4,'text-anchor':'end',fill:'#4E6580','font-size':14,'font-family':'monospace'}); p.textContent=`${x[f.id].toFixed(1)} MW`; svg.appendChild(p);
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  /* raw classifier */
+  const sRaw=score(x), pRaw=sig(sRaw);
+  let flags=[], vres=null, sUsed=sRaw, pUsed=pRaw;
+  if(validationOn){ vres=validate(x); flags=vres.flags; sUsed=score(vres.san); pUsed=sig(sUsed); }
+  const shed = sUsed>0;
+
+  /* meters */
+  let nN=0, maxPct=0;
+  METERS.forEach(m=>{
+    const row=metersEl.querySelector(`.meter[data-id="${m.id}"]`);
+    const d=x[m.id]-m.nom; const nudged=Math.abs(d)>1e-9;
+    row.querySelector('.v').textContent=x[m.id].toFixed(m.dec);
+    row.querySelector('.dlt').textContent= nudged? (d>0?'+':'')+d.toFixed(m.dec) : '';
+    row.className='meter'+(nudged?' nudged':'')+(flags.includes(m.id)?' flagged':'');
+    if(nudged){ nN++; maxPct=Math.max(maxPct,100*Math.abs(d)/m.nom); }
+  });
+  $('nNudged').textContent=nN; $('maxNudge').textContent=maxPct.toFixed(2)+'%';
+  const mp=$('meterPill');
+  if(flags.length){ mp.className='pill warn'; mp.textContent=flags.length+' FLAGGED'; }
+  else if(nN){ mp.className='pill bad'; mp.textContent='SPOOFED'; }
+  else { mp.className='pill ok'; mp.textContent='TRUSTED'; }
+
+  /* decision */
+  const b=$('badge'); b.className='badge '+(shed?'shed':'hold'); b.textContent=shed?'SHED LOAD':'HOLD';
+  $('pTxt').textContent=pUsed.toFixed(2);
+  const fill=$('pFill'); fill.style.width=(100*pUsed).toFixed(1)+'%'; fill.className='fill'+(shed?' shed':'');
+  const cp=$('clsPill');
+  if(shed){ cp.className='pill bad'; cp.textContent='FALSE SHED'; }
+  else if(nN && !validationOn){ cp.className='pill warn'; cp.textContent='UNDER ATTACK'; }
+  else if(nN && validationOn){ cp.className='pill ok'; cp.textContent='HELD'; }
+  else { cp.className='pill ok'; cp.textContent='NOMINAL'; }
+  $('clsSub').textContent = validationOn ? 'Sees sanitized readings only.' : 'Decides from the readings it is given. No notion of physics.';
+
+  /* contributions (on what the classifier actually saw) */
+  const seen = validationOn? vres.san : x;
+  const rows=METERS.map(m=>({m,c:contrib(m.id,seen[m.id]-m.nom)}));
+  const maxC=Math.max(0.5,...rows.map(r=>Math.abs(r.c)));
+  $('contribRows').innerHTML=rows.map(({m,c})=>{
+    const w=50*Math.abs(c)/maxC; const left=c>=0?50:50-w; const col=c>=0?css('--red'):css('--teal');
+    return `<div class="crow"><span class="cn">${m.name}</span><div class="cb"><i style="left:${left}%;width:${w}%;background:${col}"></i></div><span class="cv">${c>=0?'+':''}${c.toFixed(2)}</span></div>`;
+  }).join('');
+
+  /* diagram + consequence */
+  drawOneline(shed);
+  $('consequence').innerHTML = shed
+    ? `<b>≈ ${(x.fc+x.fd).toFixed(1)} MW dropped · ~3,400 customers dark</b> — and no real stress existed.`
+    : (nN? 'All feeders energized. The spoof did not reach the decision.' : 'All feeders energized.');
+
+  /* validation panel */
+  const vp=$('valPill');
+  if(!validationOn){
+    vp.className='pill warn'; vp.textContent='DISABLED';
+    ['ledBal','ledVL','ledRate'].forEach(id=>$(id).className='led off');
+    $('sFlag').textContent='–'; $('sRaw').textContent='–'; $('sSan').textContent='–';
+    $('sanBox').style.opacity=.45;
+  } else {
+    vp.className='pill '+(flags.length?'bad':'ok'); vp.textContent=flags.length?'BLOCKED SPOOF':'ARMED';
+    $('ledBal').className='led '+(vres.res.bal?'pass':'fail');
+    $('ledVL').className='led '+(vres.res.vl?'pass':'fail');
+    $('ledRate').className='led '+(vres.res.rate?'pass':'fail');
+    $('dBal').textContent=`Σ feeders ${vres.sumF.toFixed(2)} + ${LOSS} vs substation ${x.sub.toFixed(2)} MW`;
+    $('dVL').textContent=`ΔV ${(1000*vres.dV).toFixed(1)} mpu vs ΔL ${vres.dL>=0?'+':''}${vres.dL.toFixed(2)} MW`;
+    $('dRate').textContent= vres.res.rate? 'all readings within physical slew limits' : 'reading jumped faster than physics allows';
+    $('sFlag').textContent=flags.length? flags.map(k=>METERS.find(m=>m.id===k).short).join(', ') : 'none';
+    $('sRaw').textContent=(sRaw>0?'SHED':'HOLD'); $('sRaw').style.color=sRaw>0?css('--red'):css('--teal');
+    $('sSan').textContent=(shed?'SHED':'HOLD'); $('sSan').style.color=shed?css('--red'):css('--teal');
+    $('sanBox').style.opacity=1;
+  }
+}
+
+/* ---------- controls ---------- */
+function setVal(v){ validationOn=v; $('valState').textContent=v?'ON':'OFF'; const t=$('valTrack'); t.classList.toggle('on',v); t.setAttribute('aria-checked',String(v)); $('attackNote').textContent=''; render(); }
+$('valTrack').addEventListener('click',()=>setVal(!validationOn));
+$('valTrack').addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); setVal(!validationOn); } });
+$('btnAttack').addEventListener('click',attack);
+$('btnReset').addEventListener('click',()=>{ METERS.forEach(m=>x[m.id]=m.nom); $('attackNote').textContent=''; syncSliders(); render(); });
+
+syncSliders(); render();
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "Flip a load-shedding decision with tiny nudges", "lead": "Eight meter readings on the left feed a classifier in the middle that decides HOLD or SHED LOAD. Physics checks on the right can sit between them.", "steps": [{"h": "Nudge by hand", "p": "Drag any slider. Ranges are within meter accuracy class. Watch P(shed) and the contribution bars respond."}, {"h": "Press <em>Find adversarial nudge</em>", "p": "The attacker changes four meters by at most 1.4 percent. The decision flips to SHED LOAD and feeders C and D are cut on the one-line, with no real stress on the grid."}, {"h": "Switch <em>Input validation</em> on", "p": "The same spoof is flagged on all three checks. Flagged meters are replaced with trusted values and the decision holds. The raw → sanitized row shows the reversal."}, {"h": "Press the attack again", "p": "Now the attacker knows the checks and respects every one. It still falls short. Validation shrinks its room to move."}, {"h": "Reset readings", "p": "Returns every meter to nominal."}], "tip": "<b>Try:</b> two voltage meters alone will not flip it. Coordinated nudges across several meters are what do the damage."}, "science": {"title": "Adversarial inputs and physics-informed validation", "lead": "A model decides from the numbers it is given. It has no idea whether those numbers could physically occur together.", "steps": [{"h": "Small coordinated perturbations", "p": "The attacker moves each input a little in the direction that most increases the shed score (a sign-gradient step). Individually the changes are inside sensor noise; together they cross the decision threshold."}, {"h": "Physics as a filter", "p": "Feeder loads plus losses must equal the substation feed. Voltage should not sag unless load rises. Readings cannot jump faster than the grid can move. Each spoof violates at least one."}, {"h": "Sanitize, then decide", "p": "Flagged readings are replaced with the last trusted values before the model runs. The classifier never sees the spoof."}, {"h": "Where it stops", "p": "A patient attacker can drift readings slowly to beat rate limits, or spoof a fully consistent set. Rules raise the bar; they do not close the door."}], "tip": "<b>In GRID-AIR:</b> this is the trusted-data layer. The residual cases are why rules are paired with learned anomaly detection and gradient analysis."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

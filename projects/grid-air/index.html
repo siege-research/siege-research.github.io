@@ -124,6 +124,12 @@ h1,h2,h3{line-height:1.2;letter-spacing:-.02em;margin:0}
 }
 .btn--ghost:hover{background:var(--accent-soft);filter:none}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn--ghost{color:var(--accent)}}
+.btn--demo{
+  background:var(--warm-soft);color:var(--warm);
+  border-color:var(--warm-line);
+}
+.btn--demo:hover{background:var(--warm-soft);border-color:var(--warm);filter:none}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .btn--demo{color:var(--warm)}}
 
 /* ---------- breadcrumb ---------- */
 .crumbs{
@@ -237,6 +243,47 @@ section + section{border-top:1px solid var(--line)}
   border:1px solid var(--line);border-radius:6px;padding:4px 9px;
 }
 
+/* ---------- demos ---------- */
+.demos-intro{
+  display:flex;flex-wrap:wrap;gap:12px;align-items:center;
+  margin:-12px 0 32px;
+}
+.demos-intro .fine{font-size:14px;color:var(--muted);flex:1 1 320px}
+.demos{
+  list-style:none;margin:0;padding:0;
+  display:grid;gap:20px;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));
+}
+.demo{
+  background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
+  border-top:3px solid var(--warm-line);
+  padding:24px;display:flex;flex-direction:column;
+  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.demo:hover{border-color:var(--line-strong);border-top-color:var(--warm);box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.demo__head{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.demo__no{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;
+  color:var(--warm);background:var(--warm-soft);
+  border:1px solid var(--warm-line);border-radius:5px;padding:4px 9px;
+  font-variant-numeric:tabular-nums;
+}
+.demo__layer{
+  font-size:11.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);
+}
+.demo h3{font-size:17.5px;font-weight:650;letter-spacing:-.015em;line-height:1.35}
+.demo p{margin:12px 0 0;font-size:14.5px;color:var(--ink-2);line-height:1.65;flex:1 1 auto}
+.demo__try{
+  margin:14px 0 0;padding:10px 12px;font-size:13.5px;line-height:1.5;
+  color:var(--ink-2);background:var(--surface);border:1px dashed var(--line-strong);border-radius:8px;
+}
+.demo__try b{color:var(--ink)}
+.demo__try .lbl{font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:11px;color:var(--warm);margin-right:6px}
+.demo__actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.demos-note{
+  margin:28px 0 0;font-size:13.5px;line-height:1.6;color:var(--muted);max-width:80ch;
+}
+
 /* ---------- partners / people ---------- */
 .partners{
   list-style:none;margin:0;padding:0;
@@ -328,7 +375,7 @@ section + section{border-top:1px solid var(--line)}
   section{padding:56px 0}
   .site-nav a{padding:7px 9px;font-size:13.5px}
   .hero{padding:44px 0 42px}
-  .theme{padding:20px}
+  .theme,.demo{padding:20px}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none !important;animation:none !important}
@@ -336,7 +383,7 @@ section + section{border-top:1px solid var(--line)}
 }
 @media print{
   .site-header,.crumbs,.hero__actions,.backband,.btn{display:none}
-  .theme,.partners li,.facts li{break-inside:avoid;box-shadow:none}
+  .theme,.demo,.partners li,.facts li{break-inside:avoid;box-shadow:none}
   body{background:#fff;color:#000}
 }
 </style>
@@ -390,9 +437,11 @@ section + section{border-top:1px solid var(--line)}
       <li>Four institutions</li>
       <li>Five research themes</li>
       <li>20 investigators</li>
+      <li>9 interactive demos</li>
     </ul>
     <div class="hero__actions">
       <a class="btn" href="https://umaine.edu/news/2026/08/umaine-led-team-uses-ai-to-strengthen-electric-grids-against-cyberattacks-and-extreme-weather/" target="_blank" rel="noopener noreferrer">Read the announcement <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <a class="btn btn--ghost btn--demo" href="#demos">Explore the demos</a>
       <a class="btn btn--ghost" href="/">Back to SIEGE Lab</a>
     </div>
   </div>
@@ -520,6 +569,132 @@ section + section{border-top:1px solid var(--line)}
         <p>Training students and early-career researchers across power systems, AI, cybersecurity and hardware security — the combination the field currently lacks.</p>
       </article>
     </div>
+  </div>
+</section>
+
+<!-- ---------- demos ---------- -->
+<section id="demos">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Educational demos</span>
+      <h2>Nine interactive demonstrations</h2>
+      <p>Built for workforce development and public awareness, the demos make the defense-in-depth approach tangible. The order climbs the stack: trusted hardware, then trusted data and model, then self-healing, then validation and operations, and finally what it all means for a community in a hurricane. Each runs in the browser with simulated data and includes a short tutorial and an explanation of the science.</p>
+    </div>
+    <div class="demos-intro">
+      <a class="btn" href="/projects/grid-air/demos/">Start the guided tour <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <span class="fine">Steps through all nine demos in order, or jump straight to any one from the cards below.</span>
+    </div>
+    <ul class="demos">
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">01</span>
+          <span class="demo__layer">Trusted hardware</span>
+        </div>
+        <h3>Model theft through the power socket</h3>
+        <p>An attacker reconstructs a proprietary AI weight tile from nothing but the accelerator&rsquo;s power draw, using correlation power analysis. Then masking is switched on and the attack collapses.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Toggle <b>masking on</b> and watch the stolen weights dissolve into noise.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/sidechannel/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">02</span>
+          <span class="demo__layer">Trusted data</span>
+        </div>
+        <h3>Nudge a meter, drop a feeder</h3>
+        <p>A load-shedding classifier reads eight meters. Nudge four of them by less than their accuracy class and it sheds two feeders with no real stress on the grid. Input validation catches the spoof before it reaches the model.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Press <b>Find adversarial nudge</b>, then switch <b>validation on</b> and press it again.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/adversarial/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">03</span>
+          <span class="demo__layer">Trusted model</span>
+        </div>
+        <h3>The model that passed every test</h3>
+        <p>A load forecaster scores under 1 percent error and is accepted for deployment. It also silently under-forecasts by 41 percent when a hidden three-way trigger appears. Random probing never finds it. Gradient analysis does.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Probe randomly a few times, then <b>run gradient analysis</b> and apply what it finds.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/backdoor/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">04</span>
+          <span class="demo__layer">Trusted model &middot; MTD</span>
+        </div>
+        <h3>The shell game</h3>
+        <p>An attacker probes a live classifier and its success climbs as it learns the model&rsquo;s private mistakes. The defender rotates through students distilled from one teacher, and every rotation crashes the attacker back to zero.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Watch the two lines, then set the budget to <b>aggressive</b> to see where the defense stops working.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/mtd/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">05</span>
+          <span class="demo__layer">Self-healing &middot; federated</span>
+        </div>
+        <h3>One rogue node, five-node model</h3>
+        <p>Five edge nodes train a shared forecaster without sharing data. One goes rogue. Plain averaging hands it the whole model in a single round; robust aggregation discards it and the model never notices.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Turn the <b>rogue node on</b> under FedAvg, then flip aggregation to <b>robust</b>.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/federated/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">06</span>
+          <span class="demo__layer">Self-healing</span>
+        </div>
+        <h3>Poison the data, heal the grid</h3>
+        <p>A false-data-injection attack derails a load forecast. The self-healing pipeline detects the anomaly, isolates the node, rolls back, and recovers &mdash; while an unprotected baseline stays broken.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Press <b>Inject poisoned data</b> and watch the four-stage recovery.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/attack-heal/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">07</span>
+          <span class="demo__layer">Real-hardware validation</span>
+        </div>
+        <h3>Does the twin match the hardware?</h3>
+        <p>A live digital twin of the Adjuntas microgrid tracks the physical hardware in real time. Online AI estimation keeps tracking error low through disturbances; turn it off and the model drifts.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Turn <b>AI estimation off</b>, hit <b>PV dropout</b>, and watch NRMSE spike red.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/twin-race/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">08</span>
+          <span class="demo__layer">Operations &middot; human-AI teaming</span>
+        </div>
+        <h3>When do you island?</h3>
+        <p>You are the operator. A disturbance develops upstream and an AI advisor shows its recommendation and confidence. Island too early and you burn batteries for nothing; too late and the nursing home goes dark. Play it in manual, advisor, and autopilot modes and compare.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Play a few events in each mode. Watch for the transient that fools the advisor.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/islanding/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+      <li class="demo">
+        <div class="demo__head">
+          <span class="demo__no">09</span>
+          <span class="demo__layer">Human stakes</span>
+        </div>
+        <h3>A hurricane, then a cyberattack</h3>
+        <p>A storm takes down the grid. Restoration begins. Then an attacker strikes mid-recovery. Same storm, same crews, run twice: without GRID-AIR the town goes dark again for twelve hours; with it, the nursing home and the water pumps stay on. Built for public and policy audiences.</p>
+        <p class="demo__try"><span class="lbl">Try</span>Press <b>Run scenario</b> and watch the two communities diverge at T+18.</p>
+        <div class="demo__actions">
+          <a class="btn btn--ghost btn--demo" href="/projects/grid-air/demos/hurricane/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+        </div>
+      </li>
+    </ul>
+    <p class="demos-note">All nine demonstrations use simulated data and are visualizations of the approach, not the research systems. Attack timings, error rates, and trace counts are illustrative and tuned for live viewing.</p>
   </div>
 </section>
 

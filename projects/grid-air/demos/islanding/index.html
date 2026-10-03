@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Islanding Decision under Uncertainty</title>
+<style>
+  :root{
+    --bg:#0A1420; --panel:#0F1E2E; --edge:#182C42; --grid:#132638; --ink:#D6E6F2; --muted:#728CA3; --dim:#4E6580;
+    --teal:#37E0A0; --amber:#F2A93B; --blue:#79B0FF; --red:#FF5B6E; --violet:#B98CFF; --lit:#FFC96B;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh}
+
+  header{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:#6A8299;font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;border-radius:7px;
+    padding:8px 14px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)} button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .seg{display:inline-flex;border:1px solid #2E5680;border-radius:7px;overflow:hidden}
+  .seg button{border:0;border-radius:0;background:#12243A;padding:7px 11px;font-size:15px}
+  .seg button.on{background:#1D3A5A;box-shadow:inset 0 -2px 0 var(--blue)}
+  .lab{font-size:15px;color:var(--muted)}
+  #btnStart{background:linear-gradient(180deg,#2A9C74,#1C7D5B);border-color:#2A8A66;min-width:120px}
+  #btnIsland{background:linear-gradient(180deg,#B3352F,#8E2430);border-color:#D24A55;font-size:15px;padding:9px 18px;letter-spacing:.5px;box-shadow:0 0 0 0 #FF5B6E55;transition:box-shadow .3s}
+  #btnIsland:not(:disabled).hot{box-shadow:0 0 18px 2px #FF5B6E66}
+  .clock{font-family:var(--mono);font-size:15px;color:var(--ink);min-width:70px;text-align:right} .clock small{color:var(--muted);font-size:15px}
+
+  main{display:grid;grid-template-columns:1fr 1.1fr 350px;gap:12px}
+  @media(max-width:1120px){main{grid-template-columns:1fr 1fr}.advisor{grid-column:1/3}}
+  @media(max-width:700px){main{grid-template-columns:1fr}.advisor{grid-column:auto}}
+  .panel{background:linear-gradient(180deg,#112132,#0E1C2C);border:1px solid var(--edge);border-radius:12px;
+    box-shadow:0 1px 0 #1E344D inset,0 10px 24px #0004;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .p-title{font-size:15px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+  .p-sub{font-size:15px;color:var(--dim);flex-basis:100%;margin-top:-4px}
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.ok{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .pill.bad{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.warn{color:var(--amber);border-color:#7E5B22;background:#33270F}
+  .pill.dim{color:var(--dim);border-color:#243A52;background:#0C1927}
+
+  .scopeWrap{position:relative;height:120px;flex-shrink:0}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .capt{font-size:15px;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted);display:flex;justify-content:space-between}
+  .capt b{font-family:var(--mono);color:var(--ink);text-transform:none;letter-spacing:0}
+  .relays{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+  .relay{background:#0C1927;border:1px solid var(--edge);border-radius:8px;padding:7px 9px;font-size:15px;color:var(--muted)}
+  .relay b{display:block;font-family:var(--mono);font-size:15px;color:var(--ink);margin-top:2px}
+  .relay.alarm b{color:var(--amber)} .relay.trip b{color:var(--red)}
+
+  /* microgrid */
+  .status{font-family:var(--mono);font-size:22px;font-weight:700;letter-spacing:1.5px;text-align:center;padding:10px;border-radius:9px;border:2px solid;transition:all .3s}
+  .status.conn{color:var(--lit);border-color:#8A6524;background:#2A2110}
+  .status.isl{color:var(--teal);border-color:#2A6B4E;background:#0E2A1E}
+  .status.black{color:#fff;border-color:var(--red);background:#8E2430;box-shadow:0 0 22px #FF5B6E55}
+  .oneline{height:150px;flex-shrink:0}
+  .oneline svg{width:100%;height:100%;display:block}
+  .res{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}
+  .r{background:#0C1927;border:1px solid var(--edge);border-radius:8px;padding:7px 9px}
+  .r .v{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--ink)} .r .k{font-size:15px;color:var(--muted)}
+  .viab{font-size:15px;border-radius:8px;padding:8px 10px;border:1px solid var(--edge);background:#0C1927;color:var(--muted);line-height:1.4}
+  .viab.ok{border-color:#2A6B4E;color:#BFEFD9} .viab.warn{border-color:#7E5B22;color:#F1D9A6}
+  .viab b{font-family:var(--mono)}
+
+  /* advisor */
+  .rec{font-family:var(--mono);font-size:24px;font-weight:700;letter-spacing:1.5px;text-align:center;padding:12px;border-radius:9px;border:2px solid var(--edge);background:#0C1927;transition:all .3s}
+  .rec.hold{color:var(--teal);border-color:#2A6B4E} .rec.prep{color:var(--amber);border-color:#8A6524;background:#2A2110} .rec.isl{color:#fff;border-color:var(--red);background:#8E2430;box-shadow:0 0 18px #FF5B6E44}
+  .rec.off{color:var(--dim);border-style:dashed}
+  .prob .lab2{display:flex;justify-content:space-between;font-size:15px;color:var(--muted);margin-bottom:4px} .prob .lab2 b{font-family:var(--mono);color:var(--ink);font-size:15px}
+  .prob .bar{position:relative;height:12px;border-radius:6px;background:#0C1927;border:1px solid var(--edge);margin-bottom:20px}
+  .prob .fill{height:100%;border-radius:6px;background:var(--teal);transition:width .2s,background .3s}
+  .prob .thr{position:absolute;top:-4px;bottom:-4px;left:70%;width:2px;background:var(--red)}
+  .prob .thr::after{content:'act';position:absolute;top:14px;left:-8px;font-size:15px;color:var(--red);font-family:var(--mono)}
+  .why{font-size:15px;color:var(--muted);line-height:1.5} .why b{color:var(--ink)}
+  .why .up{color:var(--red)} .why .dn{color:var(--teal)}
+  .advOff{font-size:15px;color:var(--dim);line-height:1.5;padding:10px 4px}
+  .eta{font-family:var(--mono);font-size:15px;color:var(--amber);min-height:16px}
+
+  /* outcome + scoreboard */
+  .bottom{display:grid;grid-template-columns:1.3fr 1fr;gap:12px;flex:1 0 auto}
+  @media(max-width:900px){.bottom{grid-template-columns:1fr}}
+  .outcome{border-radius:10px;padding:12px 14px;border:1px solid var(--edge);background:#0C1927;min-height:96px}
+  .outcome .sc{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1;float:right;margin-left:14px}
+  .outcome .h{font-size:15px;font-weight:700;color:#fff;margin-bottom:4px}
+  .outcome .b{font-size:15px;color:var(--muted);line-height:1.5}
+  .outcome .b b{color:var(--ink)}
+  .outcome.good{border-color:#2A6B4E} .outcome.good .sc{color:var(--teal)}
+  .outcome.mid{border-color:#7E5B22} .outcome.mid .sc{color:var(--amber)}
+  .outcome.bad{border-color:#7E2B33;background:#2C141A} .outcome.bad .sc{color:var(--red)}
+  table{width:100%;border-collapse:collapse;font-size:15px}
+  th,td{padding:7px 6px;border-bottom:1px solid var(--edge);text-align:right}
+  th{font-family:var(--mono);font-size:15px;letter-spacing:.8px;color:var(--muted);font-weight:600;text-transform:uppercase}
+  td:first-child,th:first-child{text-align:left;color:var(--muted)} td{font-family:var(--mono);color:var(--ink)}
+  .teamNote{font-size:15px;color:var(--dim);line-height:1.5;margin-top:auto} .teamNote b{color:#7A93AB}
+
+  footer{border-top:1px solid var(--edge);padding-top:9px;color:var(--dim);font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB}
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Islanding decision under uncertainty · Adjuntas microgrid · human-AI teaming</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <span class="lab">Mode</span>
+    <span class="seg" id="modeSeg"><button data-m="manual">Manual</button><button data-m="advisor" class="on">AI advisor</button><button data-m="auto">Autopilot</button></span>
+    <button id="btnStart">▶ Start event</button>
+    <button id="btnIsland" disabled>⚡ ISLAND NOW</button>
+    <button id="btnResetScore">Reset scoreboard</button>
+    <div class="clock" id="clock">T+000<small> s</small></div>
+  </div>
+</header>
+
+<main>
+  <!-- SIGNALS -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Point of common coupling</div>
+      <div class="pill dim" id="sigPill">QUIET</div>
+      <div class="p-sub">What the operator can see from the upstream grid.</div>
+    </div>
+    <div class="capt"><span>Frequency</span><b id="fVal">60.00 Hz</b></div>
+    <div class="scopeWrap"><canvas id="scF"></canvas></div>
+    <div class="capt"><span>Voltage</span><b id="vVal">1.000 pu</b></div>
+    <div class="scopeWrap"><canvas id="scV"></canvas></div>
+    <div class="relays">
+      <div class="relay" id="relayA">Upstream protection<b>normal</b></div>
+      <div class="relay" id="relayB">Upstream breaker<b>closed</b></div>
+    </div>
+  </section>
+
+  <!-- MICROGRID -->
+  <section class="panel">
+    <div class="p-head">
+      <div class="p-title">Adjuntas microgrid</div>
+      <div class="pill ok" id="mgPill">GRID-TIED</div>
+      <div class="p-sub">Nursing home, water pumping, town center behind one breaker.</div>
+    </div>
+    <div class="status conn" id="mgStatus">CONNECTED TO GRID</div>
+    <div class="oneline"><svg id="oneline" viewBox="0 0 520 150" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="res">
+      <div class="r"><div class="v" id="pvKW">180</div><div class="k">PV output · kW</div></div>
+      <div class="r"><div class="v" id="soc">72%</div><div class="k">battery state of charge</div></div>
+      <div class="r"><div class="v" id="loadKW">280</div><div class="k">local load · kW</div></div>
+    </div>
+    <div class="viab ok" id="viab">Island can carry <b>100%</b> of load.</div>
+  </section>
+
+  <!-- ADVISOR -->
+  <section class="panel advisor">
+    <div class="p-head">
+      <div class="p-title">AI islanding advisor</div>
+      <div class="pill dim" id="advPill">STANDBY</div>
+      <div class="p-sub" id="advSub">Recommends; the operator decides.</div>
+    </div>
+    <div class="rec hold" id="rec">HOLD</div>
+    <div class="prob">
+      <div class="lab2"><span>P(upstream trip within 60 s)</span><b id="pVal">3%</b></div>
+      <div class="bar"><div class="fill" id="pFill" style="width:3%"></div><div class="thr"></div></div>
+    </div>
+    <div class="eta" id="eta"></div>
+    <div class="why" id="why">Watching frequency, voltage, persistence of deviation, recovery trend, and upstream relays.</div>
+    <div class="advOff" id="advOff" style="display:none">Advisor disabled in manual mode. You have the same signals it would have used.</div>
+  </section>
+</main>
+
+<div class="bottom">
+  <section class="panel">
+    <div class="capt" style="display:block">Outcome</div>
+    <div class="outcome" id="outcome"><div class="h">No event yet.</div><div class="b">Press <b>Start event</b>. A disturbance will develop upstream. Some are real faults that will trip the feed; some are transients that pass. Island too early and you run on batteries for nothing; island too late and the microgrid goes dark on an unplanned separation.</div></div>
+  </section>
+  <section class="panel">
+    <div class="capt" style="display:block">Scoreboard by mode</div>
+    <table><thead><tr><th>mode</th><th>events</th><th>avg score</th><th>blackouts</th><th>false islands</th></tr></thead><tbody id="score"></tbody></table>
+    <div class="teamNote"><b>Teaming lesson:</b> the advisor is well calibrated but not perfect. It reaches 70% on most real faults with 20 to 40 s to spare, and on about one transient in twelve. Use its confidence, then check what it cannot see: whether the deviation is recovering, and whether your island can carry the load right now.</div>
+  </section>
+</div>
+
+<footer><b>Try it:</b> play a few events in each mode and compare the scoreboard. Simplified microgrid and advisor; timings illustrative.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- scenario generator ---------- */
+function scenario(){ const r=Math.random; const u=r(); const type= u<0.5?'fault': u<0.85?'transient':'late';
+  const t0=10+r()*15; const o={type,t0};
+  if(type==='fault'){ o.trip=t0+45+r()*25; o.rate=0.0045+r()*0.003; }
+  if(type==='transient'){ o.dur=25+r()*15; o.depth=0.12+r()*0.10; }
+  if(type==='late'){ o.dur=22+r()*8; o.depth=0.10+r()*0.06; o.trip=t0+85+r()*15; o.rate=0.006+r()*0.003; }
+  o.pv=Math.round(r()<0.3? 20+r()*60 : 120+r()*130); o.soc=Math.round(35+r()*60); o.load=280;
+  return o; }
+function signals(sc,t){ const dt=t-sc.t0; let df=0,dv=0,alarm=0,imm=0;
+  if(dt>0){
+    if(sc.type==='fault'){ df=-sc.rate*dt-0.03*Math.sin(dt*0.9)*Math.min(1,dt/20); dv=-0.0012*dt; alarm=dt>14?1:0; imm=t>sc.trip-12?1:0; }
+    else if(sc.type==='transient'){ const p=dt/sc.dur; df=p<0.3?-sc.depth*(p/0.3):p<1?-sc.depth*(1-(p-0.3)/0.7):0; dv=0.25*df; alarm=(p>0.15&&p<0.6)?1:0; }
+    else { const p=dt/sc.dur; if(dt<sc.dur){ df=p<0.3?-sc.depth*(p/0.3):-sc.depth*(1-(p-0.3)/0.7)*0.6; dv=0.25*df; alarm=(p>0.15&&p<0.7)?1:0; }
+      else { const d2=dt-sc.dur; df=-0.04-sc.rate*d2-0.03*Math.sin(d2*0.9)*Math.min(1,d2/20); dv=-0.0012*d2; alarm=d2>8?1:0; imm=t>sc.trip-12?1:0; } } }
+  return {df,dv,alarm,imm}; }
+
+/* ---------- advisor: smoothed evidence accumulator ---------- */
+class Advisor{ constructor(){this.dfs=0;this.dvs=0;this.hist=[];this.persist=0;this.p=0.03;this.parts={severity:0,persist:0,recovering:0,alarm:0,imm:0};}
+  update(sig,dt){ const a=1-Math.exp(-dt/3); this.dfs+=a*(sig.df-this.dfs); this.dvs+=a*(sig.dv-this.dvs);
+    this.hist.push(this.dfs); if(this.hist.length>Math.round(10/dt))this.hist.shift();
+    const severity=Math.max(0,-this.dfs)/0.18+Math.max(0,-this.dvs)/0.05;
+    if(-this.dfs>0.05) this.persist=Math.min(30,this.persist+dt); else this.persist=Math.max(0,this.persist-2*dt);
+    const trend=this.dfs-this.hist[0]; const recovering=Math.max(0,trend)/0.04;
+    const z=1.2*severity+3.1*(this.persist/30)-2.6*recovering+0.9*sig.alarm+3.0*sig.imm-3.4;
+    this.p=1/(1+Math.exp(-z)); this.parts={severity,persist:this.persist,recovering,alarm:sig.alarm,imm:sig.imm}; return this.p; } }
+
+/* ---------- state ---------- */
+let mode='advisor', sc=null, t=0, running=false, adv=null, islandedAt=null, tripped=false, resolved=false, decisionP=null, autoP=null;
+const DT=0.4; const HLEN=300; const hF=new Float32Array(HLEN).fill(60), hV=new Float32Array(HLEN).fill(1); let hi=0;
+const board={manual:{n:0,s:0,bo:0,fi:0},advisor:{n:0,s:0,bo:0,fi:0},auto:{n:0,s:0,bo:0,fi:0}};
+
+/* ---------- one-line ---------- */
+const NS='http://www.w3.org/2000/svg';
+function drawOneline(state){ const svg=$('oneline'); svg.innerHTML=''; const el=(tg,a)=>{const e=document.createElementNS(NS,tg);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  const gridOn = state!=='black' || true; const mgOn = state!=='black';
+  const gcol = state==='conn'? css('--lit') : '#4E6580';
+  svg.appendChild(el('rect',{x:8,y:56,width:104,height:38,rx:6,fill:'#16304A',stroke:gcol}));
+  const gt=el('text',{x:60,y:80,'text-anchor':'middle',fill:gcol,'font-size':14,'font-weight':700}); gt.textContent='MAIN GRID'; svg.appendChild(gt);
+  svg.appendChild(el('line',{x1:112,y1:75,x2:148,y2:75,stroke:gcol,'stroke-width':2}));
+  /* PCC breaker */
+  const open = state!=='conn';
+  svg.appendChild(el('rect',{x:148,y:58,width:100,height:34,rx:5,fill:open?'#2C141A':'#0E2A1E',stroke:open?css('--red'):css('--teal'),'stroke-width':1.5}));
+  const bt=el('text',{x:198,y:80,'text-anchor':'middle',fill:open?css('--red'):css('--teal'),'font-size':14,'font-family':'monospace'}); bt.textContent=open?'PCC OPEN':'PCC CLOSED'; svg.appendChild(bt);
+  const mcol = mgOn? (state==='isl'?css('--teal'):css('--lit')) : '#4E6580';
+  svg.appendChild(el('line',{x1:248,y1:75,x2:270,y2:75,stroke:mcol,'stroke-width':2}));
+  svg.appendChild(el('line',{x1:270,y1:18,x2:270,y2:132,stroke:mcol,'stroke-width':3}));
+  [['PV array',22],['Battery',48],['Nursing home · clinic',82],['Water pumping',108],['Town center',134]].forEach(([n,y],i)=>{
+    svg.appendChild(el('line',{x1:270,y1:y,x2:330,y2:y,stroke:mcol,'stroke-width':1.5}));
+    svg.appendChild(el('circle',{cx:336,cy:y,r:5,fill:mgOn?(i<2?css('--blue'):mcol):'#2A3B4C'}));
+    const tt=el('text',{x:348,y:y+4,fill:mgOn?'#D6E6F2':'#4E6580','font-size':14}); tt.textContent=n+(!mgOn&&i>=2?'  — DARK':''); svg.appendChild(tt); });
+}
+
+/* ---------- scopes ---------- */
+function fit(c){const r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;if(c.width!==Math.round(r.width*d)||c.height!==Math.round(r.height*d)){c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);c.getContext('2d').setTransform(d,0,0,d,0,0);}return r;}
+function drawScope(id,arr,lo,hiY,col,ticks,fmt){ const c=$(id),ctx=c.getContext('2d'),r=fit(c),W=r.width,H=r.height; ctx.clearRect(0,0,W,H);
+  const padL=44,padR=6,padT=6,padB=6,iw=W-padL-padR,ih=H-padT-padB; const Y=v=>padT+ih*(1-(v-lo)/(hiY-lo)), X=i=>padL+iw*i/(HLEN-1);
+  ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.fillStyle=css('--muted');ctx.font='14px '+css('--mono');ctx.textAlign='right';
+  ticks.forEach(v=>{ctx.beginPath();ctx.moveTo(padL,Y(v));ctx.lineTo(W-padR,Y(v));ctx.stroke();ctx.fillText(fmt(v),padL-4,Y(v)+3);});
+  ctx.strokeStyle=col;ctx.lineWidth=1.8;ctx.beginPath(); for(let i=0;i<HLEN;i++){const idx=(hi+i)%HLEN;const y=Y(Math.max(lo,Math.min(hiY,arr[idx])));i?ctx.lineTo(X(i),y):ctx.moveTo(X(i),y);} ctx.stroke(); }
+
+/* ---------- round control ---------- */
+function startEvent(){ sc=scenario(); t=0; running=true; adv=new Advisor(); islandedAt=null; tripped=false; resolved=false; decisionP=null; autoP=null;
+  hF.fill(60); hV.fill(1); hi=0;
+  $('pvKW').textContent=sc.pv; $('soc').textContent=sc.soc+'%'; $('loadKW').textContent=sc.load;
+  $('btnStart').disabled=true; $('btnIsland').disabled=(mode==='auto'); document.querySelectorAll('#modeSeg button').forEach(b=>b.disabled=true);
+  $('outcome').className='outcome'; $('outcome').innerHTML='<div class="h">Event in progress…</div><div class="b">Watch the signals. Decide.</div>';
+  render(); }
+function viability(){ const cap=sc.pv+150; return Math.min(1,cap/sc.load); }
+function doIsland(){ if(!running||islandedAt!==null||tripped)return; islandedAt=t; decisionP=adv.p; $('btnIsland').disabled=true; }
+function resolve(kind){ running=false; resolved=true; $('btnIsland').disabled=true; $('btnStart').disabled=false; $('btnStart').textContent='▶ Next event'; document.querySelectorAll('#modeSeg button').forEach(b=>b.disabled=false);
+  const v=viability(); const curtail=v<1; let score,cls,h,b; const isFault=sc.type!=='transient';
+  if(kind==='blackout'){ score=15; cls='bad'; h='Unplanned separation — microgrid went dark'; b=`The upstream breaker tripped at T+${sc.trip.toFixed(0)} with the PCC still closed. The microgrid collapsed and needs a black start: nursing home and water pumping dark for about 14 minutes.`; }
+  else if(kind==='island'){
+    if(isFault){ const early = islandedAt < sc.t0+10;
+      if(early){ score=70; cls='mid'; h='Islanded before any evidence'; b=`You opened the PCC at T+${islandedAt.toFixed(0)}, before the disturbance was visible. This time a fault did develop (trip at T+${sc.trip.toFixed(0)}), so it worked out, but the decision was a guess.`; }
+      else { score=100; cls='good'; h='Seamless island'; b=`PCC opened at T+${islandedAt.toFixed(0)}, ${(sc.trip-islandedAt).toFixed(0)} s before the upstream trip at T+${sc.trip.toFixed(0)}. Critical loads never noticed.`; } }
+    else { score=55; cls='mid'; h='Unnecessary island'; b=`The disturbance was a transient that cleared on its own. You opened the PCC at T+${islandedAt.toFixed(0)}; resynchronizing costs about 20 minutes on local resources.`; }
+    if(curtail){ score-=10; b+=` Island could carry only <b>${Math.round(100*v)}%</b> of load, so the town-center feeder was curtailed.`; }
+  } else { /* hold to end */
+    score=100; cls='good'; h='Held through a transient'; b='The disturbance cleared without islanding. No resync, no battery drain, no curtailment. This is the outcome the advisor cannot guarantee and the operator can.'; }
+  if(mode!=='auto' && decisionP!==null) b+=` Advisor confidence at your decision: <b>${Math.round(100*decisionP)}%</b>.`;
+  if(mode==='advisor' && autoP!==null) b+=` Autopilot would have islanded at T+${autoP.toFixed(0)}.`;
+  if(mode==='advisor' && autoP===null && isFault && kind==='blackout') b+=` Autopilot would also have missed this one only if confidence never reached 70%.`;
+  const bd=board[mode]; bd.n++; bd.s+=score; if(kind==='blackout')bd.bo++; if(kind==='island'&&!isFault)bd.fi++;
+  $('outcome').className='outcome '+cls; $('outcome').innerHTML=`<div class="sc">${score}</div><div class="h">${h}</div><div class="b">${b}</div>`;
+  renderScore(); }
+
+function tick(){ if(!running)return;
+  t+=DT; const sig=signals(sc,t);
+  if(t>=120){ resolve(islandedAt!==null?'island':'hold'); render(); return; }
+  hF[hi]=60+sig.df+(Math.random()-.5)*0.004; hV[hi]=1+sig.dv+(Math.random()-.5)*0.002; hi=(hi+1)%HLEN;
+  adv.update(sig,DT);
+  if(autoP===null && adv.p>=0.7) autoP=t;
+  if(mode==='auto' && islandedAt===null && adv.p>=0.7){ islandedAt=t; decisionP=adv.p; }
+  if(sc.trip && t>=sc.trip && islandedAt===null && !tripped){ tripped=true; resolve('blackout'); }
+  if(islandedAt!==null && t>=islandedAt+6 && !resolved && (sc.type==='transient' ? t>=sc.t0+sc.dur+5 : (sc.trip && t>=sc.trip+2))) resolve('island');
+  if(islandedAt!==null && sc.type==='transient' && t>=sc.t0+sc.dur+8 && !resolved) resolve('island');
+  render(); }
+
+/* ---------- render ---------- */
+function renderScore(){ $('score').innerHTML=['manual','advisor','auto'].map(m=>{const b=board[m];return `<tr><td>${m==='auto'?'Autopilot':m==='advisor'?'AI advisor':'Manual'}</td><td>${b.n}</td><td>${b.n?(b.s/b.n).toFixed(0):'–'}</td><td>${b.bo}</td><td>${b.fi}</td></tr>`;}).join(''); }
+function render(){
+  $('clock').innerHTML='T+'+String(Math.round(t)).padStart(3,'0')+'<small> s</small>';
+  const last=hF[(hi-1+HLEN)%HLEN], lastV=hV[(hi-1+HLEN)%HLEN];
+  $('fVal').textContent=(sc?last:60).toFixed(2)+' Hz'; $('vVal').textContent=(sc?lastV:1).toFixed(3)+' pu';
+  drawScope('scF',hF,59.55,60.15,css('--teal'),[59.6,59.8,60.0],v=>v.toFixed(1));
+  drawScope('scV',hV,0.88,1.02,css('--amber'),[0.90,0.95,1.00],v=>v.toFixed(2));
+  const sig=sc?signals(sc,t):{df:0,dv:0,alarm:0,imm:0};
+  const rA=$('relayA'); rA.className='relay'+(sig.imm?' trip':sig.alarm?' alarm':''); rA.innerHTML='Upstream protection<b>'+(sig.imm?'TRIP IMMINENT':sig.alarm?'ALARM':'normal')+'</b>';
+  const upOpen = tripped || (sc && sc.trip && t>=sc.trip);
+  const rB=$('relayB'); rB.className='relay'+(upOpen?' trip':''); rB.innerHTML='Upstream breaker<b>'+(upOpen?'OPEN (tripped)':'closed')+'</b>';
+  const sp=$('sigPill'); if(!sc||t<sc.t0){sp.className='pill dim';sp.textContent='QUIET';} else if(sig.imm){sp.className='pill bad';sp.textContent='DEGRADING FAST';} else if(Math.abs(sig.df)>0.04){sp.className='pill warn';sp.textContent='DISTURBANCE';} else {sp.className='pill dim';sp.textContent='QUIET';}
+  /* microgrid */
+  const state = tripped? 'black' : islandedAt!==null? 'isl' : 'conn';
+  const st=$('mgStatus'); st.className='status '+state; st.textContent= state==='black'?'BLACKOUT · BLACK START':state==='isl'?'ISLANDED · LOCAL POWER':'CONNECTED TO GRID';
+  const mp=$('mgPill'); mp.className='pill '+(state==='black'?'bad':state==='isl'?'ok':'ok'); mp.textContent= state==='black'?'DARK':state==='isl'?'ISLANDED':'GRID-TIED';
+  drawOneline(state);
+  if(sc){ const v=viability(); const vb=$('viab'); vb.className='viab '+(v>=1?'ok':'warn'); vb.innerHTML= v>=1? `Island can carry <b>100%</b> of load on PV + battery.` : `Island can carry only <b>${Math.round(100*v)}%</b> of load right now. Islanding means curtailing the town center.`; }
+  /* advisor */
+  const advOn = mode!=='manual';
+  $('advOff').style.display=advOn?'none':'block'; ['rec','why','eta'].forEach(id=>$(id).style.display=advOn?'':'none'); document.querySelector('.prob').style.display=advOn?'':'none';
+  $('advSub').textContent= mode==='auto'?'Will open the PCC itself at 70% confidence.': mode==='advisor'?'Recommends; the operator decides.':'Disabled.';
+  const ap=$('advPill'); ap.className='pill '+(!advOn?'dim':mode==='auto'?'warn':'ok'); ap.textContent=!advOn?'OFF':mode==='auto'?'AUTOPILOT':'ADVISING';
+  if(advOn){ const p=sc?adv.p:0.03; const rec=$('rec'); const done=islandedAt!==null; rec.className='rec '+(done?'hold':p>=0.7?'isl':p>=0.4?'prep':'hold'); rec.textContent=done?'ISLANDED ✓':p>=0.7?'ISLAND NOW':p>=0.4?'PREPARE':'HOLD';
+    $('pVal').textContent=Math.round(100*p)+'%'; const f=$('pFill'); f.style.width=(100*p).toFixed(0)+'%'; f.style.background=p>=0.7?css('--red'):p>=0.4?css('--amber'):css('--teal');
+    const pr=sc?adv.parts:{severity:0,persist:0,recovering:0,alarm:0,imm:0};
+    $('why').innerHTML= sc? `Deviation <b>${pr.severity.toFixed(1)}×</b> threshold · persisted <b>${pr.persist.toFixed(0)} s</b>${pr.recovering>0.2?' · <span class="dn">recovering</span>':''}${pr.alarm?' · <span class="up">relay alarm</span>':''}${pr.imm?' · <span class="up">trip imminent</span>':''}` : 'Watching frequency, voltage, persistence of deviation, recovery trend, and upstream relays.';
+    $('eta').textContent = (sc&&p>=0.7&&islandedAt===null&&!tripped)? 'recommendation: open the PCC now' : (sc&&p>=0.4&&islandedAt===null)? 'prepare: pre-position battery, confirm island capacity' : '';
+    $('btnIsland').classList.toggle('hot', sc&&p>=0.7&&islandedAt===null&&running&&mode!=='auto'); }
+}
+
+/* ---------- controls ---------- */
+document.querySelectorAll('#modeSeg button').forEach(b=>b.addEventListener('click',()=>{ if(running)return; mode=b.dataset.m; document.querySelectorAll('#modeSeg button').forEach(x=>x.classList.toggle('on',x===b)); render(); }));
+$('btnStart').addEventListener('click',startEvent);
+$('btnIsland').addEventListener('click',doIsland);
+$('btnResetScore').addEventListener('click',()=>{ for(const k in board) board[k]={n:0,s:0,bo:0,fi:0}; renderScore(); });
+document.addEventListener('keydown',e=>{ if(e.code==='Space'&&running&&mode!=='auto'){e.preventDefault();doIsland();} });
+renderScore(); render();
+setInterval(tick,100);
+window.addEventListener('resize',render);
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "Decide when to island", "lead": "You are the operator. A disturbance develops upstream. Some are faults that will trip the feed; some are transients that pass. An AI advisor shows its recommendation and confidence.", "steps": [{"h": "Pick a mode", "p": "Manual (no advisor), AI advisor (it recommends, you decide), or Autopilot (it acts at 70 percent)."}, {"h": "Press <em>Start event</em>", "p": "Watch frequency and voltage at the PCC and the upstream relay status. Each event is about 30 seconds."}, {"h": "Decide", "p": "Press ISLAND NOW or the space bar to open the breaker. Or hold and let it play out."}, {"h": "Read the outcome", "p": "Seamless island, held transient, unnecessary island, acted before evidence, or blackout. The advisor’s confidence at your decision is recorded."}, {"h": "Play several per mode", "p": "Compare the scoreboard rows. Watch for the late fault that dips, recovers, then trips."}], "tip": "<b>Check what the advisor cannot see:</b> whether the deviation is recovering, and whether PV plus battery can carry the load right now."}, "science": {"title": "Human-AI teaming under uncertainty", "lead": "Islanding decisions have asymmetric costs and are made before the outcome is known. The advisor’s job is to quantify the uncertainty, not remove it.", "steps": [{"h": "Controlled versus unplanned separation", "p": "Island in time and critical loads never notice. Miss the trip and the microgrid collapses into a black start."}, {"h": "A calibrated advisor", "p": "It accumulates evidence: deviation severity, how long it has persisted, whether it is recovering, and relay flags. Confidence rises with sustained evidence and falls when signals recover."}, {"h": "Calibration, not certainty", "p": "It reaches 70 percent on most real faults with 20 to 40 s to spare, and on about one transient in twelve. That honesty is what makes it a useful teammate."}, {"h": "What the human adds", "p": "Island viability and context. Full automation trades a few false islands for reaction time; an attentive operator with the advisor can beat both."}], "tip": "<b>In GRID-AIR:</b> a validated twin and a hardened controller are what make a seamless island possible, and training operators to work with the advisor is part of the workforce goal."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

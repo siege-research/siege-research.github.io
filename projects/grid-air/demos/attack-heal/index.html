@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Attack &amp; Heal Demo</title>
+<style>
+  :root{
+    --bg:#0B1624;
+    --panel:#101E30;
+    --panel-edge:#1C3450;
+    --grid:#16293F;
+    --ink:#D7E4F0;
+    --muted:#7A93AB;
+    --teal:#35D0BA;
+    --blue:#7FB4FF;
+    --red:#FF5C5C;
+    --amber:#F2A93B;
+    --green:#46D97E;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--sans);
+    font-size:15px;
+    padding:18px 22px 14px;
+    display:flex;flex-direction:column;gap:14px;
+    min-height:100vh;
+  }
+
+  /* ---------- header ---------- */
+  header{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:var(--muted);font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  button{
+    font-family:var(--sans);font-size:15px;font-weight:600;
+    border:1px solid transparent;border-radius:6px;
+    padding:9px 16px;cursor:pointer;color:#fff;
+    transition:filter .15s, transform .05s;
+  }
+  button:hover{filter:brightness(1.15)}
+  button:active{transform:translateY(1px)}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+  #btnInject{background:#8E2430;border-color:#C24552}
+  #btnInject.armed{background:#A62A38}
+  #btnReset{background:#1D3A5A;border-color:#2E5680}
+  .loopWrap{display:flex;align-items:center;gap:7px;color:var(--muted);font-size:15px;user-select:none}
+  .loopWrap input{accent-color:var(--amber);width:15px;height:15px;cursor:pointer}
+  .clock{font-family:var(--mono);font-size:15px;color:var(--muted);min-width:86px;text-align:right}
+
+  /* ---------- layout ---------- */
+  main{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:1 0 auto}
+  @media(max-width:960px){main{grid-template-columns:1fr}}
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--panel-edge);
+    border-radius:10px;
+    padding:14px 16px 12px;
+    display:flex;flex-direction:column;gap:10px;
+    min-width:0;
+  }
+  .panel-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0}
+  .panel-title{font-size:15px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase}
+  .panel-title.on{color:var(--teal)}
+  .panel-title.off{color:var(--muted)}
+  .pill{
+    font-family:var(--mono);font-size:15px;letter-spacing:.8px;
+    padding:3px 10px;border-radius:20px;border:1px solid;
+  }
+  .pill.nominal{color:var(--green);border-color:#2A6B47;background:#12301F}
+  .pill.attack{color:var(--red);border-color:#7E2B2B;background:#33141A}
+  .pill.healing{color:var(--amber);border-color:#7E5B22;background:#33270F}
+  .mape{margin-left:auto;font-family:var(--mono);font-size:15px;color:var(--muted)}
+  .mape b{font-size:17px;font-weight:700}
+  .mape b.ok{color:var(--teal)}
+  .mape b.bad{color:var(--red)}
+  .mape b.warn{color:var(--amber)}
+
+  .chartWrap{position:relative;flex:1;min-height:230px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  /* ---------- nodes ---------- */
+  .nodes{display:flex;gap:8px;flex-wrap:wrap;flex-shrink:0}
+  .node{
+    display:flex;align-items:center;gap:6px;
+    font-family:var(--mono);font-size:15px;color:var(--muted);
+    border:1px solid var(--panel-edge);border-radius:5px;
+    padding:4px 9px;background:#0D1B2C;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+  .node.compromised{color:#FFB3B3;border-color:#7E2B2B;background:#2A1218}
+  .node.compromised .dot{background:var(--red)}
+  .node.isolated{color:var(--amber);border-color:#7E5B22;background:#2A2210}
+  .node.isolated .dot{background:var(--amber)}
+  @media (prefers-reduced-motion: no-preference){
+    .node.compromised .dot{animation:blink .7s steps(2) infinite}
+  }
+  @keyframes blink{50%{opacity:.25}}
+
+  /* ---------- pipeline ---------- */
+  .pipeline{display:flex;gap:8px;flex-shrink:0}
+  .stage{
+    flex:1;text-align:center;
+    border:1px solid var(--panel-edge);border-radius:6px;
+    padding:7px 4px 6px;background:#0D1B2C;
+    font-size:15px;letter-spacing:1px;text-transform:uppercase;color:#41586F;
+    font-weight:700;
+    transition:all .25s;
+  }
+  .stage .tick{display:block;font-family:var(--mono);font-size:15px;font-weight:400;margin-top:3px;color:transparent}
+  .stage.active{color:var(--amber);border-color:#8A6524;background:#2E2410;box-shadow:0 0 12px #F2A93B33}
+  .stage.done{color:var(--green);border-color:#2A6B47;background:#122A1C}
+  .stage.done .tick,.stage.active .tick{color:inherit}
+  .pipeline-label{font-size:15px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-bottom:-4px}
+  .baseline-note{
+    font-size:15px;color:var(--muted);border:1px dashed #2A415C;border-radius:6px;
+    padding:8px 12px;line-height:1.4;flex-shrink:0;
+  }
+
+  /* ---------- footer: log + metrics ---------- */
+  footer{display:grid;grid-template-columns:2.1fr 1fr;gap:14px}
+  @media(max-width:960px){footer{grid-template-columns:1fr}}
+  .logPanel,.metricsPanel{
+    background:var(--panel);border:1px solid var(--panel-edge);border-radius:10px;
+    padding:11px 14px;
+  }
+  .logPanel h2,.metricsPanel h2{
+    font-size:15px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);
+    font-weight:700;margin-bottom:7px;
+  }
+  #log{
+    font-family:var(--mono);font-size:15px;line-height:1.75;
+    height:118px;overflow-y:auto;
+  }
+  #log .t{color:#4E6A85;margin-right:9px}
+  #log .info{color:#9FB7CC}
+  #log .warn{color:var(--amber)}
+  #log .crit{color:var(--red)}
+  #log .ok{color:var(--green)}
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+  .metric .v{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--ink)}
+  .metric .v.amber{color:var(--amber)} .metric .v.teal{color:var(--teal)}
+  .metric .k{font-size:15px;color:var(--muted);margin-top:1px;line-height:1.3}
+  .hint{font-size:15px;color:#54708C;margin-top:8px;line-height:1.45}
+
+  /* ---- declutter/polish pass ---- */
+  .panel,.card,.logPanel,.metricsPanel,.gaugeCard,.infoCard,.mapPanel{
+    border-radius:12px!important;border-color:#182C42!important;
+    background:linear-gradient(180deg,#112132 0%,#0E1C2C 100%)!important;
+    box-shadow:0 1px 0 #1E344D inset, 0 10px 24px #0004;
+  }
+  footer{border-top:1px solid #182C42;color:#4E6580;font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB;font-weight:600}
+  .brand small{color:#6A8299}
+
+  .baseline-note{font-size:15px;color:#7A93AB;border:1px dashed #2A415C;border-radius:8px;padding:8px 12px;flex-shrink:0}
+  #log{height:136px}
+  .logPanel h2,.metricsPanel h2{color:#6A8299}
+
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Attack &amp; heal · trusted data + self-healing</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <label class="loopWrap"><input type="checkbox" id="autoLoop">Auto-run 30 s loop</label>
+    <button id="btnInject">Inject poisoned data</button>
+    <button id="btnReset">Reset</button>
+    <div class="clock" id="clock">t+00:00.0</div>
+  </div>
+</header>
+
+<main>
+  <!-- ================= PROTECTED ================= -->
+  <section class="panel" aria-label="GRID-AIR protected system">
+    <div class="panel-head">
+      <div class="panel-title on">GRID-AIR Protected</div>
+      <div class="pill nominal" id="pillA">NOMINAL</div>
+      <div class="mape">forecast MAPE <b id="mapeA" class="ok">1.2%</b></div>
+    </div>
+    <div class="chartWrap"><canvas id="chartA"></canvas></div>
+    <div class="nodes" id="nodesA"></div>
+    <div class="pipeline-label">Self-healing pipeline</div>
+    <div class="pipeline" id="pipeline">
+      <div class="stage" data-s="detect">Detect<span class="tick">&nbsp;</span></div>
+      <div class="stage" data-s="isolate">Isolate<span class="tick">&nbsp;</span></div>
+      <div class="stage" data-s="rollback">Roll back<span class="tick">&nbsp;</span></div>
+      <div class="stage" data-s="resume">Resume<span class="tick">&nbsp;</span></div>
+    </div>
+  </section>
+
+  <!-- ================= BASELINE ================= -->
+  <section class="panel" aria-label="Unprotected baseline system">
+    <div class="panel-head">
+      <div class="panel-title off">Unprotected Baseline</div>
+      <div class="pill nominal" id="pillB">NOMINAL</div>
+      <div class="mape">forecast MAPE <b id="mapeB" class="ok">1.2%</b></div>
+    </div>
+    <div class="chartWrap"><canvas id="chartB"></canvas></div>
+    <div class="nodes" id="nodesB"></div>
+    <div class="baseline-note">No anomaly filtering, no checkpoints. Error persists until an operator intervenes.</div>
+  </section>
+</main>
+
+<footer>
+  <div class="logPanel">
+    <h2>Event log</h2>
+    <div id="log" aria-live="polite"></div>
+  </div>
+  <div class="metricsPanel">
+    <h2>Healing metrics · last incident</h2>
+    <div class="metrics">
+      <div class="metric"><div class="v amber" id="mDetect">–</div><div class="k">detection latency</div></div>
+      <div class="metric"><div class="v amber" id="mQuar">–</div><div class="k">poisoned samples quarantined</div></div>
+      <div class="metric"><div class="v teal" id="mRecover">–</div><div class="k">time to full recovery</div></div>
+      <div class="metric"><div class="v teal" id="mAvail">100%</div><div class="k">protected forecast availability</div></div>
+    </div>
+  </div>
+</footer>
+<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div>
+
+<script>
+"use strict";
+/* =========================================================
+   GRID-AIR Attack & Heal demo — all data simulated locally.
+   ========================================================= */
+
+/* ---------- constants ---------- */
+const TICK_MS   = 130;          // simulation step
+const WINDOW    = 170;          // points kept on screen
+const Y_MIN = 280, Y_MAX = 1120;
+
+const NODE_IDS = ["ME-01","HI-03","ND-02","PR-04","UH-07"];
+const TARGET_NODE = "HI-03";
+
+/* healing timeline offsets, in ticks after injection */
+const T_DETECT   = 14;   // ~1.8 s
+const T_ISOLATE  = 25;   // ~3.3 s
+const T_ROLLBACK = 37;   // ~4.8 s
+const T_RESUME   = 50;   // ~6.5 s
+const CHECKPOINT_LAG = 45;   // rollback restores model state from ~5.9 s earlier (pre-attack)
+
+/* ---------- state ---------- */
+let tick = 0;
+let running = true;
+let injectTick = null;          // tick at which attack began, else null
+let stagesDone = {detect:false, isolate:false, rollback:false, resume:false};
+let quarantined = 0;
+
+const S = {
+  A: { actual:[], forecast:[], level:640, trend:0, err:[], ckpt:[] }, // protected
+  B: { actual:[], forecast:[], level:640, trend:0, err:[] },          // baseline
+};
+
+/* ---------- helpers ---------- */
+const $ = id => document.getElementById(id);
+const clamp = (v,a,b)=>Math.max(a,Math.min(b,v));
+function fmtClock(t){
+  const s = t*TICK_MS/1000;
+  const m = Math.floor(s/60), r = s-60*m;
+  return "t+" + String(m).padStart(2,"0") + ":" + r.toFixed(1).padStart(4,"0");
+}
+function log(cls,msg){
+  const el = document.createElement("div");
+  el.innerHTML = '<span class="t">'+fmtClock(tick)+"</span><span class='"+cls+"'>"+msg+"</span>";
+  const box = $("log");
+  box.prepend(el);
+  while(box.childElementCount>60) box.removeChild(box.lastChild);
+}
+
+/* ---------- load + poison signals ---------- */
+function trueLoad(t){
+  return 640
+    + 170*Math.sin(t/46)
+    + 55*Math.sin(t/11.3 + 1.4)
+    + 20*Math.sin(t/4.7)
+    + (Math.random()-0.5)*12;
+}
+/* FDIA-style bias: ramp + sinusoidal spoof, matching "signature S5" flavor */
+function poisonBias(dt){
+  const ramp = clamp(dt/18, 0, 1);
+  return ramp*( 210 + 130*Math.sin(dt/2.6) + 60*Math.sin(dt/1.1) );
+}
+
+/* ---------- one simulation step per side ---------- */
+function stepSide(side, feed){
+  /* double-exponential smoothing = tiny stand-in for the forecaster */
+  const alpha = 0.4, beta = 0.11;
+  const prevLevel = side.level;
+  side.level = alpha*feed + (1-alpha)*(side.level + side.trend);
+  side.trend = beta*(side.level - prevLevel) + (1-beta)*side.trend;
+  return side.level + side.trend;     // one-step-ahead forecast
+}
+
+function simTick(){
+  tick++;
+  const dt = injectTick===null ? -1 : tick - injectTick;
+  const actual = trueLoad(tick);
+
+  /* ---- feeds ---- */
+  const attackLive = injectTick!==null;
+  const protectedIsolated = attackLive && dt >= T_ISOLATE;
+  const feedA = (attackLive && !protectedIsolated) ? actual + poisonBias(dt) : actual;
+  const feedB = attackLive ? actual + poisonBias(dt) : actual;
+
+  if(attackLive && !protectedIsolated) quarantined++;   // counted once isolated
+
+  /* ---- protected: checkpoint buffer + rollback ---- */
+  S.A.ckpt.push({level:S.A.level, trend:S.A.trend});
+  if(S.A.ckpt.length>CHECKPOINT_LAG+2) S.A.ckpt.shift();
+
+  if(attackLive && dt===T_ROLLBACK){
+    const c = S.A.ckpt[0];               // state from ~3 s before now
+    S.A.level = c.level; S.A.trend = c.trend;
+  }
+
+  const fA = stepSide(S.A, feedA);
+  const fB = stepSide(S.B, feedB);
+
+  /* ---- push series ---- */
+  pushSeries(S.A, actual, fA);
+  pushSeries(S.B, actual, fB);
+
+  /* ---- healing stage machine ---- */
+  if(attackLive){
+    if(dt===1){
+      setPill("pillA","attack","UNDER ATTACK");
+      setPill("pillB","attack","UNDER ATTACK");
+      setNode("A",TARGET_NODE,"compromised");
+      setNode("B",TARGET_NODE,"compromised");
+      log("crit","FDIA injection started at node "+TARGET_NODE+" — sinusoidal bias signature (S5)");
+    }
+    if(dt===T_DETECT && !stagesDone.detect){
+      stagesDone.detect = true; stage("detect");
+      setPill("pillA","healing","HEALING");
+      $("mDetect").textContent = (T_DETECT*TICK_MS/1000).toFixed(1)+" s";
+      log("warn","[protected] gradient-anomaly detector fired · residual z-score 8.4 &gt; 3.0 threshold");
+    }
+    if(dt===T_ISOLATE && !stagesDone.isolate){
+      stagesDone.isolate = true; stage("isolate");
+      setNode("A",TARGET_NODE,"isolated");
+      log("warn","[protected] node "+TARGET_NODE+" isolated from federated aggregation · feed quarantined");
+    }
+    if(dt===T_ROLLBACK && !stagesDone.rollback){
+      stagesDone.rollback = true; stage("rollback");
+      $("mQuar").textContent = quarantined;
+      log("info","[protected] model rolled back to pre-attack checkpoint t−5.9 s · "+quarantined+" poisoned samples quarantined");
+    }
+    if(dt===T_RESUME && !stagesDone.resume){
+      stagesDone.resume = true; stage("resume");
+      $("mRecover").textContent = (T_RESUME*TICK_MS/1000).toFixed(1)+" s";
+      setPill("pillA","nominal","NOMINAL");
+      log("ok","[protected] forecast validated against physics bounds · continual learning resumed");
+      setPill("pillB","attack","DEGRADED");
+      log("crit","[baseline] no mitigation available · forecast error persists");
+    }
+  }
+
+  /* ---- MAPE readouts ---- */
+  updateMape("mapeA", S.A);
+  updateMape("mapeB", S.B);
+
+  $("clock").textContent = fmtClock(tick);
+  drawChart(chartA, S.A);
+  drawChart(chartB, S.B);
+}
+
+function pushSeries(side, actual, forecast){
+  side.actual.push(actual);
+  side.forecast.push(forecast);
+  side.err.push(Math.abs(forecast-actual)/actual);
+  if(side.actual.length>WINDOW){ side.actual.shift(); side.forecast.shift(); }
+  if(side.err.length>34) side.err.shift();
+}
+
+function updateMape(id, side){
+  const m = 100 * side.err.reduce((a,b)=>a+b,0)/side.err.length;
+  const el = $(id);
+  el.textContent = m.toFixed(1)+"%";
+  el.className = m<2.5 ? "ok" : m<7 ? "warn" : "bad";
+}
+
+/* ---------- UI helpers ---------- */
+function setPill(id, cls, text){ const p=$(id); p.className="pill "+cls; p.textContent=text; }
+function stage(name){
+  document.querySelectorAll("#pipeline .stage").forEach(s=>{
+    if(s.dataset.s===name){ s.classList.remove("active"); s.classList.add("done");
+      s.querySelector(".tick").textContent = fmtClock(tick); }
+  });
+  const order=["detect","isolate","rollback","resume"];
+  const next = order[order.indexOf(name)+1];
+  if(next) document.querySelector('#pipeline .stage[data-s="'+next+'"]').classList.add("active");
+}
+function resetPipeline(){
+  document.querySelectorAll("#pipeline .stage").forEach(s=>{
+    s.classList.remove("active","done");
+    s.querySelector(".tick").innerHTML="&nbsp;";
+  });
+}
+function buildNodes(){
+  ["A","B"].forEach(k=>{
+    const box = $("nodes"+k); box.innerHTML="";
+    NODE_IDS.forEach(id=>{
+      const n=document.createElement("div");
+      n.className="node"; n.dataset.id=id;
+      n.innerHTML='<span class="dot"></span>'+id;
+      box.appendChild(n);
+    });
+  });
+}
+function setNode(sideKey,id,cls){
+  const n = document.querySelector("#nodes"+sideKey+' .node[data-id="'+id+'"]');
+  n.className = "node"+(cls?" "+cls:"");
+}
+
+/* ---------- chart ---------- */
+function makeChart(canvasId){
+  const c = $(canvasId), ctx = c.getContext("2d");
+  return {c,ctx};
+}
+const chartA = makeChart("chartA");
+const chartB = makeChart("chartB");
+
+function sizeCanvas(ch){
+  const r = ch.c.getBoundingClientRect();
+  const dpr = window.devicePixelRatio||1;
+  if(ch.c.width!==Math.round(r.width*dpr)||ch.c.height!==Math.round(r.height*dpr)){
+    ch.c.width=Math.round(r.width*dpr); ch.c.height=Math.round(r.height*dpr);
+    ch.ctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+  return r;
+}
+const css = n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+function drawChart(ch, side){
+  const r = sizeCanvas(ch);
+  const W=r.width, H=r.height, ctx=ch.ctx;
+  const padL=78, padR=8, padT=8, padB=20;
+  const iw=W-padL-padR, ihh=H-padT-padB;
+  const X=i=>padL + iw*i/(WINDOW-1);
+  const Y=v=>padT + ihh*(1-(v-Y_MIN)/(Y_MAX-Y_MIN));
+
+  ctx.clearRect(0,0,W,H);
+
+  /* grid + axis labels */
+  ctx.strokeStyle=css("--grid"); ctx.lineWidth=1;
+  ctx.fillStyle=css("--muted"); ctx.font="14px "+css("--mono"); ctx.textAlign="right";
+  for(let v=400; v<=1000; v+=200){
+    ctx.beginPath(); ctx.moveTo(padL,Y(v)+.5); ctx.lineTo(W-padR,Y(v)+.5); ctx.stroke();
+    ctx.fillText(v+" MW", padL-6, Y(v)+3);
+  }
+
+  const n=side.actual.length, off=WINDOW-n;
+  if(n<2) return;
+
+  /* error band between actual and forecast */
+  ctx.beginPath();
+  for(let i=0;i<n;i++) ctx.lineTo(X(off+i), Y(side.forecast[i]));
+  for(let i=n-1;i>=0;i--) ctx.lineTo(X(off+i), Y(side.actual[i]));
+  ctx.closePath();
+  ctx.fillStyle="rgba(255,92,92,0.16)";
+  ctx.fill();
+
+  /* actual load */
+  ctx.beginPath();
+  for(let i=0;i<n;i++) ctx.lineTo(X(off+i), Y(side.actual[i]));
+  ctx.strokeStyle=css("--teal"); ctx.lineWidth=2; ctx.stroke();
+
+  /* forecast */
+  ctx.beginPath(); ctx.setLineDash([6,5]);
+  for(let i=0;i<n;i++) ctx.lineTo(X(off+i), Y(side.forecast[i]));
+  ctx.strokeStyle=css("--blue"); ctx.lineWidth=1.7; ctx.stroke();
+  ctx.setLineDash([]);
+
+  /* legend */
+  ctx.font="14px "+css("--sans"); ctx.textAlign="left";
+  ctx.fillStyle=css("--teal");  ctx.fillText("● metered load", padL+6, padT+11);
+  ctx.fillStyle=css("--blue");  ctx.fillText("- - AI forecast", padL+150, padT+11);
+}
+
+/* ---------- controls ---------- */
+function inject(){
+  if(injectTick!==null) return;
+  injectTick = tick;
+  quarantined = 0;
+  stagesDone = {detect:false,isolate:false,rollback:false,resume:false};
+  resetPipeline();
+  document.querySelector('#pipeline .stage[data-s="detect"]').classList.add("active");
+  $("btnInject").disabled = true;
+  ["mDetect","mQuar","mRecover"].forEach(id=>$(id).textContent="–");
+}
+function reset(soft){
+  injectTick=null; quarantined=0;
+  stagesDone={detect:false,isolate:false,rollback:false,resume:false};
+  resetPipeline();
+  ["A","B"].forEach(k=>NODE_IDS.forEach(id=>setNode(k,id,"")));
+  setPill("pillA","nominal","NOMINAL");
+  setPill("pillB","nominal","NOMINAL");
+  /* re-seed baseline model so its forecast returns to normal */
+  S.B.level = S.B.actual.length? S.B.actual[S.B.actual.length-1] : 640;
+  S.B.trend = 0;
+  S.A.level = S.A.actual.length? S.A.actual[S.A.actual.length-1] : 640;
+  S.A.trend = 0;
+  S.A.err.length = 0; S.B.err.length = 0;
+  $("btnInject").disabled=false;
+  if(!soft) log("info","system reset · all nodes live · models re-seeded");
+}
+$("btnInject").addEventListener("click",()=>{ inject(); });
+$("btnReset").addEventListener("click",()=>{ reset(false); });
+
+/* ---------- auto loop: inject at +4 s, reset at +30 s, repeat ---------- */
+let loopTimer=null;
+$("autoLoop").addEventListener("change",e=>{
+  if(e.target.checked){
+    log("info","auto-run enabled · one incident every 30 s");
+    runLoopCycle();
+  }else{
+    clearTimeout(loopTimer); loopTimer=null;
+    log("info","auto-run disabled");
+  }
+});
+function runLoopCycle(){
+  reset(true);
+  loopTimer=setTimeout(()=>{ inject();
+    loopTimer=setTimeout(()=>{ if($("autoLoop").checked) runLoopCycle(); }, 26000);
+  }, 4000);
+}
+
+/* ---------- boot ---------- */
+buildNodes();
+/* pre-fill history so charts open full */
+for(let i=0;i<WINDOW;i++){
+  tick++;
+  const a=trueLoad(tick);
+  pushSeries(S.A,a,stepSide(S.A,a));
+  pushSeries(S.B,a,stepSide(S.B,a));
+}
+log("info","GRID-AIR demo online · 5 federated edge nodes reporting · forecaster nominal");
+log("info","press [Inject poisoned data] to launch one FDIA incident");
+
+setInterval(()=>{ if(running) simTick(); }, TICK_MS);
+window.addEventListener("resize",()=>{ drawChart(chartA,S.A); drawChart(chartB,S.B); });
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "Poison the data, then watch the grid heal", "lead": "Two identical load forecasters: GRID-AIR protected on the left, an unprotected baseline on the right. Both receive the same poisoned data.", "steps": [{"h": "Let it run", "p": "Both forecasts track metered load with error around 1 to 2 percent."}, {"h": "Press <em>Inject poisoned data</em>", "p": "Node HI-03 turns red on both sides and both forecasts derail. Error climbs past 20 percent."}, {"h": "Watch the pipeline", "p": "Detect, Isolate, Roll back, Resume light up with timestamps. The protected forecast snaps back under 2 percent."}, {"h": "Compare the baseline", "p": "No filtering, no checkpoints. Its error persists and the pill reads DEGRADED. The metrics panel records detection latency and quarantined samples."}, {"h": "Auto-run or Reset", "p": "Check Auto-run 30 s loop for unattended booth mode; Reset returns both sides to nominal."}], "tip": "<b>Keep it honest:</b> the demo timings are illustrative. Real success criteria are stated as detection rate, false-alarm rate, and rollback time."}, "science": {"title": "False data injection and self-healing", "lead": "Continual learning ingests live data. If that data is spoofed, the model learns the spoof.", "steps": [{"h": "The attack", "p": "A sinusoidal bias signature is injected at one federated node. Both forecasters ingest it and drift."}, {"h": "Detect", "p": "A gradient-anomaly detector watches the residual between forecast and metered load. A z-score above threshold fires within seconds."}, {"h": "Isolate and roll back", "p": "The compromised node is cut from federated aggregation and its samples quarantined. The model is restored from a checkpoint deep enough to predate the attack; a shallow checkpoint would restore poisoned state."}, {"h": "Resume", "p": "The forecast is validated against physics bounds before continual learning restarts."}], "tip": "<b>In GRID-AIR:</b> secure continual learning catches the poison; self-healing federated learning recovers from it."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>

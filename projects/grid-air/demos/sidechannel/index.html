@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GRID-AIR · Side-Channel Leakage Demo</title>
+<style>
+  :root{
+    --bg:#0A1420;
+    --panel:#0F1E2E;
+    --edge:#1B3145;
+    --grid:#132638;
+    --ink:#D6E6F2;
+    --muted:#728CA3;
+    --phos:#37E0A0;      /* phosphor scope green */
+    --phos-dim:#1E6E52;
+    --blue:#79B0FF;
+    --red:#FF5B6E;
+    --amber:#F2A93B;
+    --violet:#B98CFF;
+    --mono:Consolas,"SF Mono",Menlo,"Courier New",monospace;
+    --sans:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;
+    padding:16px 20px 12px;display:flex;flex-direction:column;gap:12px;min-height:100vh;
+  }
+
+  header{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:10px}
+  .brand h1{font-size:20px;letter-spacing:.5px;color:#FFF;font-weight:700}
+  .brand h1 span{color:var(--amber)}
+  .brand small{color:var(--muted);font-size:15px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+
+  /* masking toggle switch */
+  .switch{display:flex;align-items:center;gap:10px;user-select:none}
+  .switch .lab{font-size:15px;color:var(--muted)}
+  .switch .lab b{color:var(--ink)}
+  .track{position:relative;width:104px;height:30px;border-radius:16px;cursor:pointer;
+    background:#2A1A20;border:1px solid #5A2731;transition:all .2s}
+  .track.on{background:#122E22;border-color:#2A6B4E}
+  .knob{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;
+    background:var(--red);transition:all .2s;box-shadow:0 1px 3px #0008}
+  .track.on .knob{left:78px;background:var(--phos)}
+  .track .txt{position:absolute;top:0;height:30px;line-height:30px;font-family:var(--mono);
+    font-size:15px;letter-spacing:.5px}
+  .track .off-t{right:9px;color:#FF97A3}
+  .track .on-t{left:11px;color:var(--phos);opacity:0}
+  .track.on .off-t{opacity:0}
+  .track.on .on-t{opacity:1}
+
+  button{font-family:var(--sans);font-size:15px;font-weight:600;border:1px solid #2E5680;
+    border-radius:6px;padding:8px 15px;cursor:pointer;color:#fff;background:#1D3A5A;transition:filter .15s}
+  button:hover{filter:brightness(1.18)}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .trace-count{font-family:var(--mono);font-size:15px;color:var(--muted);min-width:120px;text-align:right}
+  .trace-count b{color:var(--ink);font-size:15px}
+
+  main{display:grid;grid-template-columns:1.05fr 1.1fr 0.95fr;gap:12px;flex:1 0 auto}
+  @media(max-width:1080px){main{grid-template-columns:1fr 1fr}}
+  @media(max-width:720px){main{grid-template-columns:1fr}}
+
+  .panel{background:var(--panel);border:1px solid var(--edge);border-radius:10px;
+    padding:12px 14px 11px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .p-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap;flex-shrink:0}
+  .p-title{font-size:15px;font-weight:700;letter-spacing:1.1px;text-transform:uppercase;color:var(--muted)}
+  .p-sub{font-size:15px;color:#4E6A85;flex-basis:100%;line-height:1.35;margin-top:-3px}
+
+  .pill{font-family:var(--mono);font-size:15px;letter-spacing:.7px;padding:3px 9px;border-radius:20px;border:1px solid;margin-left:auto}
+  .pill.leak{color:var(--red);border-color:#7E2B33;background:#2C141A}
+  .pill.safe{color:var(--phos);border-color:#2A6B4E;background:#0E2A1E}
+
+  .scopeWrap{position:relative;flex:1;min-height:180px}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  /* weight matrices */
+  .matrices{display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:nowrap;flex:1}
+  .matBox{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .matBox canvas{position:static;width:196px;height:196px;image-rendering:pixelated;
+    border:1px solid var(--edge);border-radius:4px;background:#050B12}
+  .matBox .cap{font-size:15px;color:var(--muted);letter-spacing:.4px}
+  .matBox .cap b{color:var(--ink)}
+  .arrow{align-self:center;color:var(--muted);font-size:22px;margin-top:-22px;flex-shrink:0}
+  @media(max-width:720px){.arrow{display:none}}
+
+  .recoverBar{margin-top:2px}
+  .recoverBar .track2{height:9px;border-radius:5px;background:#10202F;border:1px solid var(--edge);overflow:hidden}
+  .recoverBar .fill{height:100%;width:0%;background:var(--red);transition:width .18s,background .3s}
+  .recoverBar.safe .fill{background:var(--phos)}
+  .recoverBar .lab{display:flex;justify-content:space-between;font-size:15px;color:var(--muted);margin-bottom:4px}
+  .recoverBar .lab b{font-family:var(--mono);color:var(--ink)}
+
+  /* metrics + spectrum */
+  .metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px 14px}
+  .metric .v{font-family:var(--mono);font-size:19px;font-weight:700}
+  .metric .v.red{color:var(--red)} .metric .v.phos{color:var(--phos)} .metric .v.amber{color:var(--amber)}
+  .metric .k{font-size:15px;color:var(--muted);margin-top:1px;line-height:1.25}
+  .specWrap{position:relative;flex:1;min-height:150px}
+  .foot-note{font-size:15px;color:#54708C;line-height:1.45;flex-shrink:0}
+  .foot-note b{color:#7A93AB}
+  .byteReadout{font-family:var(--mono);font-size:15px;color:var(--muted);
+    background:#0B1826;border:1px solid var(--edge);border-radius:6px;padding:8px 11px;flex-shrink:0}
+  .byteReadout .hex{color:var(--ink)}
+  .byteReadout .ok{color:var(--phos)} .byteReadout .bad{color:var(--red)}
+
+  footer{font-size:15px;color:#54708C;line-height:1.5;border-top:1px solid var(--edge);padding-top:9px}
+  footer b{color:var(--muted)}
+  .legend{display:inline-flex;gap:14px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:5px}
+  .swatch{width:11px;height:3px;border-radius:2px;display:inline-block}
+
+  /* ---- declutter/polish pass ---- */
+  .panel,.card,.logPanel,.metricsPanel,.gaugeCard,.infoCard,.mapPanel{
+    border-radius:12px!important;border-color:#182C42!important;
+    background:linear-gradient(180deg,#112132 0%,#0E1C2C 100%)!important;
+    box-shadow:0 1px 0 #1E344D inset, 0 10px 24px #0004;
+  }
+  footer{border-top:1px solid #182C42;color:#4E6580;font-size:15px;line-height:1.5}
+  footer b{color:#7A93AB;font-weight:600}
+  .brand small{color:#6A8299}
+
+
+  /* ---- help / science popups ---- */
+  .helpBtns{display:inline-flex;gap:6px;margin-left:12px;align-self:center}
+  .helpBtn{font-family:var(--sans);font-size:15px;font-weight:600;color:#9FB7CC;background:#0F1E2E;border:1px solid #2A415C;
+    border-radius:20px;padding:4px 10px 4px 6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .helpBtn:hover{border-color:#79B0FF;color:#fff} .helpBtn.sci:hover{border-color:#37E0A0}
+  .helpBtn .ic{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;background:#1D3A5A;color:#fff;font-family:Georgia,serif}
+  .helpBtn.sci .ic{background:#155C46}
+  .hOverlay{position:fixed;inset:0;background:#040A11d0;backdrop-filter:blur(3px);z-index:200;display:none;align-items:center;justify-content:center;padding:20px}
+  .hOverlay.open{display:flex}
+  .hCard{width:min(700px,100%);max-height:90vh;overflow:auto;background:linear-gradient(180deg,#132538,#0E1C2C);border:1px solid #2A415C;border-radius:14px;
+    box-shadow:0 30px 80px #000a;animation:hIn .18s ease-out}
+  @keyframes hIn{from{transform:translateY(10px);opacity:0}to{transform:none;opacity:1}}
+  .hHead{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;border-bottom:1px solid #1B3145}
+  .hHead .hIc{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:18px;font-weight:700;color:#fff;background:#1D3A5A;flex-shrink:0}
+  .hCard.sci .hHead .hIc{background:#155C46}
+  .hHead .hT{display:flex;flex-direction:column;gap:2px}
+  .hHead .hTag{font-family:var(--mono);font-size:15px;letter-spacing:1.6px;text-transform:uppercase;color:#79B0FF}
+  .hCard.sci .hHead .hTag{color:#37E0A0}
+  .hHead h2{font-size:19px;color:#fff;font-family:Georgia,"Times New Roman",serif;font-weight:700;line-height:1.15}
+  .hClose{margin-left:auto;background:transparent;border:1px solid #2A415C;color:#9FB7CC;border-radius:8px;padding:5px 10px;cursor:pointer;font-size:15px}
+  .hClose:hover{border-color:#79B0FF;color:#fff}
+  .hBody{padding:14px 20px 6px}
+  .hLead{font-size:15px;color:#B9CADB;line-height:1.55;margin-bottom:12px}
+  .hSteps{display:flex;flex-direction:column;gap:8px}
+  .hStep{display:grid;grid-template-columns:28px 1fr;gap:11px;align-items:start;background:#0C1927;border:1px solid #1B3145;border-radius:9px;padding:9px 12px}
+  .hStep .n{width:26px;height:26px;border-radius:50%;background:#1D3A5A;color:#fff;font-family:var(--mono);font-size:15px;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .hCard.sci .hStep .n{background:#155C46}
+  .hStep b{display:block;font-size:15px;color:#fff;margin-bottom:2px}
+  .hStep p{font-size:15px;color:#9FB7CC;line-height:1.5}
+  .hStep p em{color:#D6E6F2;font-style:normal;font-family:var(--mono);font-size:15px}
+  .hTip{margin-top:12px;font-size:15px;color:#E9C27A;background:#241C0C;border:1px solid #6E5220;border-radius:8px;padding:8px 12px;line-height:1.5}
+  .hTip b{color:#F2A93B}
+  .hCard.sci .hTip{color:#BFEFD9;background:#0E2A1E;border-color:#2A6B4E} .hCard.sci .hTip b{color:#37E0A0}
+  .hFoot{display:flex;align-items:center;gap:10px;padding:10px 20px 16px}
+  .hSwap{background:transparent;border:0;color:#79B0FF;cursor:pointer;font-size:15px;font-weight:600;padding:6px 2px}
+  .hSwap:hover{text-decoration:underline}
+  .hOk{margin-left:auto;font-family:var(--sans);font-size:15px;font-weight:600;border-radius:7px;padding:8px 16px;cursor:pointer;color:#fff;border:1px solid #2A8A66;background:linear-gradient(180deg,#2A9C74,#1C7D5B)}
+
+
+  .legal{color:#5E7690;font-size:15px;line-height:1.45;border-top:1px solid #182C42;margin-top:8px;padding-top:8px}
+  .legal p{margin:0 0 5px} .legal b{color:#7A93AB}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <h1>GRID<span>-</span>AIR</h1>
+    <small>Side-channel leakage · trusted hardware</small>
+    <span class="helpBtns">
+      <button class="helpBtn" id="hbTut" type="button"><span class="ic">?</span>How to use</button>
+      <button class="helpBtn sci" id="hbSci" type="button"><span class="ic">∑</span>The science</button>
+    </span>
+  </div>
+  <div class="controls">
+    <div class="switch">
+      <span class="lab">Masking defense: <b id="maskState">OFF</b></span>
+      <div class="track" id="maskTrack" role="switch" aria-checked="false" tabindex="0">
+        <span class="txt off-t">OFF</span><span class="txt on-t">ON</span>
+        <div class="knob"></div>
+      </div>
+    </div>
+    <button id="btnReset">Restart capture</button>
+    <div class="trace-count">traces captured <b id="nTraces">0</b></div>
+  </div>
+</header>
+
+<main>
+  <!-- ============ SCOPE ============ -->
+  <section class="panel" aria-label="Power trace">
+    <div class="p-head">
+      <div class="p-title">AI accelerator power trace</div>
+      <div class="pill leak" id="scopePill">LEAKING</div>
+      <div class="p-sub">Live current draw of the MAC unit. Leakage is statistical, invisible to the eye.</div>
+    </div>
+    <div class="scopeWrap"><canvas id="scope"></canvas></div>
+  </section>
+
+  <!-- ============ WEIGHT RECOVERY ============ -->
+  <section class="panel" aria-label="Weight recovery">
+    <div class="p-head">
+      <div class="p-title">Stolen model weights</div>
+      <div class="pill leak" id="matPill">EXPOSED</div>
+      <div class="p-sub">CPA reconstructs the weight tile from power alone.</div>
+    </div>
+    <div class="matrices">
+      <div class="matBox">
+        <canvas id="matTrue" width="16" height="16"></canvas>
+        <div class="cap"><b>True weights</b> · 16×16 tile</div>
+      </div>
+      <div class="arrow" id="arrow">➜</div>
+      <div class="matBox">
+        <canvas id="matRec" width="16" height="16"></canvas>
+        <div class="cap"><b>Attacker reconstruction</b></div>
+      </div>
+    </div>
+    <div class="recoverBar" id="recoverBar">
+      <div class="lab"><span>weight bytes recovered</span><b id="recTxt">0 / 256</b></div>
+      <div class="track2"><div class="fill" id="recFill"></div></div>
+    </div>
+    <div class="byteReadout" id="byteReadout"></div>
+    <div class="foot-note" id="matNote">Undefended: the model is copied in seconds.</div>
+  </section>
+
+  <!-- ============ CPA SPECTRUM + METRICS ============ -->
+  <section class="panel" aria-label="Attack analysis">
+    <div class="p-head">
+      <div class="p-title">CPA hypothesis test · byte #<span id="tByteId">42</span></div>
+      <div class="p-sub">Correlation of all 256 guesses. One peak = exposed.</div>
+    </div>
+    <div class="specWrap"><canvas id="spec"></canvas></div>
+    <div class="metrics">
+      <div class="metric"><div class="v red" id="mCorr">–</div><div class="k">peak correlation<br>(exploitable leakage)</div></div>
+      <div class="metric"><div class="v amber" id="mMargin">–</div><div class="k">margin over next<br>best guess</div></div>
+      <div class="metric"><div class="v red" id="mRecovered">0 / 256</div><div class="k">weights recovered</div></div>
+      <div class="metric"><div class="v" id="mStatus">CAPTURING</div><div class="k">attack status</div></div>
+    </div>
+  </section>
+</main>
+
+<footer><b>Toggle masking on</b> to split each weight into random shares and watch the attack collapse. Simulated; trace counts are illustrative.<div class="legal"><p><b>Disclaimer:</b> This report was prepared as an account of work sponsored by an agency of the United States Government. Neither the United States Government nor any agency thereof, nor any of their employees, makes any warranty, express or implied, or assumes any legal liability or responsibility for the accuracy, completeness, or usefulness of any information, apparatus, product, or process disclosed, or represents that its use would not infringe privately owned rights. Reference herein to any specific commercial product, process, or service by trade name, trademark, manufacturer, or otherwise does not necessarily constitute or imply its endorsement, recommendation, or favoring by the United States Government or any agency thereof. The views and opinions of authors expressed herein do not necessarily state or reflect those of the United States Government or any agency thereof.</p><p><b>Acknowledgment:</b> This work was supported by the U.S. Department of Energy, Office of Science, Basic Energy Sciences, under Award #DE-SC0026398.</p></div></footer>
+
+<script>
+"use strict";
+/* =======================================================================
+   GRID-AIR Side-Channel demo. All data simulated locally.
+   Attacker runs Correlation Power Analysis (CPA) with a Hamming-weight
+   leakage model. First-order Boolean masking removes first-order leakage.
+   ======================================================================= */
+
+/* ---------- Hamming weight ---------- */
+const HW = new Uint8Array(256);
+for(let i=0;i<256;i++){let c=i,n=0;while(c){n+=c&1;c>>=1;}HW[i]=n;}
+
+/* ---------- secret weight tile: a lightning bolt (energy motif) ---------- */
+const BOLT = [
+  "0000000011110000",
+  "0000000111100000",
+  "0000001111000000",
+  "0000011110000000",
+  "0000111100000000",
+  "0001111000000000",
+  "0011111111100000",
+  "0111111111000000",
+  "0000011110000000",
+  "0000111100000000",
+  "0001111000000000",
+  "0011110000000000",
+  "0111100000000000",
+  "1111000000000000",
+  "1110000000000000",
+  "0000000000000000",
+];
+const W = new Uint8Array(256);
+(function(){
+  let s=97;const r=()=>{s=(s*1103515245+12345)&0x7fffffff;return s/0x7fffffff;};
+  for(let y=0;y<16;y++)for(let x=0;x<16;x++){
+    const on = BOLT[y][x]==="1";
+    const base = on ? 210 : 40;
+    W[y*16+x] = Math.max(0,Math.min(255, base + Math.round((r()-0.5)*26)));
+  }
+})();
+const T_BYTE = 42;   // highlighted byte for the CPA spectrum
+
+/* ---------- leakage / device model ---------- */
+const BASE=8, COEF=1.0, NOISE=4.5;
+function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();
+  return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+
+/* ---------- CPA accumulators ---------- */
+let sumX,sumX2,sumY,sumY2,sumXY,predL,n;
+const recovered = new Uint8Array(256);
+let recoveredCount = 0;
+function resetCPA(){
+  sumX=new Float64Array(256); sumX2=new Float64Array(256);
+  sumY=new Float64Array(256); sumY2=new Float64Array(256);
+  sumXY=new Float64Array(65536); predL=new Float64Array(256);
+  n=0; recoveredCount=0; recovered.fill(0);
+  specVals.fill(0);
+}
+
+/* ---------- state ---------- */
+let masked = false;
+const $ = id=>document.getElementById(id);
+
+/* one captured trace: known input a broadcast to all lanes */
+function captureTrace(){
+  const a=(Math.random()*256)|0;
+  for(let h=0;h<256;h++){const l=HW[h^a];predL[h]=l;sumX[h]+=l;sumX2[h]+=l*l;}
+  for(let i=0;i<256;i++){
+    let p;
+    if(masked){                       // first-order Boolean masking: W = share1 ^ share2
+      const r=(Math.random()*256)|0;  // fresh random share -> leakage decorrelated from W[i]
+      p = BASE + COEF*HW[r] + NOISE*gauss();
+    } else {
+      p = BASE + COEF*HW[W[i]^a] + NOISE*gauss();
+    }
+    sumY[i]+=p; sumY2[i]+=p*p;
+    const bi=i*256;
+    for(let h=0;h<256;h++) sumXY[bi+h]+=predL[h]*p;
+  }
+  n++;
+}
+
+/* ---------- recovery + spectrum ---------- */
+const varX=new Float64Array(256);
+const specVals=new Float64Array(256);   // signed corr for highlighted byte
+let peakCorr=0, margin=0;
+function recompute(){
+  if(n<4) return;
+  for(let h=0;h<256;h++) varX[h]=n*sumX2[h]-sumX[h]*sumX[h];
+  let cnt=0;
+  for(let i=0;i<256;i++){
+    const varY=n*sumY2[i]-sumY[i]*sumY[i]; const bi=i*256;
+    let bestR=-2,bh=0,secondR=-2;
+    const wantSpec = (i===T_BYTE);
+    for(let h=0;h<256;h++){
+      const cov=n*sumXY[bi+h]-sumX[h]*sumY[i];
+      const d=varX[h]*varY;
+      const r = d>0 ? cov/Math.sqrt(d) : 0;
+      if(wantSpec) specVals[h]=r;
+      if(r>bestR){secondR=bestR;bestR=r;bh=h;}
+      else if(r>secondR){secondR=r;}
+    }
+    recovered[i]=bh;
+    if(bh===W[i]) cnt++;
+    if(wantSpec){peakCorr=bestR;margin=bestR-secondR;}
+  }
+  recoveredCount=cnt;
+}
+
+/* =======================================================================
+   RENDERING
+   ======================================================================= */
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+function fitCanvas(c){
+  const r=c.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  if(c.width!==Math.round(r.width*dpr)||c.height!==Math.round(r.height*dpr)){
+    c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);
+    c.getContext("2d").setTransform(dpr,0,0,dpr,0,0);
+  }
+  return r;
+}
+
+/* ---- scope: scrolling power waveform ---- */
+const scope=$("scope"), sctx=scope.getContext("2d");
+const SCOPE_LEN=240;
+const wave=new Float32Array(SCOPE_LEN);
+let wp=0;
+function pushWave(){
+  /* one representative op's instantaneous power */
+  const a=(Math.random()*256)|0;
+  let v;
+  if(masked){ const r=(Math.random()*256)|0; v=BASE+COEF*HW[r]+NOISE*gauss(); }
+  else { v=BASE+COEF*HW[W[(Math.random()*256)|0]^a]+NOISE*gauss(); }
+  wave[wp]=v; wp=(wp+1)%SCOPE_LEN;
+}
+function drawScope(){
+  const r=fitCanvas(scope),W_=r.width,H=r.height;
+  sctx.clearRect(0,0,W_,H);
+  /* grid */
+  sctx.strokeStyle=css("--grid");sctx.lineWidth=1;
+  for(let gx=0;gx<=8;gx++){const x=W_*gx/8;sctx.beginPath();sctx.moveTo(x,0);sctx.lineTo(x,H);sctx.stroke();}
+  for(let gy=0;gy<=4;gy++){const y=H*gy/4;sctx.beginPath();sctx.moveTo(0,y);sctx.lineTo(W_,y);sctx.stroke();}
+  /* waveform */
+  const padY=14, lo=0, hi=BASE+COEF*8+NOISE*2.5;
+  const Y=v=>padY+(H-2*padY)*(1-(v-lo)/(hi-lo));
+  const glow=masked?css("--amber"):css("--phos");
+  sctx.strokeStyle=glow;sctx.lineWidth=1.6;sctx.shadowColor=glow;sctx.shadowBlur=6;
+  sctx.beginPath();
+  for(let i=0;i<SCOPE_LEN;i++){
+    const idx=(wp+i)%SCOPE_LEN;const x=W_*i/(SCOPE_LEN-1);const y=Y(wave[idx]);
+    i?sctx.lineTo(x,y):sctx.moveTo(x,y);
+  }
+  sctx.stroke();sctx.shadowBlur=0;
+  /* label */
+  sctx.fillStyle=css("--muted");sctx.font="14px "+css("--mono");sctx.textAlign="left";
+  sctx.fillText(masked?"mode: masked (randomized shares)":"mode: undefended", 8, H-6);
+}
+
+/* ---- weight matrices ---- */
+const trueCtx=$("matTrue").getContext("2d");
+const recCtx=$("matRec").getContext("2d");
+function drawMatrix(ctx,bytes,isRecovered){
+  const img=ctx.createImageData(16,16);
+  for(let i=0;i<256;i++){
+    const v=bytes[i];
+    /* slight teal tint so the bolt reads as "energy", not flat grey */
+    const rr=Math.round(v*0.55), gg=Math.round(v*0.95), bb=Math.round(v*0.80);
+    img.data[i*4]=rr;img.data[i*4+1]=gg;img.data[i*4+2]=bb;img.data[i*4+3]=255;
+  }
+  ctx.putImageData(img,0,0);
+}
+drawMatrix(trueCtx,W,false);
+
+/* ---- CPA spectrum ---- */
+const spec=$("spec"), spctx=spec.getContext("2d");
+function drawSpec(){
+  const r=fitCanvas(spec),W_=r.width,H=r.height;
+  spctx.clearRect(0,0,W_,H);
+  const padL=30,padB=16,padT=8,padR=6;
+  const iw=W_-padL-padR, ih=H-padT-padB;
+  /* baseline + scale: corr in [-0.2, 1] */
+  const lo=-0.2, hi=1.0;
+  const Y=v=>padT+ih*(1-(v-lo)/(hi-lo));
+  const X=h=>padL+iw*h/255;
+  /* grid */
+  spctx.strokeStyle=css("--grid");spctx.lineWidth=1;
+  spctx.fillStyle=css("--muted");spctx.font="14px "+css("--mono");spctx.textAlign="right";
+  [0,0.5,1.0].forEach(v=>{spctx.beginPath();spctx.moveTo(padL,Y(v));spctx.lineTo(W_-padR,Y(v));spctx.stroke();
+    spctx.fillText(v.toFixed(1),padL-4,Y(v)+3);});
+  /* zero line */
+  spctx.strokeStyle="#24405A";spctx.beginPath();spctx.moveTo(padL,Y(0));spctx.lineTo(W_-padR,Y(0));spctx.stroke();
+  /* bars: |corr| per hypothesis, grey; correct-guess bar red */
+  const trueVal=W[T_BYTE];
+  for(let h=0;h<256;h++){
+    const v=specVals[h];
+    const x=X(h);
+    const y=Y(Math.max(v,0));
+    spctx.strokeStyle = (h===recovered[T_BYTE]) ? css("--red") : "#33506E";
+    spctx.lineWidth = (h===recovered[T_BYTE]) ? 2 : 1;
+    spctx.beginPath();spctx.moveTo(x,Y(0));spctx.lineTo(x,y);spctx.stroke();
+  }
+  /* mark the true weight value */
+  const tx=X(trueVal);
+  spctx.strokeStyle=css("--phos");spctx.setLineDash([3,3]);spctx.lineWidth=1;
+  spctx.beginPath();spctx.moveTo(tx,padT);spctx.lineTo(tx,H-padB);spctx.stroke();spctx.setLineDash([]);
+  spctx.fillStyle=css("--phos");spctx.font="14px "+css("--sans");
+  spctx.textAlign = trueVal<40 ? "left" : "center";
+  spctx.fillText("true weight = "+trueVal, trueVal<40? tx+3 : tx, padT+9);
+  /* x label */
+  spctx.fillStyle=css("--muted");spctx.textAlign="center";
+  spctx.fillText("weight-byte guess  0 \u2192 255", padL+iw/2, H-4);
+}
+
+/* ---- readouts ---- */
+function updateReadouts(){
+  $("nTraces").textContent=n;
+  $("recTxt").textContent=recoveredCount+" / 256";
+  $("mRecovered").textContent=recoveredCount+" / 256";
+  const pct=100*recoveredCount/256;
+  $("recFill").style.width=pct.toFixed(1)+"%";
+  $("mCorr").textContent=(peakCorr>0?peakCorr:0).toFixed(2);
+  $("mMargin").textContent=(margin>0?"+":"")+margin.toFixed(2);
+
+  const hx=v=>"0x"+v.toString(16).toUpperCase().padStart(2,"0");
+  const rv=recovered[T_BYTE], tv=W[T_BYTE], hit=(rv===tv && !masked && n>=4);
+  $("byteReadout").innerHTML =
+    "byte #"+T_BYTE+"  ·  true <span class='hex'>"+hx(tv)+"</span>"+
+    "  ·  recovered <span class='hex'>"+hx(rv)+"</span>  "+
+    (hit ? "<span class='ok'>\u2713 match</span>" : "<span class='bad'>\u2717 wrong</span>");
+
+  const secure = masked;
+  /* status logic */
+  let status,statusColor;
+  if(secure){ status="BLOCKED"; statusColor="phos"; }
+  else if(recoveredCount>=250){ status="MODEL STOLEN"; statusColor="red"; }
+  else { status="CAPTURING"; statusColor="amber"; }
+  const st=$("mStatus"); st.textContent=status; st.className="v "+statusColor;
+
+  /* pills + tints */
+  const scopePill=$("scopePill"), matPill=$("matPill"), rb=$("recoverBar");
+  const corrEl=$("mCorr"), recEl=$("mRecovered");
+  if(secure){
+    scopePill.className="pill safe"; scopePill.textContent="PROTECTED";
+    matPill.className="pill safe"; matPill.textContent="NO LEAKAGE";
+    rb.className="recoverBar safe";
+    corrEl.className="v phos"; recEl.className="v phos";
+    $("matNote").innerHTML="Masked: no first-order leakage. Guesses are random.";
+    $("arrow").style.color="#2A6B4E";
+  }else{
+    scopePill.className="pill leak"; scopePill.textContent="LEAKING";
+    matPill.className="pill leak"; matPill.textContent="EXPOSED";
+    rb.className="recoverBar";
+    corrEl.className="v red"; recEl.className="v red";
+    $("matNote").innerHTML="Undefended: the model is copied in seconds.";
+    $("arrow").style.color=css("--muted");
+  }
+}
+
+/* ---- toggle + reset ---- */
+function setMask(v){
+  masked=v;
+  $("maskState").textContent=v?"ON":"OFF";
+  const tr=$("maskTrack"); tr.classList.toggle("on",v); tr.setAttribute("aria-checked",String(v));
+  resetCPA();
+}
+$("maskTrack").addEventListener("click",()=>setMask(!masked));
+$("maskTrack").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setMask(!masked);}});
+$("btnReset").addEventListener("click",()=>resetCPA());
+$("tByteId").textContent=T_BYTE;
+
+/* ---- main loop ---- */
+const TRACES_PER_FRAME=3, SCOPE_PER_FRAME=3;
+function loop(){
+  for(let k=0;k<TRACES_PER_FRAME;k++) captureTrace();
+  for(let k=0;k<SCOPE_PER_FRAME;k++) pushWave();
+  recompute();
+  drawScope();
+  drawMatrix(recCtx,recovered,true);
+  drawSpec();
+  updateReadouts();
+  requestAnimationFrame(loop);
+}
+
+/* boot */
+resetCPA();
+for(let i=0;i<SCOPE_LEN;i++) pushWave();
+updateReadouts();
+requestAnimationFrame(loop);
+window.addEventListener("resize",()=>{drawScope();drawSpec();});
+</script>
+
+<div class="hOverlay" id="hOverlay" role="dialog" aria-modal="true" aria-labelledby="hTitle">
+  <div class="hCard" id="hCard">
+    <div class="hHead"><div class="hIc" id="hIc">?</div><div class="hT"><div class="hTag" id="hTag"></div><h2 id="hTitle"></h2></div><button class="hClose" id="hClose" type="button">Close ✕</button></div>
+    <div class="hBody"><div class="hLead" id="hLead"></div><div class="hSteps" id="hSteps"></div><div class="hTip" id="hTip"></div></div>
+    <div class="hFoot"><button class="hSwap" id="hSwap" type="button"></button><button class="hOk" id="hOk" type="button">Got it</button></div>
+  </div>
+</div>
+<script>
+(function(){
+  "use strict";
+  const HELP={"tutorial": {"title": "Watch a model get stolen through its power draw", "lead": "Three panels: the live power trace of an AI accelerator, the attacker’s reconstruction of a secret weight tile, and a hypothesis test for one weight byte.", "steps": [{"h": "Let it run", "p": "The trace looks like noise. The attacker captures it anyway; the counter at the top right shows how many traces so far."}, {"h": "Watch the middle panel", "p": "The reconstruction fills in from static to a clean lightning bolt in a few seconds. The bar and the byte readout track progress."}, {"h": "Read the right panel", "p": "All 256 guesses for one weight byte. A single tall red bar on the true value means the byte is exposed."}, {"h": "Flip <em>Masking defense</em> on", "p": "Capture restarts. Now the reconstruction stays noise, the bars stay flat, and the status reads BLOCKED."}, {"h": "Restart capture", "p": "Reruns the current mode from zero traces whenever you want a fresh start."}], "tip": "<b>Say this out loud:</b> the trace looks identical with masking on and off. Leakage is statistical; only the attack reveals it."}, "science": {"title": "Correlation power analysis and masking", "lead": "Hardware leaks what it computes. Every switching transistor draws current, and how much depends on the data.", "steps": [{"h": "Power tracks the data", "p": "A multiply-accumulate draws current roughly in proportion to the number of 1 bits in its operands (the Hamming weight). The weight bits are encoded in the waveform."}, {"h": "CPA extracts it", "p": "For each of the 256 guesses for a byte, the attacker predicts the leakage and correlates it with the measured power across many traces. The correct guess correlates best. Sign matters: the bitwise complement correlates equally strongly but negatively."}, {"h": "Masking breaks the correlation", "p": "Each secret is split into random shares that are fresh every operation. Power now depends on the shares, not the secret, so first-order correlation with any guess collapses to noise."}, {"h": "Masking is not the end", "p": "Real masked hardware still leaks through higher-order and glitch effects. Designing masking that holds up in practice is a search problem."}], "tip": "<b>In GRID-AIR:</b> AI-guided design-space exploration hardens FPGA and GPU accelerators against exactly this attack. Stolen weights are IP loss and the first step toward crafting adversarial inputs."}};
+  const $=id=>document.getElementById(id);
+  let kind='tutorial', lastFocus=null;
+  function fill(k){ kind=k; const d=HELP[k]; const card=$('hCard'); card.classList.toggle('sci',k==='science');
+    $('hIc').textContent = k==='science'?'∑':'?'; $('hTag').textContent = k==='science'?'The science':'How to use this demo'; $('hTitle').textContent=d.title; $('hLead').textContent=d.lead;
+    $('hSteps').innerHTML=d.steps.map((s,i)=>`<div class="hStep"><div class="n">${i+1}</div><div><b>${s.h}</b><p>${s.p}</p></div></div>`).join('');
+    $('hTip').innerHTML=d.tip; $('hSwap').textContent = k==='science'?'← How to use':'See the science →'; }
+  function open(k){ lastFocus=document.activeElement; fill(k); $('hOverlay').classList.add('open'); $('hClose').focus(); }
+  function close(){ $('hOverlay').classList.remove('open'); if(lastFocus&&lastFocus.focus) lastFocus.focus(); }
+  $('hbTut').addEventListener('click',()=>open('tutorial')); $('hbSci').addEventListener('click',()=>open('science'));
+  $('hClose').addEventListener('click',close); $('hOk').addEventListener('click',close);
+  $('hSwap').addEventListener('click',()=>fill(kind==='science'?'tutorial':'science'));
+  $('hOverlay').addEventListener('click',e=>{ if(e.target===$('hOverlay')) close(); });
+  document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&$('hOverlay').classList.contains('open')){ e.stopPropagation(); close(); } },true);
+})();
+</script>
+
+</body>
+</html>
