@@ -1,0 +1,1556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RISC-V single-cycle datapath — ECE 473</title>
+<meta name="description" content="An interactive RISC-V single-cycle datapath demo for ECE 473 Computer Architecture and Organization at the University of Maine — build the datapath block by block, trace all 37 RV32I instructions through it, and run a program cycle by cycle.">
+<link rel="canonical" href="https://www.siegelab.org/teaching/ece473/single-cycle/">
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="apple-touch-icon" href="/assets/favicon.png">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="SIEGE Lab">
+<meta property="og:title" content="RISC-V single-cycle datapath — ECE 473">
+<meta property="og:description" content="Interactive RISC-V single-cycle datapath demo for ECE 473 Computer Architecture and Organization.">
+<meta property="og:url" content="https://www.siegelab.org/teaching/ece473/single-cycle/">
+<meta property="og:image" content="https://www.siegelab.org/assets/siege-logo.png">
+<meta name="twitter:card" content="summary_large_image">
+<style>
+:root { --ink:#14213D; --ink2:#3B4457; --mute:#6B7280; --line:#D9DDE3; --panel:#F4F5F7; --bg:#fff; --hi:#FFF1B8; --ok:#2A9D8F; --bad:#E63946; --ctrl:#1F6FD0;
+  --sans:"Avenir Next","Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif; --mono:"SF Mono","Cascadia Mono","JetBrains Mono",Consolas,"DejaVu Sans Mono",Menlo,monospace; --fs: clamp(13px, 1.05vw, 20px); }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font-family: var(--sans); font-size: var(--fs); color: var(--ink); background: var(--bg); display: grid; grid-template-rows: auto 1fr auto; grid-template-columns: minmax(0,1fr); height: 100vh; overflow: hidden; line-height: 1.35; }
+.mono { font-family: var(--mono); } .muted { color: var(--mute); } .small { font-size: .85em; } .big { font-size: 1.3em; font-weight: 600; }
+button { font: inherit; color: inherit; cursor: pointer; } input { font: inherit; }
+h3 { margin: 0 0 .3em; font-size: 1.25em; } h4 { margin: 0 0 .3em; font-size: 1em; color: var(--ink2); } p { margin: 0 0 .6em; }
+header { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 2vw; padding: .5vh 1.2vw; border-bottom: 1px solid var(--line); }
+header .title { font-weight: 700; font-size: 1.25em; white-space: nowrap; } header .title small { display: block; font-weight: 400; font-size: .7em; color: var(--mute); }
+#tabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: .4vw; min-width: 0; }
+.tab { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: .5em; align-items: center; text-align: left; padding: .4em .7em; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; min-width: 0; }
+.tab .n { grid-row: 1/3; font-family: var(--mono); font-size: 1.3em; font-weight: 700; color: var(--mute); } .tab .tn { font-weight: 700; } .tab .ts { font-size: .78em; color: var(--mute); }
+.tab.on { background: var(--ink); color: #fff; border-color: var(--ink); } .tab.on .n, .tab.on .ts { color: #C9D1E0; }
+footer { display: flex; justify-content: space-between; gap: 1.5vw; padding: .4vh 1.2vw; border-top: 1px solid var(--line); color: var(--mute); font-size: .8em; white-space: nowrap; }
+footer #hint { overflow: hidden; text-overflow: ellipsis; flex: 1; min-width: 0; } footer .credit { color: var(--ink2); font-weight: 600; }
+footer kbd { font-family: var(--mono); background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 0 .35em; }
+main { position: relative; overflow: hidden; }
+.module { display: none; position: absolute; inset: 0; padding: 1vh 1.2vw; overflow: hidden; flex-direction: column; } .module.on { display: flex; } .module > * { flex: 1; min-height: 0; }
+.pill { display: inline-block; color: #fff; border-radius: 999px; padding: .1em .7em; font-size: .78em; font-weight: 600; vertical-align: middle; }
+.pill.ext { background: var(--panel); color: var(--ink2); border: 1px solid var(--line); } .pill.ctrl { background: var(--ctrl); }
+.chip { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: .2em .55em; font-size: .9em; }
+.chip:hover, .chip.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.btn { border: 1px solid var(--line); background: var(--bg); border-radius: 6px; padding: .35em .9em; font-weight: 600; } .btn.primary { background: var(--ink); color: #fff; border-color: var(--ink); } .btn.sm { padding: .15em .6em; font-size: .9em; font-weight: 700; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; } .seg button { border: 0; background: var(--bg); padding: .3em .8em; font-weight: 600; } .seg button.on { background: var(--ink); color: #fff; }
+#t4phase button[data-p=fetch].on { background: #2F5FA8; } #t4phase button[data-p=decode].on { background: #3F8F5F; } #t4phase button[data-p=execute].on { background: #B8742A; } #t4phase button[data-p=memory].on { background: #A8412F; } #t4phase button[data-p=writeback].on { background: #7B4BA6; }
+.row { display: flex; align-items: center; gap: .7em; flex-wrap: wrap; } .tog { font-size: .9em; display: inline-flex; align-items: center; gap: .3em; }
+.err.bad { color: var(--bad); font-weight: 600; }
+.stp span { font-family: var(--mono); color: var(--mute); font-weight: 700; }
+.ctrl-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .3em; }
+.cs { display: flex; justify-content: space-between; gap: .4em; border: 1px solid var(--line); border-radius: 5px; padding: .08em .45em; font-size: 1em; } .cs span { color: var(--mute); } .cs.on { background: var(--hi); border-color: #E0C45A; } .cs.off b { color: var(--mute); font-weight: 400; } .cs small { color: var(--mute); font-weight: 400; font-size: 1em; } .cs.wide { grid-column: span 2; } .cs b { white-space: nowrap; }
+
+/* datapath svg */
+.dp2 { width: 100%; height: 100%; }
+.dp2 .wire { fill: none; stroke: #3B4457; stroke-width: 1.8; } .dp2 .wire.ctrl { stroke: var(--ctrl); stroke-width: 1.4; stroke-dasharray: 6 3; } .dp2 .wire.const { stroke: #9AA3B2; }
+.dp2 .wire.on { stroke: #E07B12; stroke-width: 3.4; stroke-dasharray: none; } .dp2 .wire.ctrl.on { stroke-width: 2.4; stroke-dasharray: 6 3; } .dp2 .wire.dim { opacity: .22; }
+.dp2 .box { fill: #fff; stroke: #3B4457; stroke-width: 1.8; } .dp2 .box.on { fill: var(--hi); stroke: #E07B12; stroke-width: 3; } .dp2 .box.dim { opacity: .4; }
+.dp2 .subbox { fill: none; stroke: #9AA3B2; stroke-dasharray: 3 3; }
+.dp2 { --dpfs: 16px; }
+.dp2 .boxlbl { font-family: var(--sans); font-size: var(--dpfs); font-weight: 700; fill: var(--ink); } .dp2 .boxlbl.sub { font-weight: 400; font-size: var(--dpfs); fill: var(--ink2); }
+.dp2 .port { font-family: var(--mono); font-size: var(--dpfs); fill: var(--ink2); } .dp2 .sel { font-family: var(--mono); font-size: var(--dpfs); fill: var(--ink2); }
+.dp2 .val .lead, .dp2 .val .leaddot { pointer-events: none; } .dp2 .val rect, .dp2 .val text { cursor: move; } .dp2 .val .lead { stroke: #14213D; stroke-width: 1.3; } .dp2 .val .leaddot { fill: #14213D; }
+.dp2 .subs { font-size: 75%; }
+footer .tog { white-space: nowrap; }
+.dp2 .wlbl { font-family: var(--mono); font-size: var(--dpfs); fill: var(--ink); } .dp2 .wlbl.ctrl { fill: var(--ctrl); }
+.dp2 .slash line { stroke: #3B4457; stroke-width: 1; } .dp2 .slash text { font-family: var(--mono); font-size: var(--dpfs); fill: var(--mute); }
+.dp2 .clkmark { fill: none; stroke: #3B4457; stroke-width: 1.4; }
+.dp2 .hidden { display: none; }
+.dp2.noctrl .wire.ctrl, .dp2.noctrl .wlbl.ctrl { display: none; }
+.dp2 .val rect { fill: #14213D; } .dp2 .val text { font-family: var(--mono); font-size: 13px; fill: #fff; }
+.dp2 [data-tip] { cursor: pointer; }
+.dp2 .hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
+.dp2 text { cursor: default; }
+.dp2 .wire.hov { stroke: #1F9D8A !important; stroke-width: 5 !important; opacity: 1 !important; }
+.dp2 .box.hov { stroke: #1F9D8A !important; stroke-width: 4 !important; opacity: 1 !important; fill: #DDF3EE !important; }
+#dptip { display: none; position: fixed; z-index: 20; max-width: 30em; background: #14213D; color: #fff; border-radius: 8px; padding: .6em .9em; font-size: 1.15em; line-height: 1.3; pointer-events: none; box-shadow: 0 6px 20px rgba(0,0,0,.25); }
+#dptip b { font-size: 1.1em; } #dptip .tw { font-family: var(--mono); color: #C9D1E0; margin-left: .4em; } #dptip div { margin-top: .25em; }
+.ov { border: 1px solid var(--line); border-radius: 6px; background: var(--panel); padding: 2px; }
+.ov .dp2 { width: 100%; height: auto; } .ov .dp2 text { display: none; } .ov .dp2 .wire { stroke-width: 3; } .ov .dp2 .wire.ctrl { stroke-width: 2; } .ov .dp2 .box { stroke-width: 3; } .ov .dp2 .val { display: none; }
+.ov .viewrect { fill: rgba(224,123,18,.12); stroke: #E07B12; stroke-width: 6; }
+
+/* T1 */
+.t1 { display: grid; grid-template-columns: 1fr 19%; grid-template-rows: minmax(0, 1fr) auto; gap: .6vh 1vw; }
+.t1-dp { grid-row: 1; grid-column: 1; } .t1-side { grid-row: 1 / 3; grid-column: 2; } .t1-text { grid-row: 2; grid-column: 1; }
+#t1 { font-size: 1.25em; } #t1 .stp { font-size: 1em; padding: .18em .5em; } #t1 .t1-text { font-size: 1em; } #t1 .btn { font-size: 1em; }
+
+.t1-dp { display: flex; align-items: center; min-height: 0; }
+.t1-side { display: grid; grid-template-rows: auto 1fr auto auto; gap: 1vh; min-height: 0; }
+.stepper { display: flex; flex-direction: column; gap: .25vh; }
+.stp { display: flex; gap: .6em; align-items: center; padding: .22em .6em; border-radius: 5px; border: 1px solid var(--line); font-size: .9em; cursor: pointer; }
+.stp.on { background: var(--ink); color: #fff; border-color: var(--ink); } .stp.on span { color: #C9D1E0; } .stp.done { background: var(--panel); }
+.t1-text { background: var(--panel); border-radius: 8px; padding: .6em 1em; overflow: auto; font-size: 1.05em; max-height: 22vh; } .t1-text h3 { display: inline; margin-right: .5em; } .t1-text p { display: inline; }
+/* T3 */
+.t3 { display: grid; grid-template-columns: 1fr 24%; gap: 1.2vw; } .t3-dp { display: flex; align-items: center; min-height: 0; }
+.t3-side { display: grid; grid-template-rows: auto 1fr auto; gap: 1vh; min-height: 0; } .t3-info { background: var(--panel); border-radius: 8px; padding: .8em 1em; overflow: auto; }
+.t3-legend { display: flex; gap: 1em; font-size: .85em; color: var(--mute); } .lg .sw { display: inline-block; width: 1.6em; height: 3px; vertical-align: middle; margin-right: .3em; background: #3B4457; } .lg .sw.ctrl { background: var(--ctrl); } .lg .sw.on { background: #E07B12; height: 4px; }
+/* T4 */
+.t4 { display: grid; grid-template-rows: auto 1fr; gap: .8vh; }
+.t4-chips { display: flex; flex-wrap: wrap; gap: .3em 1.2em; align-items: center; } .grp { display: flex; gap: .25em; align-items: center; } .gname { font-size: .78em; color: var(--mute); font-weight: 600; margin-right: .2em; }
+.t4-body { display: grid; grid-template-columns: 1fr 27%; gap: 1.2vw; min-height: 0; }
+.t4-dp { display: grid; grid-template-rows: auto 1fr; gap: .5vh; min-height: 0; } .t4-dp > div:last-child { min-height: 0; display: flex; align-items: center; }
+.t4-custom { font-size: .85em; color: var(--mute); } .t4-custom input { width: 11em; padding: .25em .5em; border: 1px solid var(--line); border-radius: 6px; }
+.t4-side { display: grid; grid-template-rows: auto auto auto 1fr; gap: 1vh; min-height: 0; }
+.t4-ins { display: flex; align-items: center; gap: .6em; flex-wrap: wrap; }
+#t4narr { overflow: auto; font-size: 1em; display: flex; flex-direction: column; gap: .45em; }
+.ph { border-left: 5px solid var(--phc); background: var(--panel); border-radius: 0 8px 8px 0; padding: .35em .7em .35em .75em; --phc: #6B7280; }
+.ph.dimp { display: none; }
+.ph-tag { display: inline-block; font-weight: 700; color: #fff; background: var(--phc); border-radius: 999px; padding: .02em .7em; font-size: 1em; margin-bottom: .2em; letter-spacing: .02em; }
+.ph ul { margin: 0; padding-left: 1.1em; } .ph li { margin: .08em 0; line-height: 1.3; }
+.ph-fetch { --phc: #2F5FA8; } .ph-decode { --phc: #3F8F5F; } .ph-execute { --phc: #B8742A; } .ph-memory { --phc: #A8412F; } .ph-writeback { --phc: #7B4BA6; }
+.ph .sig { font-family: var(--mono); font-weight: 600; color: #1F6FD0; } .ph .hv { font-family: var(--mono); background: #14213D; color: #fff; border-radius: 3px; padding: 0 .3em; }
+.ph .rg { font-family: var(--mono); font-weight: 700; color: #2A9D8F; } .ph .blk { font-weight: 700; color: var(--ink); } .ph .num { font-family: var(--mono); font-weight: 600; }
+.ph .ok { color: var(--ok); font-weight: 700; } .ph .no { color: var(--bad); font-weight: 700; }
+.stages .stage:nth-child(1).on { background: #2F5FA8; border-color: #2F5FA8; }
+#regpop { display: none; position: fixed; inset: 0; background: rgba(20,33,61,.55); z-index: 15; align-items: center; justify-content: center; }
+#regpop.open { display: flex; }
+#regpop .card { background: #fff; border-radius: 10px; padding: 1.2em 1.6em; max-width: 60em; font-size: 1.15em; }
+#regpop h3 { margin: 0; } #regpop p { margin: .5em 0; }
+table.regtab { border-collapse: collapse; width: 100%; } .regtab th { text-align: left; color: var(--mute); font-weight: 600; border-bottom: 1px solid var(--line); padding: .15em .6em; } .regtab td { padding: .18em .6em; border-bottom: 1px solid var(--line); }
+#help { display: none; position: fixed; inset: 0; background: rgba(20,33,61,.55); z-index: 10; align-items: center; justify-content: center; } #help.open { display: flex; }
+#help .card { background: #fff; border-radius: 10px; padding: 1.5em 2em; max-width: 44em; } #help td { padding: .2em .8em .2em 0; }
+
+/* T6 run */
+.t6 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 21%); gap: .8vw; min-width: 0; }
+.t6-editor { display: none; } .t6-editor.open { display: grid; grid-template-rows: minmax(0, 1fr) auto; gap: .3vh; position: absolute; inset: 0; background: #fff; padding: .4em; z-index: 3; } .t6-editor textarea { width: 100%; height: 100%; resize: none; border: 1px solid var(--line); border-radius: 6px; padding: .4em .6em; font-size: .85em; line-height: 1.3; } .t6-list { position: relative; } .t6-list select { flex: 1; padding: .2em .4em; border: 1px solid var(--line); border-radius: 6px; font-size: .9em; }
+.t6-edit, .t6-mid, .t6-right { min-width: 0; }
+.t6-edit { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .6vh; min-height: 0; }
+.t6-edit select { width: 100%; padding: .3em .5em; border: 1px solid var(--line); border-radius: 6px; }
+.t6-edit textarea { width: 100%; height: 100%; resize: none; border: 1px solid var(--line); border-radius: 6px; padding: .4em .6em; font-size: .85em; line-height: 1.3; }
+.t6-mid { display: grid; grid-template-rows: auto minmax(0, 1fr) auto; gap: .4vh; min-height: 0; }
+.t6-dp { position: relative; } .t6-ov { position: absolute; left: .2vw; top: .2vh; width: 11%; background: rgba(255,255,255,.92); z-index: 2; } .t6-zoom { margin-left: auto; display: inline-flex; gap: .3em; }
+.reglg { font-size: .78em; margin-left: .3em; } .lg-rd { background: #DDF3EE; border: 1px solid #2A9D8F; border-radius: 3px; padding: 0 .35em; } .lg-wr { background: var(--hi); border: 1px solid #E0C45A; border-radius: 3px; padding: 0 .35em; }
+.reg.rd { background: #DDF3EE; outline: 1px solid #2A9D8F; }
+.t6-ctl label { font-size: .9em; color: var(--mute); display: inline-flex; align-items: center; gap: .4em; } .t6-ctl input[type=range] { width: 6em; }
+.t6-cyc { font-size: 1.1em; } .t6-cyc b { font-family: var(--mono); font-size: 1.2em; }
+.status { font-family: var(--mono); color: var(--mute); } .status.halt { color: var(--bad); font-weight: 600; }
+.t6-dp { display: flex; align-items: center; min-height: 0; }
+.t6-strip h4 { margin-bottom: .2em; }
+.strip6 { display: flex; flex-direction: column; gap: 2px; font-size: .8em; }
+.s6h, .s6r { display: grid; grid-template-columns: 11em repeat(6, 1fr); gap: 2px; align-items: center; }
+.s6h span { text-align: center; color: var(--mute); font-family: var(--mono); }
+.s6i { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.s6c { height: 1.5em; background: var(--panel); border-radius: 3px; text-align: center; font-family: var(--mono); font-size: .8em; line-height: 1.9em; color: #fff; }
+.s6c.on { background: #E07B12; } .s6c.on.cls-load { background: #B8742A; } .s6c.on.cls-store { background: #A8412F; } .s6c.on.cls-branch { background: #7B4BA6; } .s6c.on.cls-jump { background: #1E8A8A; } .s6c.on.cls-alu, .s6c.on.cls-alui { background: #2F5FA8; } .s6c.on.cls-upper { background: #8A6E1E; }
+.t6-right { display: grid; grid-template-rows: minmax(0, 34%) auto minmax(0, 1fr); gap: .4vh; min-height: 0; }
+.t6-right h4 { margin-bottom: .1em; } .t6-list .listing { font-size: .78em; line-height: 1.15; } .mem6 { font-size: .78em; line-height: 1.15; }
+.t6-list { display: grid; grid-template-rows: auto auto minmax(0, 1fr); min-height: 0; gap: .2vh; } .t6-list .listing { overflow: auto; border: 1px solid var(--line); border-radius: 6px; font-size: .85em; }
+.listing .lbl { color: var(--ink2); font-weight: 700; padding: .1em .5em; background: var(--panel); }
+.listing .irow { display: grid; grid-template-columns: 1.3em 1fr; gap: .4em; padding: .06em .5em .06em .8em; } .listing .irow.cur { background: var(--hi); font-weight: 700; } .listing .irow.next { background: #E8EEF8; } .listing .irow.cur.next { background: linear-gradient(90deg, var(--hi) 55%, #E8EEF8 55%); } .listing .a { color: var(--ink2); }
+.lg-cur { background: var(--hi); border: 1px solid #E0C45A; border-radius: 3px; padding: 0 .35em; } .lg-next { background: #E8EEF8; border: 1px solid #B9C6DE; border-radius: 3px; padding: 0 .35em; }
+.regs6 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 .5em; font-size: .78em; line-height: 1.15; }
+.regs6 .reg, .mem6 .reg { display: flex; justify-content: space-between; gap: .3em; padding: 0 .3em; border-radius: 3px; } .reg .ra { color: var(--ink2); } .reg.chg { background: var(--hi); font-weight: 700; } .reg.acc { outline: 1px solid var(--ink); }
+.t6-mem { min-height: 0; overflow: auto; } .mem6 { font-size: .8em; display: grid; grid-template-columns: repeat(2, 1fr); gap: 1px .6em; } .memsep { grid-column: 1 / 3; color: var(--mute); font-weight: 700; border-top: 1px solid var(--line); margin-top: .2em; }
+</style>
+</head>
+<body>
+<header>
+  <div class="title">RISC-V single-cycle datapath<small>ECE 473 Computer Architecture and Organization</small></div>
+  <div id="tabs"></div>
+</header>
+<main>
+  <section class="module" id="t1"></section>
+  <section class="module" id="t4"></section>
+  <section class="module" id="t6"></section>
+</main>
+<footer>
+  <span id="hint"></span>
+  <span class="credit">Made with care by Dr. Prabuddha Chakraborty (ECE and ASCC, University of Maine) for his ECE 473 students, and anyone else who likes their bits in order.</span>
+  <label class="tog"><input type="checkbox" id="hovtog" checked> hover info <kbd>H</kbd></label>
+  <span><kbd>?</kbd> keys &nbsp; <kbd>F</kbd> fullscreen</span>
+</footer>
+<div id="help"><div class="card">
+  <h3>Keys</h3>
+  <table>
+    <tr><td><kbd>1</kbd> to <kbd>3</kbd></td><td>switch tab</td></tr>
+    <tr><td><kbd>Space</kbd> <kbd>R</kbd> <kbd>Backspace</kbd></td><td>step, run, reset (Run tab)</td></tr>
+    <tr><td><kbd>&larr;</kbd> <kbd>&rarr;</kbd></td><td>next block, or next instruction</td></tr>
+    <tr><td><kbd>Space</kbd></td><td>add the next block (Build it up)</td></tr>
+    <tr><td><kbd>V</kbd></td><td>toggle values on wires (Instructions)</td></tr>
+    <tr><td><kbd>H</kbd></td><td>turn hover popups on or off</td></tr>
+    <tr><td><kbd>N</kbd></td><td>register name table (Instructions)</td></tr>
+    <tr><td><kbd>+</kbd> <kbd>-</kbd> <kbd>0</kbd></td><td>magnifier: zoom in, zoom out, refit</td></tr>
+    <tr><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd></td><td>magnifier: move up, left, down, right</td></tr>
+    <tr><td>mouse</td><td>drag the diagram or the orange box to move, wheel to resize, click in the overview to center</td></tr>
+    <tr><td><kbd>F</kbd></td><td>fullscreen</td></tr>
+    <tr><td><kbd>Esc</kbd></td><td>close this</td></tr>
+  </table>
+  <p class="muted small">Single-cycle RV32I datapath in the Harris and Harris style, with a PC input on the SrcA mux for auipc, a zero input for lui, and flag-based branches. Everything runs in this file.</p>
+</div></div>
+<script>
+// ===== RISC-V core: ISA tables, encoding, decoding, assembler, C extension =====
+const RV = (() => {
+const XREG = ['zero','ra','sp','gp','tp','t0','t1','t2','s0','s1','a0','a1','a2','a3','a4','a5','a6','a7',
+  's2','s3','s4','s5','s6','s7','s8','s9','s10','s11','t3','t4','t5','t6'];
+const FREG = ['ft0','ft1','ft2','ft3','ft4','ft5','ft6','ft7','fs0','fs1','fa0','fa1','fa2','fa3','fa4','fa5','fa6','fa7',
+  'fs2','fs3','fs4','fs5','fs6','fs7','fs8','fs9','fs10','fs11','ft8','ft9','ft10','ft11'];
+const CSR = {mstatus:0x300, misa:0x301, mie:0x304, mtvec:0x305, mscratch:0x340, mepc:0x341, mcause:0x342, mtval:0x343, mip:0x344,
+  fflags:0x001, frm:0x002, fcsr:0x003, cycle:0xC00, time:0xC01, instret:0xC02, mhartid:0xF14};
+const CSRNAME = {}; for (const k in CSR) CSRNAME[CSR[k]] = k;
+
+// Classes: how the instruction uses the machine. hw: hardware capabilities it needs.
+const CLASSES = {
+  alu:   {name:'Integer ALU, register',   fmt:'R', color:'#2F5FA8'},
+  alui:  {name:'Integer ALU, immediate',  fmt:'I', color:'#3F8F5F'},
+  load:  {name:'Loads',                   fmt:'I', color:'#B8742A'},
+  store: {name:'Stores',                  fmt:'S', color:'#A8412F'},
+  branch:{name:'Conditional branches',    fmt:'B', color:'#7B4BA6'},
+  jump:  {name:'Jumps',                   fmt:'J', color:'#1E8A8A'},
+  upper: {name:'Upper immediates',        fmt:'U', color:'#8A6E1E'},
+  sys:   {name:'System and CSR',          fmt:'I', color:'#555E6B'},
+  mul:   {name:'M: multiply and divide',  fmt:'R', color:'#2F5FA8'},
+  fp:    {name:'F: single-precision float', fmt:'R', color:'#B03A6E'},
+};
+
+// Instruction table. f7 given as value or null (don't care). rm:true means funct3 is a rounding mode.
+// rs2v: fixed rs2 value used for matching (F conversions). imm12: fixed imm used for matching (ecall etc).
+const T = [];
+const add = (m, fmt, op, f3, f7, cls, ext, desc, extra={}) => T.push(Object.assign({m,fmt,op,f3,f7,cls,ext,desc}, extra));
+// --- RV32I ---
+add('lui',  'U',0x37,null,null,'upper','I','rd = imm << 12');
+add('auipc','U',0x17,null,null,'upper','I','rd = PC + (imm << 12)');
+add('jal',  'J',0x6F,null,null,'jump','I','rd = PC+4; PC = PC + imm');
+add('jalr', 'I',0x67,0,null,'jump','I','rd = PC+4; PC = (rs1 + imm) & ~1');
+for (const [m,f3,d] of [['beq',0,'=='],['bne',1,'!='],['blt',4,'< (signed)'],['bge',5,'>= (signed)'],['bltu',6,'< (unsigned)'],['bgeu',7,'>= (unsigned)']])
+  add(m,'B',0x63,f3,null,'branch','I',`if (rs1 ${d} rs2) PC = PC + imm`);
+for (const [m,f3,d] of [['lb',0,'sign-extended byte'],['lh',1,'sign-extended halfword'],['lw',2,'word'],['lbu',4,'zero-extended byte'],['lhu',5,'zero-extended halfword']])
+  add(m,'I',0x03,f3,null,'load','I',`rd = Mem[rs1 + imm], ${d}`);
+for (const [m,f3,d] of [['sb',0,'byte'],['sh',1,'halfword'],['sw',2,'word']])
+  add(m,'S',0x23,f3,null,'store','I',`Mem[rs1 + imm] = rs2, ${d}`);
+for (const [m,f3,d] of [['addi',0,'rs1 + imm'],['slti',2,'(rs1 < imm) ? 1 : 0, signed'],['sltiu',3,'(rs1 < imm) ? 1 : 0, unsigned'],['xori',4,'rs1 ^ imm'],['ori',6,'rs1 | imm'],['andi',7,'rs1 & imm']])
+  add(m,'I',0x13,f3,null,'alui','I',`rd = ${d}`);
+add('slli','I',0x13,1,0x00,'alui','I','rd = rs1 << shamt',{shamt:true});
+add('srli','I',0x13,5,0x00,'alui','I','rd = rs1 >> shamt, zero fill',{shamt:true});
+add('srai','I',0x13,5,0x20,'alui','I','rd = rs1 >> shamt, sign fill',{shamt:true});
+for (const [m,f3,f7,d] of [['add',0,0,'rs1 + rs2'],['sub',0,0x20,'rs1 - rs2'],['sll',1,0,'rs1 << rs2[4:0]'],['slt',2,0,'(rs1 < rs2) ? 1 : 0, signed'],['sltu',3,0,'(rs1 < rs2) ? 1 : 0, unsigned'],['xor',4,0,'rs1 ^ rs2'],['srl',5,0,'rs1 >> rs2[4:0], zero fill'],['sra',5,0x20,'rs1 >> rs2[4:0], sign fill'],['or',6,0,'rs1 | rs2'],['and',7,0,'rs1 & rs2']])
+  add(m,'R',0x33,f3,f7,'alu','I',`rd = ${d}`);
+add('fence','I',0x0F,0,null,'sys','I','order memory operations (pred, succ)',{fence:true});
+add('ecall','I',0x73,0,null,'sys','I','trap to the environment (system call)',{imm12:0, noargs:true});
+add('ebreak','I',0x73,0,null,'sys','I','trap to the debugger',{imm12:1, noargs:true});
+add('mret','I',0x73,0,null,'sys','I','return from M-mode trap: PC = mepc',{imm12:0x302, noargs:true});
+add('wfi','I',0x73,0,null,'sys','I','wait for interrupt (nop here)',{imm12:0x105, noargs:true});
+for (const [m,f3,d] of [['csrrw',1,'rd = csr; csr = rs1'],['csrrs',2,'rd = csr; csr |= rs1'],['csrrc',3,'rd = csr; csr &= ~rs1']])
+  add(m,'I',0x73,f3,null,'sys','Zicsr',d,{csr:true});
+for (const [m,f3,d] of [['csrrwi',5,'rd = csr; csr = uimm'],['csrrsi',6,'rd = csr; csr |= uimm'],['csrrci',7,'rd = csr; csr &= ~uimm']])
+  add(m,'I',0x73,f3,null,'sys','Zicsr',d,{csr:true, csri:true});
+// --- M ---
+for (const [m,f3,d] of [['mul',0,'low 32 bits of rs1 * rs2'],['mulh',1,'high 32 bits of rs1 * rs2, signed'],['mulhsu',2,'high 32 bits, rs1 signed, rs2 unsigned'],['mulhu',3,'high 32 bits, unsigned'],['div',4,'rs1 / rs2, signed'],['divu',5,'rs1 / rs2, unsigned'],['rem',6,'rs1 % rs2, signed'],['remu',7,'rs1 % rs2, unsigned']])
+  add(m,'R',0x33,f3,1,'mul','M',`rd = ${d}`);
+// --- F ---
+add('flw','I',0x07,2,null,'fp','F','frd = Mem[rs1 + imm], 32-bit float',{fd:true});
+add('fsw','S',0x27,2,null,'fp','F','Mem[rs1 + imm] = frs2',{fs2:true});
+add('fmadd.s', 'R4',0x43,null,null,'fp','F','frd = frs1 * frs2 + frs3',{rm:true,fd:true,fs1:true,fs2:true});
+add('fmsub.s', 'R4',0x47,null,null,'fp','F','frd = frs1 * frs2 - frs3',{rm:true,fd:true,fs1:true,fs2:true});
+add('fnmsub.s','R4',0x4B,null,null,'fp','F','frd = -(frs1 * frs2) + frs3',{rm:true,fd:true,fs1:true,fs2:true});
+add('fnmadd.s','R4',0x4F,null,null,'fp','F','frd = -(frs1 * frs2) - frs3',{rm:true,fd:true,fs1:true,fs2:true});
+for (const [m,f7,d] of [['fadd.s',0x00,'frs1 + frs2'],['fsub.s',0x04,'frs1 - frs2'],['fmul.s',0x08,'frs1 * frs2'],['fdiv.s',0x0C,'frs1 / frs2']])
+  add(m,'R',0x53,null,f7,'fp','F',`frd = ${d}`,{rm:true,fd:true,fs1:true,fs2:true});
+add('fsqrt.s','R',0x53,null,0x2C,'fp','F','frd = sqrt(frs1)',{rm:true,fd:true,fs1:true,rs2v:0,one:true});
+for (const [m,f3,d] of [['fsgnj.s',0,'|frs1| with sign of frs2'],['fsgnjn.s',1,'|frs1| with inverted sign of frs2'],['fsgnjx.s',2,'frs1 with sign = sign(frs1) ^ sign(frs2)']])
+  add(m,'R',0x53,f3,0x10,'fp','F',`frd = ${d}`,{fd:true,fs1:true,fs2:true});
+add('fmin.s','R',0x53,0,0x14,'fp','F','frd = min(frs1, frs2)',{fd:true,fs1:true,fs2:true});
+add('fmax.s','R',0x53,1,0x14,'fp','F','frd = max(frs1, frs2)',{fd:true,fs1:true,fs2:true});
+add('fcvt.w.s', 'R',0x53,null,0x60,'fp','F','rd = (int32) frs1',{rm:true,fs1:true,rs2v:0,one:true});
+add('fcvt.wu.s','R',0x53,null,0x60,'fp','F','rd = (uint32) frs1',{rm:true,fs1:true,rs2v:1,one:true});
+add('fmv.x.w', 'R',0x53,0,0x70,'fp','F','rd = raw bits of frs1',{fs1:true,rs2v:0,one:true});
+add('fclass.s','R',0x53,1,0x70,'fp','F','rd = 10-bit class mask of frs1',{fs1:true,rs2v:0,one:true});
+for (const [m,f3,d] of [['fle.s',0,'<='],['flt.s',1,'<'],['feq.s',2,'==']])
+  add(m,'R',0x53,f3,0x50,'fp','F',`rd = (frs1 ${d} frs2) ? 1 : 0`,{fs1:true,fs2:true});
+add('fcvt.s.w', 'R',0x53,null,0x68,'fp','F','frd = (float) rs1, signed',{rm:true,fd:true,rs2v:0,one:true});
+add('fcvt.s.wu','R',0x53,null,0x68,'fp','F','frd = (float) rs1, unsigned',{rm:true,fd:true,rs2v:1,one:true});
+add('fmv.w.x','R',0x53,0,0x78,'fp','F','frd = raw bits of rs1',{fd:true,rs2v:0,one:true});
+const BYNAME = {}; for (const e of T) BYNAME[e.m] = e;
+
+// ---------- field maps: 32 entries, bit 31 first ----------
+const FIELDMAP = {
+  R:  [['funct7',7],['rs2',5],['rs1',5],['funct3',3],['rd',5],['opcode',7]],
+  R4: [['rs3',5],['fmt',2],['rs2',5],['rs1',5],['rm',3],['rd',5],['opcode',7]],
+  I:  [['imm',12,[11,0]],['rs1',5],['funct3',3],['rd',5],['opcode',7]],
+  S:  [['imm',7,[11,5]],['rs2',5],['rs1',5],['funct3',3],['imm',5,[4,0]],['opcode',7]],
+  B:  [['imm',1,[12,12]],['imm',6,[10,5]],['rs2',5],['rs1',5],['funct3',3],['imm',4,[4,1]],['imm',1,[11,11]],['opcode',7]],
+  U:  [['imm',20,[31,12]],['rd',5],['opcode',7]],
+  J:  [['imm',1,[20,20]],['imm',10,[10,1]],['imm',1,[11,11]],['imm',8,[19,12]],['rd',5],['opcode',7]],
+};
+// per-bit view: [{field, immBit}] for bits 31..0
+function bitmap(fmt) {
+  const out = []; let bit = 31;
+  for (const seg of FIELDMAP[fmt]) {
+    const [f, w, imm] = seg;
+    for (let i = 0; i < w; i++) { out.push({bit: bit - i, field: f, immBit: imm ? imm[0] - i : null}); }
+    bit -= w;
+  }
+  return out;
+}
+// ---------- immediates ----------
+const sext = (v, bits) => (v << (32 - bits)) >> (32 - bits);
+function immOf(w, fmt) {
+  switch (fmt) {
+    case 'I': return sext(w >>> 20, 12);
+    case 'S': return sext(((w >>> 25) << 5) | ((w >>> 7) & 0x1F), 12);
+    case 'B': return sext((((w >>> 31) & 1) << 12) | (((w >>> 7) & 1) << 11) | (((w >>> 25) & 0x3F) << 5) | (((w >>> 8) & 0xF) << 1), 13);
+    case 'U': return (w & 0xFFFFF000) | 0;
+    case 'J': return sext((((w >>> 31) & 1) << 20) | (((w >>> 12) & 0xFF) << 12) | (((w >>> 20) & 1) << 11) | (((w >>> 21) & 0x3FF) << 1), 21);
+  }
+  return 0;
+}
+function placeImm(imm, fmt) {
+  const b = (v, n) => (v >>> 0) & ((1 << n) - 1);
+  switch (fmt) {
+    case 'I': return b(imm,12) << 20;
+    case 'S': return (b(imm >> 5, 7) << 25) | (b(imm, 5) << 7);
+    case 'B': return (b(imm >> 12,1) << 31) | (b(imm >> 5, 6) << 25) | (b(imm >> 1, 4) << 8) | (b(imm >> 11,1) << 7);
+    case 'U': return imm & 0xFFFFF000;
+    case 'J': return (b(imm >> 20,1) << 31) | (b(imm >> 1,10) << 21) | (b(imm >> 11,1) << 20) | (b(imm >> 12,8) << 12);
+  }
+  return 0;
+}
+const immRange = {I:[-2048,2047], S:[-2048,2047], B:[-4096,4094], U:[-2147483648,2147483647], J:[-1048576,1048574]};
+
+// ---------- encode from fields ----------
+function encode(e, f) {
+  let w = e.op;
+  const rd = f.rd|0, rs1 = f.rs1|0, rs2 = f.rs2|0;
+  switch (e.fmt) {
+    case 'R':  w |= (rd<<7) | ((e.rm ? (f.rm ?? 7) : e.f3) << 12) | (rs1<<15) | ((e.rs2v !== undefined ? e.rs2v : rs2) << 20) | (e.f7 << 25); break;
+    case 'R4': w |= (rd<<7) | ((f.rm ?? 7) << 12) | (rs1<<15) | (rs2<<20) | ((f.rs3|0) << 27); break;
+    case 'I': {
+      let imm = f.imm|0;
+      if (e.shamt) imm = (f.imm & 0x1F) | (e.f7 << 5);
+      if (e.imm12 !== undefined) imm = e.imm12;
+      if (e.csr) imm = f.csr;
+      w |= (rd<<7) | (e.f3<<12) | ((e.csri ? (f.uimm & 0x1F) : rs1) << 15) | placeImm(imm, 'I'); break; }
+    case 'S': w |= (e.f3<<12) | (rs1<<15) | (rs2<<20) | placeImm(f.imm|0, 'S'); break;
+    case 'B': w |= (e.f3<<12) | (rs1<<15) | (rs2<<20) | placeImm(f.imm|0, 'B'); break;
+    case 'U': w |= (rd<<7) | placeImm(f.imm|0, 'U'); break;
+    case 'J': w |= (rd<<7) | placeImm(f.imm|0, 'J'); break;
+  }
+  return w >>> 0;
+}
+// ---------- decode 32-bit word ----------
+function decode(w) {
+  w = w >>> 0;
+  const op = w & 0x7F, rd = (w>>>7)&0x1F, f3 = (w>>>12)&7, rs1 = (w>>>15)&0x1F, rs2 = (w>>>20)&0x1F, f7 = (w>>>25)&0x7F, rs3 = (w>>>27)&0x1F;
+  let e = null;
+  for (const c of T) {
+    if (c.op !== op) continue;
+    if (c.f3 !== null && c.f3 !== f3) continue;
+    if (c.f7 !== null) {
+      if (c.shamt) { if (c.f7 !== f7) continue; }
+      else if (c.f7 !== f7) continue;
+    }
+    if (c.rs2v !== undefined && c.rs2v !== rs2) continue;
+    if (c.imm12 !== undefined && (w >>> 20) !== c.imm12) continue;
+    if (c.fmt === 'R4' && ((w>>>25)&3) !== 0) continue;
+    e = c; break;
+  }
+  if (!e) return {ok:false, word:w, fmt:'R', fields:{op,rd,f3,rs1,rs2,f7}, text:'illegal instruction'};
+  const fields = {op, rd, f3, rs1, rs2, f7, rs3, rm: f3, imm: 0, csr: 0, uimm: 0};
+  if (['I','S','B','U','J'].includes(e.fmt)) fields.imm = immOf(w, e.fmt);
+  if (e.shamt) fields.imm = rs2;
+  if (e.csr) { fields.csr = w >>> 20; fields.uimm = rs1; }
+  return {ok:true, word:w, e, fmt:e.fmt, fields, text: format(e, fields), cls:e.cls, len:4};
+}
+// ---------- pretty print ----------
+const x = n => XREG[n], fr = n => FREG[n];
+function format(e, f) {
+  const csrn = c => CSRNAME[c] || ('0x' + c.toString(16));
+  const R1 = e.fs1 ? fr(f.rs1) : x(f.rs1), R2 = e.fs2 ? fr(f.rs2) : x(f.rs2), RD = e.fd ? fr(f.rd) : x(f.rd);
+  switch (e.fmt) {
+    case 'R':  return e.one ? `${e.m} ${RD}, ${R1}` : `${e.m} ${RD}, ${R1}, ${R2}`;
+    case 'R4': return `${e.m} ${RD}, ${R1}, ${R2}, ${fr(f.rs3)}`;
+    case 'I':
+      if (e.noargs) return e.m;
+      if (e.fence) return 'fence';
+      if (e.csr) return `${e.m} ${RD}, ${csrn(f.csr)}, ${e.csri ? f.uimm : R1}`;
+      if (e.cls === 'load' || e.m === 'jalr' || e.m === 'flw') return `${e.m} ${RD}, ${f.imm}(${R1})`;
+      return `${e.m} ${RD}, ${R1}, ${f.imm}`;
+    case 'S': return `${e.m} ${R2}, ${f.imm}(${R1})`;
+    case 'B': return `${e.m} ${R1}, ${R2}, ${f.imm}`;
+    case 'U': return `${e.m} ${RD}, 0x${((f.imm >>> 12) & 0xFFFFF).toString(16)}`;
+    case 'J': return `${e.m} ${RD}, ${f.imm}`;
+  }
+}
+// ---------- parsing ----------
+function parseReg(s, fp) {
+  s = s.trim().toLowerCase();
+  const names = fp ? FREG : XREG;
+  let i = names.indexOf(s); if (i >= 0) return i;
+  if (!fp && s === 'fp') return 8;
+  const m = s.match(/^([xf])(\d+)$/);
+  if (m && ((fp && m[1]==='f') || (!fp && m[1]==='x'))) { const n = +m[2]; if (n < 32) return n; }
+  throw new Error(`unknown ${fp?'floating-point ':''}register "${s}"`);
+}
+function parseNum(s, labels) {
+  s = s.trim();
+  let neg = false; if (s[0] === '-') { neg = true; s = s.slice(1); }
+  let v;
+  if (/^0x[0-9a-f]+$/i.test(s)) v = parseInt(s, 16);
+  else if (/^0b[01]+$/i.test(s)) v = parseInt(s.slice(2), 2);
+  else if (/^\d+$/.test(s)) v = parseInt(s, 10);
+  else if (/^'.'$/.test(s)) v = s.charCodeAt(1);
+  else if (labels && s in labels) v = labels[s];
+  else throw new Error(`bad number or unknown label "${s}"`);
+  return (neg ? -v : v) | 0;
+}
+function parseMem(s, labels) { // imm(reg)
+  const m = s.trim().match(/^(.*)\((\w+)\)$/);
+  if (!m) throw new Error(`expected offset(register), got "${s}"`);
+  return {imm: m[1].trim() === '' ? 0 : parseNum(m[1], labels), rs1: parseReg(m[2])};
+}
+// expand pseudoinstructions into real ones. pc used for label-relative forms. Returns array of [mnemonic, operand strings].
+function expand(m, a, labels, pc) {
+  const L = labels || {};
+  const rel = t => (t in L) ? String(L[t] - pc) : t;
+  const hi = v => ((v + 0x800) >>> 12) & 0xFFFFF, lo = v => sext(v & 0xFFF, 12);
+  switch (m) {
+    case 'nop': return [['addi','x0','x0','0']];
+    case 'li': {
+      const v = parseNum(a[1], L);
+      if (v >= -2048 && v <= 2047) return [['addi', a[0], 'x0', String(v)]];
+      const out = [['lui', a[0], '0x' + hi(v).toString(16)]];
+      if (lo(v) !== 0) out.push(['addi', a[0], a[0], String(lo(v))]);
+      return out; }
+    case 'la': { const v = ((L[a[1]] !== undefined ? L[a[1]] : parseNum(a[1], L)) - pc) | 0; return [['auipc', a[0], '0x' + hi(v).toString(16)], ['addi', a[0], a[0], String(lo(v))]]; }
+    case 'mv': return [['addi', a[0], a[1], '0']];
+    case 'not': return [['xori', a[0], a[1], '-1']];
+    case 'neg': return [['sub', a[0], 'x0', a[1]]];
+    case 'seqz': return [['sltiu', a[0], a[1], '1']];
+    case 'snez': return [['sltu', a[0], 'x0', a[1]]];
+    case 'sltz': return [['slt', a[0], a[1], 'x0']];
+    case 'sgtz': return [['slt', a[0], 'x0', a[1]]];
+    case 'beqz': return [['beq', a[0], 'x0', rel(a[1])]];
+    case 'bnez': return [['bne', a[0], 'x0', rel(a[1])]];
+    case 'blez': return [['bge', 'x0', a[0], rel(a[1])]];
+    case 'bgez': return [['bge', a[0], 'x0', rel(a[1])]];
+    case 'bltz': return [['blt', a[0], 'x0', rel(a[1])]];
+    case 'bgtz': return [['blt', 'x0', a[0], rel(a[1])]];
+    case 'bgt':  return [['blt', a[1], a[0], rel(a[2])]];
+    case 'ble':  return [['bge', a[1], a[0], rel(a[2])]];
+    case 'bgtu': return [['bltu', a[1], a[0], rel(a[2])]];
+    case 'bleu': return [['bgeu', a[1], a[0], rel(a[2])]];
+    case 'j':    return [['jal', 'x0', rel(a[0])]];
+    case 'jr':   return [['jalr', 'x0', '0(' + a[0] + ')']];
+    case 'ret':  return [['jalr', 'x0', '0(ra)']];
+    case 'call': { const v = ((L[a[0]] !== undefined ? L[a[0]] : parseNum(a[0], L)) - pc) | 0; return [['auipc', 'ra', '0x' + hi(v).toString(16)], ['jalr', 'ra', lo(v) + '(ra)']]; }
+    case 'tail': { const v = ((L[a[0]] !== undefined ? L[a[0]] : parseNum(a[0], L)) - pc) | 0; return [['auipc', 't1', '0x' + hi(v).toString(16)], ['jalr', 'x0', lo(v) + '(t1)']]; }
+    case 'csrr': return [['csrrs', a[0], a[1], 'x0']];
+    case 'csrw': return [['csrrw', 'x0', a[0], a[1]]];
+    case 'csrs': return [['csrrs', 'x0', a[0], a[1]]];
+    case 'csrc': return [['csrrc', 'x0', a[0], a[1]]];
+    case 'csrwi': return [['csrrwi', 'x0', a[0], a[1]]];
+    case 'csrsi': return [['csrrsi', 'x0', a[0], a[1]]];
+    case 'csrci': return [['csrrci', 'x0', a[0], a[1]]];
+    case 'fmv.s': return [['fsgnj.s', a[0], a[1], a[1]]];
+    case 'fabs.s': return [['fsgnjx.s', a[0], a[1], a[1]]];
+    case 'fneg.s': return [['fsgnjn.s', a[0], a[1], a[1]]];
+    case 'rdcycle': return [['csrrs', a[0], 'cycle', 'x0']];
+    case 'rdinstret': return [['csrrs', a[0], 'instret', 'x0']];
+  }
+  if (m === 'jal' && a.length === 1) return [['jal', 'ra', rel(a[0])]];
+  if (m === 'jal' && a.length === 2 && !(a[1] in L) && !/^-?\d|^0x/.test(a[1].trim()) ) return null;
+  if (m === 'jalr' && a.length === 1) return [['jalr', 'ra', '0(' + a[0] + ')']];
+  if (m === 'jalr' && a.length === 3) return [['jalr', a[0], a[2] + '(' + a[1] + ')']];
+  if (BYNAME[m] && ['B','J'].includes(BYNAME[m].fmt)) { const c = a.slice(); c[c.length-1] = rel(c[c.length-1]); return [[m, ...c]]; }
+  return null;
+}
+const PSEUDO = ['nop','li','la','mv','not','neg','seqz','snez','sltz','sgtz','beqz','bnez','blez','bgez','bltz','bgtz','bgt','ble','bgtu','bleu','j','jr','ret','call','tail','csrr','csrw','csrs','csrc','csrwi','csrsi','csrci','fmv.s','fabs.s','fneg.s','rdcycle','rdinstret'];
+function splitOperands(s) {
+  const out = []; let cur = '', depth = 0;
+  for (const ch of s) { if (ch === '(') depth++; if (ch === ')') depth--; if (ch === ',' && depth === 0) { out.push(cur.trim()); cur = ''; } else cur += ch; }
+  if (cur.trim() !== '') out.push(cur.trim());
+  return out;
+}
+// Assemble one real instruction (no pseudo). Returns fields object + entry.
+function fieldsFor(m, a, labels) {
+  const e = BYNAME[m]; if (!e) throw new Error(`unknown instruction "${m}"`);
+  const f = {rd:0, rs1:0, rs2:0, rs3:0, imm:0, csr:0, uimm:0, rm:7};
+  const need = n => { if (a.length !== n) throw new Error(`${m} expects ${n} operand${n===1?'':'s'}, got ${a.length}`); };
+  const rng = (v, fmt) => { const [lo, hi] = immRange[fmt]; if (v < lo || v > hi) throw new Error(`immediate ${v} out of range for ${m} (${lo}..${hi})`); return v; };
+  switch (e.fmt) {
+    case 'R':
+      if (e.one) { need(2); f.rd = parseReg(a[0], e.fd); f.rs1 = parseReg(a[1], e.fs1); }
+      else { need(3); f.rd = parseReg(a[0], e.fd); f.rs1 = parseReg(a[1], e.fs1); f.rs2 = parseReg(a[2], e.fs2); }
+      break;
+    case 'R4': need(4); f.rd = parseReg(a[0], true); f.rs1 = parseReg(a[1], true); f.rs2 = parseReg(a[2], true); f.rs3 = parseReg(a[3], true); break;
+    case 'I':
+      if (e.noargs) { need(0); break; }
+      if (e.fence) { break; }
+      if (e.csr) { need(3); f.rd = parseReg(a[0]); f.csr = (a[1].toLowerCase() in CSR) ? CSR[a[1].toLowerCase()] : parseNum(a[1]); if (e.csri) f.uimm = parseNum(a[2]); else f.rs1 = parseReg(a[2]); break; }
+      if (e.cls === 'load' || e.m === 'jalr' || e.m === 'flw') { need(2); f.rd = parseReg(a[0], e.fd); const mm = parseMem(a[1], labels); f.rs1 = mm.rs1; f.imm = rng(mm.imm, 'I'); break; }
+      need(3); f.rd = parseReg(a[0]); f.rs1 = parseReg(a[1]); f.imm = parseNum(a[2], labels);
+      if (e.shamt) { if (f.imm < 0 || f.imm > 31) throw new Error(`shift amount ${f.imm} must be 0..31`); } else rng(f.imm, 'I');
+      break;
+    case 'S': { need(2); f.rs2 = parseReg(a[0], e.fs2); const mm = parseMem(a[1], labels); f.rs1 = mm.rs1; f.imm = rng(mm.imm, 'S'); break; }
+    case 'B': need(3); f.rs1 = parseReg(a[0]); f.rs2 = parseReg(a[1]); f.imm = rng(parseNum(a[2], labels), 'B'); if (f.imm & 1) throw new Error('branch offset must be even'); break;
+    case 'U': need(2); f.rd = parseReg(a[0]); { const v = parseNum(a[1], labels); if (v < 0 || v > 0xFFFFF) throw new Error(`upper immediate ${a[1]} must fit in 20 bits (0..0xFFFFF)`); f.imm = (v << 12) | 0; } break;
+    case 'J': need(2); f.rd = parseReg(a[0]); f.imm = rng(parseNum(a[1], labels), 'J'); if (f.imm & 1) throw new Error('jump offset must be even'); break;
+  }
+  return {e, f};
+}
+// Assemble a single line of assembly (real or pseudo) into one or more 32-bit words. pc for label-relative.
+function assembleLine(line, labels, pc) {
+  const s = line.replace(/#.*|\/\/.*/, '').trim();
+  if (!s) return [];
+  const sp = s.indexOf(' ');
+  const m = (sp < 0 ? s : s.slice(0, sp)).toLowerCase();
+  const a = sp < 0 ? [] : splitOperands(s.slice(sp + 1));
+  const ex = expand(m, a, labels, pc);
+  const list = ex || [[m, ...a]];
+  return list.map(([mm, ...aa]) => { const {e, f} = fieldsFor(mm, aa, labels); return {word: encode(e, f), e, f, text: format(e, f), src: s}; });
+}
+// ---------- C extension ----------
+const cx = r => r + 8; // 3-bit register field to x8..x15
+function decode16(h) {
+  h &= 0xFFFF;
+  const op = h & 3, f3 = (h >> 13) & 7;
+  const rd = (h >> 7) & 0x1F, rs2 = (h >> 2) & 0x1F, rdp = cx((h >> 2) & 7), rs1p = cx((h >> 7) & 7);
+  const b = (v, n) => (v & ((1 << n) - 1));
+  let asm = null, name = null;
+  if (op === 0) {
+    if (f3 === 0) { const imm = (b(h>>7,4)<<6) | (b(h>>11,2)<<4) | (b(h>>5,1)<<3) | (b(h>>6,1)<<2); if (imm) { name='c.addi4spn'; asm=`addi ${x(rdp)}, sp, ${imm}`; } }
+    else if (f3 === 2) { const imm = (b(h>>10,3)<<3) | (b(h>>6,1)<<2) | (b(h>>5,1)<<6); name='c.lw'; asm=`lw ${x(rdp)}, ${imm}(${x(rs1p)})`; }
+    else if (f3 === 3) { const imm = (b(h>>10,3)<<3) | (b(h>>6,1)<<2) | (b(h>>5,1)<<6); name='c.flw'; asm=`flw ${fr(rdp)}, ${imm}(${x(rs1p)})`; }
+    else if (f3 === 6) { const imm = (b(h>>10,3)<<3) | (b(h>>6,1)<<2) | (b(h>>5,1)<<6); name='c.sw'; asm=`sw ${x(rdp)}, ${imm}(${x(rs1p)})`; }
+    else if (f3 === 7) { const imm = (b(h>>10,3)<<3) | (b(h>>6,1)<<2) | (b(h>>5,1)<<6); name='c.fsw'; asm=`fsw ${fr(rdp)}, ${imm}(${x(rs1p)})`; }
+  } else if (op === 1) {
+    const imm6 = sext((b(h>>12,1)<<5) | b(h>>2,5), 6);
+    if (f3 === 0) { name = rd === 0 && imm6 === 0 ? 'c.nop' : 'c.addi'; asm = rd === 0 ? 'addi x0, x0, 0' : `addi ${x(rd)}, ${x(rd)}, ${imm6}`; }
+    else if (f3 === 1 || f3 === 5) { const imm = sext((b(h>>12,1)<<11)|(b(h>>8,1)<<10)|(b(h>>9,2)<<8)|(b(h>>6,1)<<7)|(b(h>>7,1)<<6)|(b(h>>2,1)<<5)|(b(h>>11,1)<<4)|(b(h>>3,3)<<1), 12); name = f3===1?'c.jal':'c.j'; asm = `jal ${f3===1?'ra':'x0'}, ${imm}`; }
+    else if (f3 === 2) { name='c.li'; asm=`addi ${x(rd)}, x0, ${imm6}`; }
+    else if (f3 === 3) {
+      if (rd === 2) { const imm = sext((b(h>>12,1)<<9)|(b(h>>3,2)<<7)|(b(h>>5,1)<<6)|(b(h>>2,1)<<5)|(b(h>>6,1)<<4), 10); name='c.addi16sp'; asm=`addi sp, sp, ${imm}`; }
+      else if (rd !== 0 && imm6 !== 0) { name='c.lui'; asm=`lui ${x(rd)}, 0x${(imm6 & 0xFFFFF).toString(16)}`; }
+    }
+    else if (f3 === 4) {
+      const sub = b(h>>10,2), sh = (b(h>>12,1)<<5) | b(h>>2,5);
+      if (sub === 0 && sh < 32) { name='c.srli'; asm=`srli ${x(rs1p)}, ${x(rs1p)}, ${sh}`; }
+      else if (sub === 1 && sh < 32) { name='c.srai'; asm=`srai ${x(rs1p)}, ${x(rs1p)}, ${sh}`; }
+      else if (sub === 2) { name='c.andi'; asm=`andi ${x(rs1p)}, ${x(rs1p)}, ${imm6}`; }
+      else if (sub === 3 && !b(h>>12,1)) { const k = b(h>>5,2); name = ['c.sub','c.xor','c.or','c.and'][k]; asm = `${['sub','xor','or','and'][k]} ${x(rs1p)}, ${x(rs1p)}, ${x(rdp)}`; }
+    }
+    else if (f3 === 6 || f3 === 7) { const imm = sext((b(h>>12,1)<<8)|(b(h>>5,2)<<6)|(b(h>>2,1)<<5)|(b(h>>10,2)<<3)|(b(h>>3,2)<<1), 9); name = f3===6?'c.beqz':'c.bnez'; asm = `${f3===6?'beq':'bne'} ${x(rs1p)}, x0, ${imm}`; }
+  } else if (op === 2) {
+    if (f3 === 0) { const sh = (b(h>>12,1)<<5) | b(h>>2,5); if (rd && sh < 32) { name='c.slli'; asm=`slli ${x(rd)}, ${x(rd)}, ${sh}`; } }
+    else if (f3 === 2) { const imm = (b(h>>12,1)<<5)|(b(h>>4,3)<<2)|(b(h>>2,2)<<6); if (rd) { name='c.lwsp'; asm=`lw ${x(rd)}, ${imm}(sp)`; } }
+    else if (f3 === 3) { const imm = (b(h>>12,1)<<5)|(b(h>>4,3)<<2)|(b(h>>2,2)<<6); name='c.flwsp'; asm=`flw ${fr(rd)}, ${imm}(sp)`; }
+    else if (f3 === 4) {
+      const bit12 = b(h>>12,1);
+      if (!bit12) { if (rs2 === 0 && rd) { name='c.jr'; asm=`jalr x0, 0(${x(rd)})`; } else if (rs2 && rd) { name='c.mv'; asm=`add ${x(rd)}, x0, ${x(rs2)}`; } }
+      else { if (rd === 0 && rs2 === 0) { name='c.ebreak'; asm='ebreak'; } else if (rs2 === 0) { name='c.jalr'; asm=`jalr ra, 0(${x(rd)})`; } else if (rd) { name='c.add'; asm=`add ${x(rd)}, ${x(rd)}, ${x(rs2)}`; } }
+    }
+    else if (f3 === 6) { const imm = (b(h>>9,4)<<2)|(b(h>>7,2)<<6); name='c.swsp'; asm=`sw ${x(rs2)}, ${imm}(sp)`; }
+    else if (f3 === 7) { const imm = (b(h>>9,4)<<2)|(b(h>>7,2)<<6); name='c.fswsp'; asm=`fsw ${fr(rs2)}, ${imm}(sp)`; }
+  }
+  if (!asm) return {ok:false, half:h, text:'illegal compressed instruction', len:2};
+  const d = assembleLine(asm, {}, 0)[0];
+  const dec = decode(d.word);
+  dec.len = 2; dec.cname = name; dec.half = h; dec.ctext = asm; dec.expanded = dec.text;
+  return dec;
+}
+// Try to compress a decoded 32-bit instruction. Returns 16-bit halfword or null.
+function compress(d) {
+  if (!d.ok) return null;
+  const {e, fields: f} = d, m = e.m;
+  const isP = r => r >= 8 && r <= 15, cr = r => r - 8;
+  const fit = (v, n) => v >= -(1 << (n-1)) && v < (1 << (n-1));
+  const imm6 = v => ((v >> 5) & 1) << 12 | (v & 0x1F) << 2;
+  const ld = (imm) => ((imm >> 3) & 7) << 10 | ((imm >> 2) & 1) << 6 | ((imm >> 6) & 1) << 5;
+  if (m === 'addi') {
+    if (f.rd === 0 && f.rs1 === 0 && f.imm === 0) return 0x0001;
+    if (f.rd === 2 && f.rs1 === 2 && f.imm !== 0 && (f.imm & 15) === 0 && fit(f.imm, 10)) { const v = f.imm; return 0x6101 | ((v>>9)&1)<<12 | ((v>>4)&1)<<6 | ((v>>6)&1)<<5 | ((v>>7)&3)<<3 | ((v>>5)&1)<<2; }
+    if (f.rd === f.rs1 && f.rd !== 0 && f.imm !== 0 && fit(f.imm, 6)) return 0x0001 | imm6(f.imm) | f.rd << 7;
+    if (f.rs1 === 0 && f.rd !== 0 && fit(f.imm, 6)) return 0x4001 | imm6(f.imm) | f.rd << 7;
+    if (f.rs1 === 2 && isP(f.rd) && f.imm > 0 && (f.imm & 3) === 0 && f.imm < 1024) { const v = f.imm; return 0x0000 | ((v>>4)&3)<<11 | ((v>>6)&15)<<7 | ((v>>2)&1)<<6 | ((v>>3)&1)<<5 | cr(f.rd)<<2; }
+  }
+  if (m === 'lui' && f.rd !== 0 && f.rd !== 2) { const v = f.imm >> 12; if (v !== 0 && fit(v, 6)) return 0x6001 | imm6(v) | f.rd << 7; }
+  if (m === 'lw') { if (isP(f.rd) && isP(f.rs1) && f.imm >= 0 && f.imm < 128 && (f.imm & 3) === 0) return 0x4000 | ld(f.imm) | cr(f.rs1) << 7 | cr(f.rd) << 2;
+    if (f.rs1 === 2 && f.rd !== 0 && f.imm >= 0 && f.imm < 256 && (f.imm & 3) === 0) return 0x4002 | ((f.imm>>5)&1)<<12 | ((f.imm>>2)&7)<<4 | ((f.imm>>6)&3)<<2 | f.rd << 7; }
+  if (m === 'sw') { if (isP(f.rs2) && isP(f.rs1) && f.imm >= 0 && f.imm < 128 && (f.imm & 3) === 0) return 0xC000 | ld(f.imm) | cr(f.rs1) << 7 | cr(f.rs2) << 2;
+    if (f.rs1 === 2 && f.imm >= 0 && f.imm < 256 && (f.imm & 3) === 0) return 0xC002 | ((f.imm>>2)&15)<<9 | ((f.imm>>6)&3)<<7 | f.rs2 << 2; }
+  if (m === 'flw' && isP(f.rd) && isP(f.rs1) && f.imm >= 0 && f.imm < 128 && (f.imm & 3) === 0) return 0x6000 | ld(f.imm) | cr(f.rs1) << 7 | cr(f.rd) << 2;
+  if (m === 'fsw' && isP(f.rs2) && isP(f.rs1) && f.imm >= 0 && f.imm < 128 && (f.imm & 3) === 0) return 0xE000 | ld(f.imm) | cr(f.rs1) << 7 | cr(f.rs2) << 2;
+  if (m === 'add' && f.rd !== 0) { if (f.rs1 === 0 && f.rs2 !== 0) return 0x8002 | f.rd << 7 | f.rs2 << 2; if (f.rs2 === 0 && f.rs1 !== 0) return 0x8002 | f.rd << 7 | f.rs1 << 2; if (f.rd === f.rs1 && f.rs2 !== 0) return 0x9002 | f.rd << 7 | f.rs2 << 2; if (f.rd === f.rs2 && f.rs1 !== 0) return 0x9002 | f.rd << 7 | f.rs1 << 2; }
+  if (['sub','xor','or','and'].includes(m) && f.rd === f.rs1 && isP(f.rd) && isP(f.rs2)) return 0x8C01 | cr(f.rd) << 7 | ['sub','xor','or','and'].indexOf(m) << 5 | cr(f.rs2) << 2;
+  if (m === 'slli' && f.rd === f.rs1 && f.rd !== 0 && f.imm !== 0) return 0x0002 | imm6(f.imm) | f.rd << 7;
+  if (m === 'srli' && f.rd === f.rs1 && isP(f.rd) && f.imm !== 0) return 0x8001 | imm6(f.imm) | cr(f.rd) << 7;
+  if (m === 'srai' && f.rd === f.rs1 && isP(f.rd) && f.imm !== 0) return 0x8401 | imm6(f.imm) | cr(f.rd) << 7;
+  if (m === 'andi' && f.rd === f.rs1 && isP(f.rd) && fit(f.imm, 6)) return 0x8801 | imm6(f.imm) | cr(f.rd) << 7;
+  if (m === 'jal' && (f.rd === 0 || f.rd === 1) && fit(f.imm, 12)) { const v = f.imm; return (f.rd ? 0x2001 : 0xA001) | ((v>>11)&1)<<12 | ((v>>4)&1)<<11 | ((v>>8)&3)<<9 | ((v>>10)&1)<<8 | ((v>>6)&1)<<7 | ((v>>7)&1)<<6 | ((v>>1)&7)<<3 | ((v>>5)&1)<<2; }
+  if (m === 'jalr' && f.imm === 0 && f.rs1 !== 0) { if (f.rd === 0) return 0x8002 | f.rs1 << 7; if (f.rd === 1) return 0x9002 | f.rs1 << 7; }
+  if ((m === 'beq' || m === 'bne') && f.rs2 === 0 && isP(f.rs1) && fit(f.imm, 9)) { const v = f.imm; return (m==='beq'?0xC001:0xE001) | ((v>>8)&1)<<12 | ((v>>3)&3)<<10 | cr(f.rs1)<<7 | ((v>>6)&3)<<5 | ((v>>1)&3)<<3 | ((v>>5)&1)<<2; }
+  if (m === 'ebreak') return 0x9002;
+  return null;
+}
+// ---------- full program assembler ----------
+// Returns {ok, errors, items:[{addr, word, len, text, src, line, cls}], labels, dataStart}
+function assembleProgram(src, opts={}) {
+  const TEXT = opts.textBase ?? 0x0000, DATA = opts.dataBase ?? 0x2000, compressOn = !!opts.compress;
+  const lines = src.split('\n');
+  const errors = [];
+  // pass 0: tokenize into statements
+  const stmts = [];
+  lines.forEach((raw, li) => {
+    let s = raw.replace(/#.*|\/\/.*/, '').trim();
+    while (s) {
+      const lm = s.match(/^([A-Za-z_.$][\w.$]*)\s*:\s*/);
+      if (lm) { stmts.push({label: lm[1], line: li}); s = s.slice(lm[0].length); continue; }
+      stmts.push({stmt: s, line: li}); s = '';
+    }
+  });
+  const labels = {}; let items = [];
+  let sizes = new Map();
+  for (let iter = 0; iter < 6; iter++) {
+    let pc = TEXT, seg = 'text', dpc = DATA; items = []; let changed = false;
+    const setLabel = (n, v) => { if (labels[n] !== v) { changed = true; labels[n] = v; } };
+    for (const st of stmts) {
+      const cur = seg === 'text' ? pc : dpc;
+      if (st.label) { setLabel(st.label, cur); continue; }
+      const s = st.stmt;
+      if (s[0] === '.') {
+        const [d, ...rest] = s.split(/\s+/); const arg = rest.join(' ');
+        if (d === '.text') seg = 'text'; else if (d === '.data') seg = 'data';
+        else if (d === '.word') { for (const v of splitOperands(arg)) { items.push({addr: dpc, data: true, bytes: 4, value: labels[v] !== undefined ? labels[v] : safeNum(v, labels), line: st.line}); dpc += 4; } }
+        else if (d === '.half') { for (const v of splitOperands(arg)) { items.push({addr: dpc, data: true, bytes: 2, value: safeNum(v, labels), line: st.line}); dpc += 2; } }
+        else if (d === '.byte') { for (const v of splitOperands(arg)) { items.push({addr: dpc, data: true, bytes: 1, value: safeNum(v, labels), line: st.line}); dpc += 1; } }
+        else if (d === '.float') { for (const v of splitOperands(arg)) { const fa = new Float32Array([parseFloat(v)]); items.push({addr: dpc, data: true, bytes: 4, value: new Uint32Array(fa.buffer)[0], line: st.line}); dpc += 4; } }
+        else if (d === '.space') { dpc += safeNum(arg, labels); }
+        else if (d === '.asciz' || d === '.string' || d === '.ascii') { const m = arg.match(/^"(.*)"$/); const str = (m ? m[1] : arg).replace(/\\n/g, '\n').replace(/\\0/g, '\0'); const bytes = [...str].map(c => c.charCodeAt(0)); if (d !== '.ascii') bytes.push(0); for (const b of bytes) { items.push({addr: dpc, data: true, bytes: 1, value: b, line: st.line}); dpc++; } }
+        else if (d === '.align') { const n = 1 << safeNum(arg, labels); if (seg === 'text') pc = (pc + n - 1) & ~(n - 1); else dpc = (dpc + n - 1) & ~(n - 1); }
+        else if (['.globl','.global','.section','.type','.size','.equ','.set'].includes(d)) {}
+        else if (iter === 5) errors.push({line: st.line, msg: `unknown directive ${d}`});
+        continue;
+      }
+      if (seg === 'data' && iter === 5) { errors.push({line: st.line, msg: 'instruction in .data section'}); continue; }
+      let words;
+      try { words = assembleLine(s, iter === 0 ? new Proxy({}, {get: (t, k) => typeof k === 'string' ? 0 : undefined, has: () => true}) : labels, pc); }
+      catch (err) { if (iter === 5) errors.push({line: st.line, msg: err.message}); words = [{word: 0x13, e: BYNAME.addi, f: {}, text: 'addi x0, x0, 0', src: s}]; }
+      for (const w of words) {
+        const d = decode(w.word);
+        let len = 4, half = null;
+        if (compressOn) { const c = compress(d); if (c !== null) { half = c; len = 2; } }
+        items.push({addr: pc, word: w.word, half, len, text: w.text, src: s, line: st.line, cls: d.cls, e: d.e, fields: d.fields, pseudo: words.length > 1 || w.text !== s.replace(/\s+/g,' ')});
+        pc += len;
+      }
+    }
+    if (!changed && iter > 0) break;
+  }
+  function safeNum(v, L) { try { return parseNum(v, L); } catch (e) { errors.push({msg: e.message}); return 0; } }
+  return {ok: errors.length === 0, errors, items, labels, textBase: TEXT, dataBase: DATA};
+}
+
+return {XREG, FREG, CSR, CSRNAME, CLASSES, T, BYNAME, FIELDMAP, bitmap, immOf, placeImm, sext, encode, decode, decode16, compress, format,
+  parseReg, parseNum, assembleLine, assembleProgram, expand, PSEUDO, immRange};
+})();
+
+
+// ===== Simulator: RV32IMF + C + Zicsr with M-mode traps =====
+const SIM = (() => {
+const MEMSIZE = 0x10000; // 64 KiB, addresses 0x0000..0xFFFF
+const f32 = new Float32Array(1), u32 = new Uint32Array(f32.buffer);
+const bitsToF = b => { u32[0] = b >>> 0; return f32[0]; };
+const fToBits = v => { f32[0] = v; return u32[0]; };
+const CANON_NAN = 0x7FC00000;
+
+function create() {
+  return {pc: 0, x: new Int32Array(32), f: new Uint32Array(32), mem: new Uint8Array(MEMSIZE), csr: {}, halted: false, haltMsg: '', instret: 0, cycle: 0, log: []};
+}
+function reset(s, prog) {
+  s.pc = prog.textBase; s.x.fill(0); s.f.fill(0); s.mem.fill(0); s.csr = {}; s.halted = false; s.haltMsg = ''; s.instret = 0; s.cycle = 0; s.log = [];
+  s.x[2] = 0xFFF0; // stack pointer near top of memory
+  s.x[3] = prog.dataBase + 0x800; // global pointer
+  s.csr[0x301] = 0x40001125; // misa: RV32 I M F C U
+  for (const it of prog.items) {
+    if (it.data) { writeMem(s, it.addr, it.value, it.bytes); }
+    else if (it.len === 2) writeMem(s, it.addr, it.half, 2); else writeMem(s, it.addr, it.word, 4);
+  }
+}
+function readMem(s, addr, bytes) { addr >>>= 0; let v = 0; for (let i = bytes - 1; i >= 0; i--) v = (v << 8) | s.mem[(addr + i) & (MEMSIZE - 1)]; return v >>> 0; }
+function writeMem(s, addr, v, bytes) { addr >>>= 0; for (let i = 0; i < bytes; i++) s.mem[(addr + i) & (MEMSIZE - 1)] = (v >>> (8 * i)) & 0xFF; }
+function inRange(addr) { return (addr >>> 0) < MEMSIZE; }
+
+function trap(s, ev, cause, tval) {
+  ev.trap = {cause, tval};
+  s.csr[0x341] = ev.pc >>> 0;      // mepc
+  s.csr[0x342] = cause >>> 0;      // mcause
+  s.csr[0x343] = tval >>> 0;       // mtval
+  const st = s.csr[0x300] | 0;     // mstatus: MPIE <- MIE, MIE <- 0, MPP <- 11
+  s.csr[0x300] = ((st & ~0x1888) | ((st & 8) << 4) | 0x1800) >>> 0;
+  const tvec = (s.csr[0x305] | 0) >>> 0;
+  if (tvec === 0) {
+    s.halted = true;
+    s.haltMsg = cause === 11 ? 'ecall with mtvec = 0: no handler installed, program stops' : cause === 3 ? 'ebreak: program stops' : `trap (mcause ${cause}) with mtvec = 0: program stops`;
+    ev.pcNext = ev.pc; return;
+  }
+  ev.pcNext = (tvec & ~3) >>> 0;
+}
+const CAUSES = {0:'instruction address misaligned', 1:'instruction access fault', 2:'illegal instruction', 3:'breakpoint', 4:'load address misaligned', 5:'load access fault', 6:'store address misaligned', 7:'store access fault', 11:'environment call'};
+
+function fclass(bits) {
+  const sign = bits >>> 31, exp = (bits >>> 23) & 0xFF, man = bits & 0x7FFFFF;
+  if (exp === 0xFF) { if (man === 0) return sign ? 1 << 0 : 1 << 7; return (man & 0x400000) ? 1 << 9 : 1 << 8; }
+  if (exp === 0) { if (man === 0) return sign ? 1 << 3 : 1 << 4; return sign ? 1 << 2 : 1 << 5; }
+  return sign ? 1 << 1 : 1 << 6;
+}
+const isNaNBits = b => ((b >>> 23) & 0xFF) === 0xFF && (b & 0x7FFFFF) !== 0;
+function fresult(v) { return Number.isNaN(v) ? CANON_NAN : fToBits(v); }
+function toInt(v, unsigned) { // fcvt truncation with saturation
+  if (Number.isNaN(v)) return unsigned ? 0xFFFFFFFF : 0x7FFFFFFF;
+  v = Math.trunc(v);
+  if (unsigned) { if (v < 0) return 0; if (v > 0xFFFFFFFF) return 0xFFFFFFFF; return v >>> 0; }
+  if (v < -2147483648) return -2147483648; if (v > 2147483647) return 2147483647; return v | 0;
+}
+
+// Execute one instruction. Returns event describing what happened (for the datapath view).
+function step(s) {
+  if (s.halted) return null;
+  const pc = s.pc >>> 0;
+  const ev = {pc, pcNext: (pc + 4) >>> 0, len: 4, rdWritten: null, frdWritten: null, memAddr: null, memRead: null, memWrite: null, taken: null, trap: null, csr: null};
+  s.cycle++;
+  if (pc & 1) { trap(s, ev, 0, pc); s.pc = ev.pcNext; return ev; }
+  if (!inRange(pc)) { trap(s, ev, 1, pc); s.pc = ev.pcNext; return ev; }
+  const half = readMem(s, pc, 2);
+  let d;
+  if ((half & 3) !== 3) { d = RV.decode16(half); ev.len = 2; ev.pcNext = (pc + 2) >>> 0; ev.raw = half; }
+  else { d = RV.decode(readMem(s, pc, 4)); ev.raw = d.word; }
+  ev.dec = d; ev.text = d.ok ? (d.len === 2 ? d.ctext : d.text) : '(illegal)';
+  if (!d.ok) { trap(s, ev, 2, ev.raw); s.pc = ev.pcNext; return ev; }
+  const e = d.e, f = d.fields, x = s.x;
+  const rs1 = x[f.rs1] | 0, rs2 = x[f.rs2] | 0, imm = f.imm | 0;
+  ev.rs1 = rs1; ev.rs2 = rs2; ev.imm = imm; ev.cls = e.cls; ev.m = e.m;
+  const setRd = v => { if (f.rd !== 0) { x[f.rd] = v | 0; ev.rdWritten = f.rd; } ev.result = v | 0; };
+  const setFrd = b => { s.f[f.rd] = b >>> 0; ev.frdWritten = f.rd; ev.result = b >>> 0; };
+  const load = (addr, bytes, signed) => {
+    addr >>>= 0; ev.memAddr = addr; ev.alu = addr | 0;
+    if (addr % bytes) { trap(s, ev, 4, addr); return null; }
+    if (!inRange(addr + bytes - 1)) { trap(s, ev, 5, addr); return null; }
+    let v = readMem(s, addr, bytes); if (signed && bytes < 4) v = RV.sext(v, bytes * 8); ev.memRead = v | 0; return v | 0;
+  };
+  const store = (addr, v, bytes) => {
+    addr >>>= 0; ev.memAddr = addr; ev.alu = addr | 0;
+    if (addr % bytes) { trap(s, ev, 6, addr); return false; }
+    if (!inRange(addr + bytes - 1)) { trap(s, ev, 7, addr); return false; }
+    writeMem(s, addr, v, bytes); ev.memWrite = v; return true;
+  };
+  const fA = bitsToF(s.f[f.rs1]), fB = bitsToF(s.f[f.rs2]), fC = bitsToF(s.f[f.rs3]);
+  const F = Math.fround;
+  switch (e.m) {
+    case 'lui': setRd(imm); break;
+    case 'auipc': ev.alu = (pc + imm) | 0; setRd(pc + imm); break;
+    case 'jal': ev.target = (pc + imm) >>> 0; ev.taken = true; setRd(ev.pcNext); ev.pcNext = ev.target; break;
+    case 'jalr': ev.target = ((rs1 + imm) & ~1) >>> 0; ev.alu = ev.target | 0; ev.taken = true; setRd(ev.pcNext); ev.pcNext = ev.target; break;
+    case 'beq': case 'bne': case 'blt': case 'bge': case 'bltu': case 'bgeu': {
+      const u1 = rs1 >>> 0, u2 = rs2 >>> 0;
+      const t = {beq: rs1 === rs2, bne: rs1 !== rs2, blt: rs1 < rs2, bge: rs1 >= rs2, bltu: u1 < u2, bgeu: u1 >= u2}[e.m];
+      ev.taken = t; ev.target = (pc + imm) >>> 0; if (t) ev.pcNext = ev.target; break; }
+    case 'lb': { const v = load(rs1 + imm, 1, true); if (v !== null) setRd(v); break; }
+    case 'lh': { const v = load(rs1 + imm, 2, true); if (v !== null) setRd(v); break; }
+    case 'lw': { const v = load(rs1 + imm, 4, true); if (v !== null) setRd(v); break; }
+    case 'lbu': { const v = load(rs1 + imm, 1, false); if (v !== null) setRd(v); break; }
+    case 'lhu': { const v = load(rs1 + imm, 2, false); if (v !== null) setRd(v); break; }
+    case 'sb': store(rs1 + imm, rs2, 1); break;
+    case 'sh': store(rs1 + imm, rs2, 2); break;
+    case 'sw': store(rs1 + imm, rs2, 4); break;
+    case 'addi': ev.alu = rs1 + imm; setRd(rs1 + imm); break;
+    case 'slti': ev.alu = rs1 < imm ? 1 : 0; setRd(ev.alu); break;
+    case 'sltiu': ev.alu = (rs1 >>> 0) < (imm >>> 0) ? 1 : 0; setRd(ev.alu); break;
+    case 'xori': ev.alu = rs1 ^ imm; setRd(ev.alu); break;
+    case 'ori': ev.alu = rs1 | imm; setRd(ev.alu); break;
+    case 'andi': ev.alu = rs1 & imm; setRd(ev.alu); break;
+    case 'slli': ev.alu = rs1 << imm; setRd(ev.alu); break;
+    case 'srli': ev.alu = rs1 >>> imm; setRd(ev.alu); break;
+    case 'srai': ev.alu = rs1 >> imm; setRd(ev.alu); break;
+    case 'add': ev.alu = rs1 + rs2; setRd(ev.alu); break;
+    case 'sub': ev.alu = rs1 - rs2; setRd(ev.alu); break;
+    case 'sll': ev.alu = rs1 << (rs2 & 31); setRd(ev.alu); break;
+    case 'slt': ev.alu = rs1 < rs2 ? 1 : 0; setRd(ev.alu); break;
+    case 'sltu': ev.alu = (rs1 >>> 0) < (rs2 >>> 0) ? 1 : 0; setRd(ev.alu); break;
+    case 'xor': ev.alu = rs1 ^ rs2; setRd(ev.alu); break;
+    case 'srl': ev.alu = rs1 >>> (rs2 & 31); setRd(ev.alu); break;
+    case 'sra': ev.alu = rs1 >> (rs2 & 31); setRd(ev.alu); break;
+    case 'or': ev.alu = rs1 | rs2; setRd(ev.alu); break;
+    case 'and': ev.alu = rs1 & rs2; setRd(ev.alu); break;
+    case 'mul': ev.alu = Math.imul(rs1, rs2); setRd(ev.alu); break;
+    case 'mulh': ev.alu = Number((BigInt(rs1) * BigInt(rs2)) >> 32n) | 0; setRd(ev.alu); break;
+    case 'mulhsu': ev.alu = Number((BigInt(rs1) * BigInt(rs2 >>> 0)) >> 32n) | 0; setRd(ev.alu); break;
+    case 'mulhu': ev.alu = Number((BigInt(rs1 >>> 0) * BigInt(rs2 >>> 0)) >> 32n) | 0; setRd(ev.alu); break;
+    case 'div': ev.alu = rs2 === 0 ? -1 : (rs1 === -2147483648 && rs2 === -1) ? rs1 : Math.trunc(rs1 / rs2); setRd(ev.alu); break;
+    case 'divu': ev.alu = rs2 === 0 ? -1 : Math.trunc((rs1 >>> 0) / (rs2 >>> 0)); setRd(ev.alu); break;
+    case 'rem': ev.alu = rs2 === 0 ? rs1 : (rs1 === -2147483648 && rs2 === -1) ? 0 : rs1 % rs2; setRd(ev.alu); break;
+    case 'remu': ev.alu = rs2 === 0 ? rs1 : (rs1 >>> 0) % (rs2 >>> 0); setRd(ev.alu); break;
+    case 'fence': case 'wfi': break;
+    case 'ecall': trap(s, ev, 11, 0); break;
+    case 'ebreak': trap(s, ev, 3, pc); break;
+    case 'mret': { const st = s.csr[0x300] | 0; s.csr[0x300] = ((st & ~0x1888) | ((st >> 4) & 8) | 0x80) >>> 0; ev.pcNext = (s.csr[0x341] | 0) >>> 0; ev.taken = true; ev.target = ev.pcNext; break; }
+    case 'csrrw': case 'csrrs': case 'csrrc': case 'csrrwi': case 'csrrsi': case 'csrrci': {
+      const c = f.csr, old = (s.csr[c] | 0) >>> 0, src = e.csri ? f.uimm : rs1;
+      if (c === 0xC00) s.csr[c] = s.cycle; if (c === 0xC02) s.csr[c] = s.instret; if (c === 0xC01) s.csr[c] = s.cycle;
+      const cur = (s.csr[c] | 0) >>> 0;
+      let nv = cur;
+      if (e.m === 'csrrw' || e.m === 'csrrwi') nv = src >>> 0;
+      else if (e.m === 'csrrs' || e.m === 'csrrsi') { if (src !== 0) nv = (cur | src) >>> 0; }
+      else { if (src !== 0) nv = (cur & ~src) >>> 0; }
+      const readOnly = (c >> 10) === 3;
+      if (readOnly && (e.m.startsWith('csrrw') || src !== 0)) { trap(s, ev, 2, ev.raw); break; }
+      s.csr[c] = nv; ev.csr = {addr: c, old: cur, nv}; setRd(cur); break; }
+    // ---- F ----
+    case 'flw': { const v = load(rs1 + imm, 4, false); if (v !== null) setFrd(v); break; }
+    case 'fsw': store(rs1 + imm, s.f[f.rs2], 4); break;
+    case 'fadd.s': setFrd(fresult(F(fA + fB))); break;
+    case 'fsub.s': setFrd(fresult(F(fA - fB))); break;
+    case 'fmul.s': setFrd(fresult(F(fA * fB))); break;
+    case 'fdiv.s': setFrd(fresult(F(fA / fB))); break;
+    case 'fsqrt.s': setFrd(fresult(F(Math.sqrt(fA)))); break;
+    case 'fmadd.s': setFrd(fresult(F(fA * fB + fC))); break;
+    case 'fmsub.s': setFrd(fresult(F(fA * fB - fC))); break;
+    case 'fnmsub.s': setFrd(fresult(F(-(fA * fB) + fC))); break;
+    case 'fnmadd.s': setFrd(fresult(F(-(fA * fB) - fC))); break;
+    case 'fsgnj.s': setFrd((s.f[f.rs1] & 0x7FFFFFFF) | (s.f[f.rs2] & 0x80000000)); break;
+    case 'fsgnjn.s': setFrd((s.f[f.rs1] & 0x7FFFFFFF) | (~s.f[f.rs2] & 0x80000000)); break;
+    case 'fsgnjx.s': setFrd(s.f[f.rs1] ^ (s.f[f.rs2] & 0x80000000)); break;
+    case 'fmin.s': setFrd(isNaNBits(s.f[f.rs1]) && isNaNBits(s.f[f.rs2]) ? CANON_NAN : isNaNBits(s.f[f.rs1]) ? s.f[f.rs2] : isNaNBits(s.f[f.rs2]) ? s.f[f.rs1] : fToBits(Math.min(fA, fB))); break;
+    case 'fmax.s': setFrd(isNaNBits(s.f[f.rs1]) && isNaNBits(s.f[f.rs2]) ? CANON_NAN : isNaNBits(s.f[f.rs1]) ? s.f[f.rs2] : isNaNBits(s.f[f.rs2]) ? s.f[f.rs1] : fToBits(Math.max(fA, fB))); break;
+    case 'fcvt.w.s': setRd(toInt(fA, false)); break;
+    case 'fcvt.wu.s': setRd(toInt(fA, true)); break;
+    case 'fmv.x.w': setRd(s.f[f.rs1]); break;
+    case 'fclass.s': setRd(fclass(s.f[f.rs1])); break;
+    case 'feq.s': setRd(fA === fB ? 1 : 0); break;
+    case 'flt.s': setRd(fA < fB ? 1 : 0); break;
+    case 'fle.s': setRd(fA <= fB ? 1 : 0); break;
+    case 'fcvt.s.w': setFrd(fToBits(F(rs1))); break;
+    case 'fcvt.s.wu': setFrd(fToBits(F(rs1 >>> 0))); break;
+    case 'fmv.w.x': setFrd(rs1 >>> 0); break;
+    default: trap(s, ev, 2, ev.raw);
+  }
+  if (!ev.trap) s.instret++;
+  s.pc = ev.pcNext;
+  if (ev.pcNext === pc && !ev.trap && e.cls === 'jump') { s.halted = true; s.haltMsg = 'jump to self: program stops'; }
+  s.log.push(ev); if (s.log.length > 2000) s.log.shift();
+  return ev;
+}
+return {create, reset, step, readMem, writeMem, MEMSIZE, CAUSES, bitsToF, fToBits, fclass};
+})();
+
+
+// ===== Detailed single-cycle RV32I datapath =====
+const DP2 = (() => {
+const W = 1200, H = 640;
+// Wires: id, path, kind (data|ctrl|const), width, name, desc, value label position v:[x,y], sx: slash offset, ns: no slash
+const WIRES = [
+  // fetch
+  {id:'pcnext',   d:'M76,325 L110,325', w:32, name:'PCNext', desc:'Next value loaded into the PC on the clock edge.', v:[44,394], ns:true},
+  {id:'pc',       d:'M156,325 L210,325', w:32, name:'PC', desc:'Current program counter, the byte address of the instruction being executed.', v:[110,364], sx:12},
+  {id:'pc_add4',  d:'M180,325 L180,205 L200,205', w:32, name:'PC', desc:'PC also feeds the +4 adder.', ns:true},
+  {id:'four',     d:'M186,225 L200,225', w:32, name:'4', desc:'Constant 4: every RV32I instruction is 4 bytes.', kind:'const'},
+  {id:'pcplus4',  d:'M250,215 L290,215', w:32, name:'PCPlus4', desc:'PC + 4, the default next instruction. Every instruction computes it.', v:[300,234], ns:true},
+  {id:'pcplus4_res', d:'M290,215 L1080,215 L1080,316 L1130,316', w:32, name:'PCPlus4', desc:'PC + 4 delivered to the result mux as the return address. Used only by jal and jalr.', sx:180},
+  {id:'pcplus4_pcmux', d:'M290,215 L290,45 L22,45 L22,302 L50,302', w:32, name:'PCPlus4', desc:'PC + 4 returned to the PCNext mux, input 00.', ns:true},
+  {id:'instr',    d:'M330,325 L360,325', w:32, name:'Instr', desc:'The 32-bit instruction word read from instruction memory.', v:[366,398], sx:15},
+  {id:'instr_bus', d:'M360,325 L360,280', w:32, name:'Instr', desc:'Instruction bus at the rs1 and rs2 address taps (bits 19:15 and 24:20).', ns:true},
+  {id:'instr_bus_dn', d:'M360,325 L360,332', w:32, name:'Instr', desc:'Instruction bus down to the rd tap (bits 11:7) and on to the extend unit.', ns:true},
+  {id:'instr_bus_up', d:'M360,280 L360,90', w:32, name:'Instr', desc:'Instruction bus continuing up to the control unit, which reads opcode, funct3 and funct7[5].', ns:true},
+  {id:'instr_bus_ext', d:'M360,332 L360,468', w:32, name:'Instr', desc:'Instruction bus continuing down to the extend unit. Carries the immediate fields for I, S, B, U and J instructions.', ns:true},
+  {id:'instr_ctrl', d:'M360,90 L400,90', w:11, name:'op, funct3, funct7[5]', desc:'Bits 6:0 (opcode), 14:12 (funct3) and bit 30 (funct7[5]) go to the control unit.', sx:8},
+  {id:'instr_a1', d:'M360,280 L420,280', w:5, name:'Instr[19:15] = rs1, to R<sub>s1</sub>', desc:'Source register 1 address, straight from fixed bit positions. No decoding needed.', sx:22},
+  {id:'instr_a2', d:'M360,306 L420,306', w:5, name:'Instr[24:20] = rs2, to R<sub>s2</sub>', desc:'Source register 2 address.', sx:22},
+  {id:'instr_a3', d:'M360,332 L420,332', w:5, name:'Instr[11:7] = rd, to R<sub>d</sub>', desc:'Destination register address for the write port.', sx:22},
+  {id:'instr_ext', d:'M360,468 L420,468', w:25, name:'Instr[31:7]', desc:'All bits that can hold immediate fields go to the extend unit.', sx:22},
+  // decode / register read
+  {id:'rd1',      d:'M590,290 L618,290 L618,276 L650,276', w:32, name:'RD1', desc:'Value of register rs1, read combinationally.', v:[594,262], sx:12},
+  {id:'rd2',      d:'M590,350 L630,350', w:32, name:'RD2', desc:'Value of register rs2.', v:[594,372], sx:12},
+  {id:'rd2_b',    d:'M630,350 L630,366 L650,366', w:32, name:'RD2', desc:'RD2 as ALU operand B, selected when ALUSrcB = 0: R-type ALU and branches.', ns:true},
+  {id:'rd2_wd',   d:'M630,350 L630,440 L880,440 L880,370 L900,370', w:32, name:'WriteData', desc:'RD2 also goes to the data memory write port: stores write rs2.', ns:true},
+  {id:'immext',   d:'M590,468 L610,468', w:32, name:'ImmExt', desc:'The 32-bit sign-extended immediate, rebuilt from the scattered bit fields.', v:[594,492], ns:true},
+  {id:'immext_b', d:'M610,468 L610,394 L650,394', w:32, name:'ImmExt', desc:'ImmExt as ALU operand B, selected when ALUSrcB = 1: I-type ALU, loads, stores, jalr, lui, auipc.', ns:true},
+  {id:'immext_tgt', d:'M610,468 L610,518 L730,518', w:32, name:'ImmExt', desc:'ImmExt also feeds the PC target adder for branches and jal.', ns:true},
+  {id:'pc_bus',   d:'M180,325 L180,560 L640,560', w:32, name:'PC', desc:'PC routed down to the target adder (branches, jal) and to the SrcA mux (auipc).', ns:true},
+  {id:'pc_tgt',   d:'M640,560 L700,560 L700,492 L730,492', w:32, name:'PC', desc:'PC into the target adder, for branches and jal.', ns:true},
+  {id:'pc_muxa',  d:'M640,560 L640,318 L650,318', w:32, name:'PC', desc:'PC as ALU operand A, used by auipc.', ns:true},
+  {id:'zero_muxa', d:'M636,297 L650,297', w:32, name:'0', desc:'Constant zero as operand A, used by lui so the ALU passes the immediate through.', kind:'const'},
+  // execute
+  {id:'srca',     d:'M678,297 L730,297', w:32, name:'SrcA', desc:'ALU operand A: RD1, PC or 0.', v:[694,318], ns:true},
+  {id:'srcb',     d:'M678,380 L730,380', w:32, name:'SrcB', desc:'ALU operand B: RD2 or ImmExt.', v:[694,401], ns:true},
+  {id:'aluresult', d:'M830,340 L860,340', w:32, name:'ALUResult', desc:'ALU output: arithmetic result, effective address, or jalr target.', v:[900,486], ns:true},
+  {id:'alu_dmem', d:'M860,340 L860,300 L900,300', w:32, name:'ALUResult', desc:'Effective address for loads and stores.', sx:14},
+  {id:'alu_down', d:'M860,340 L860,470', w:32, name:'ALUResult', desc:'ALU result routed down, toward the result mux and toward the PCNext mux (jalr).', ns:true},
+  {id:'alu_resmux', d:'M860,470 L1100,470 L1100,364 L1130,364', w:32, name:'ALUResult', desc:'ALU result to the result mux, input 00.', ns:true},
+  {id:'alu_pcmux', d:'M860,470 L860,590 L36,590 L36,348 L50,348', w:32, name:'ALUResult', desc:'jalr target: rs1 + imm from the ALU, returned to the PCNext mux, input 10 (bit 0 cleared).', ns:true},
+  {id:'flags',    d:'M780,270 L780,190 L850,190', w:4, name:'Flags', desc:'Zero, Negative, Carry, Overflow from the ALU subtraction. The branch unit decides taken or not from these.', kind:'data', v:[790,278], sx:64},
+  {id:'pctarget', d:'M800,505 L840,505 L840,575 L29,575 L29,325 L50,325', w:32, name:'PCTarget', desc:'PC + ImmExt, the branch or jal target, returned to the PCNext mux, input 01.', v:[770,568], sx:12},
+  {id:'pcsrc',    d:'M900,150 L900,35 L74,35 L74,289', w:2, name:'PCSrc', desc:'Selects PCNext: 00 PC+4, 01 PCTarget, 10 ALUResult.', kind:'ctrl', ns:true},
+  // memory
+  {id:'readdata', d:'M1050,340 L1130,340', w:32, name:'ReadData', desc:'Data read from memory, already width-selected and extended by the load unit.', v:[1056,332], ns:true},
+  // writeback
+  {id:'result',   d:'M1158,340 L1190,340 L1190,605 L395,605 L395,362 L420,362', w:32, name:'Result', desc:'Value written to rd: ALUResult, ReadData or PCPlus4.', v:[800,624], ns:true},
+  // control wires
+  {id:'c_regwrite', d:'M460,125 L460,260', w:1, name:'RegWrite', desc:'1 when the instruction writes a register. Gates the register file write port.', kind:'ctrl'},
+  {id:'c_immsrc', d:'M615,125 L615,425 L470,425 L470,440', w:3, name:'ImmSrc', desc:'Selects which immediate format the extend unit rebuilds: I, S, B, U or J.', kind:'ctrl', ns:true},
+  {id:'c_alusrca', d:'M675,125 L675,259', w:2, name:'ALUSrcA', desc:'00 RD1, 01 PC (auipc), 10 zero (lui).', kind:'ctrl', ns:true},
+  {id:'c_alusrcb', d:'M683,125 L683,341 L664,341 L664,355', w:1, name:'ALUSrcB', desc:'0 RD2, 1 ImmExt.', kind:'ctrl'},
+  {id:'c_alucontrol', d:'M750,125 L750,259', w:4, name:'ALUControl', desc:'Which ALU operation: add, sub, and, or, xor, sll, srl, sra, slt, sltu.', kind:'ctrl', ns:true},
+  {id:'c_memwrite', d:'M760,85 L966,85 L966,260', w:1, name:'MemWrite', desc:'1 for stores. Enables the data memory write port.', kind:'ctrl'},
+  {id:'c_funct3', d:'M760,70 L925,70', w:3, name:'funct3', desc:'funct3 passed through the control unit. It goes to the branch unit (condition) and to the load/store unit (width and sign).', kind:'ctrl', ns:true},
+  {id:'c_funct3_dm', d:'M925,70 L1048,70 L1048,260', w:3, name:'funct3', desc:'funct3 to the load/store unit: byte, halfword or word, and sign or zero extension.', kind:'ctrl', ns:true},
+  {id:'c_funct3_br', d:'M925,70 L925,150', w:3, name:'funct3', desc:'Branch condition code for the branch unit.', kind:'ctrl', ns:true},
+  {id:'c_resultsrc', d:'M760,96 L1156,96 L1156,305', w:2, name:'ResultSrc', desc:'00 ALUResult, 01 ReadData, 10 PCPlus4.', kind:'ctrl', ns:true},
+  {id:'c_branch', d:'M760,118 L870,118 L870,150', w:3, name:'Branch, Jump, JumpReg', desc:'Branch: conditional branch. Jump: jal. JumpReg: jalr. The branch unit reads these every cycle: when all three are 0 it outputs PCSrc = 00 (PC+4) whatever the flags say.', kind:'ctrl', ns:true},
+];
+const BOXES = [
+  {id:'pcmux', mux:true, x:50, y:280, w:26, h:92, name:'PCNext mux', desc:'3:1 mux choosing the next PC.', sel:['00','01','10']},
+  {id:'pc', x:110, y:303, w:46, h:44, t:'PC', clk:true, name:'Program counter', desc:'32-bit register. Updated once per cycle on the rising clock edge.'},
+  {id:'add4', adder:true, x:200, y:190, w:50, h:50, t:'+', name:'PC+4 adder', desc:'Adds 4 to PC. Only bits 31:2 change, so this is an incrementer.'},
+  {id:'imem', x:210, y:280, w:120, h:90, t:'Instruction|memory', ty:300, ports:[['A',210,325,'l'],['RD',330,325,'r']], name:'Instruction memory', desc:'Read-only memory holding the program. Reads combinationally: address in, word out, no clock.'},
+  {id:'ctrl', x:400, y:55, w:360, h:70, t:'', name:'Control unit', desc:'Main decoder (from opcode) and ALU decoder (from funct3, funct7[5] and ALUOp).', sub:[['Main decoder',400,55,200,70],['ALU decoder',600,55,160,70]]},
+  {id:'rf', x:420, y:260, w:170, h:130, t:'Register file|32 x 32 bit', clk:true, ports:[['R<s1>',420,280,'l'],['R<s2>',420,306,'l'],['R<d>',420,332,'l'],['WD3',420,362,'l'],['RD1',590,290,'r'],['RD2',590,350,'r'],['WE3',496,260,'t'],['CLK',530,390,'b']], name:'Register file', desc:'32 registers, two combinational read ports, one write port clocked at the end of the cycle. x0 always reads 0.'},
+  {id:'ext', x:420, y:440, w:170, h:56, t:'Extend', tx:520, ty:486, ports:[['ImmSrc',470,440,'t'],['ImmExt',590,452,'r']], name:'Extend unit', desc:'Rebuilds and sign-extends the immediate for the I, S, B, U or J format.'},
+  {id:'muxa', mux:true, x:650, y:250, w:28, h:92, name:'SrcA mux', desc:'Selects the ALU A operand: RD1, PC, or 0.', sel:['00','10','01']},
+  {id:'muxb', mux:true, x:650, y:350, w:28, h:60, name:'SrcB mux', desc:'Selects the ALU B operand: RD2 or ImmExt.', sel:['0','1']},
+  {id:'alu', poly:'730,250 830,290 830,390 730,430 730,356 748,340 730,324', t:'ALU', tx:790, ty:346, x:730, y:250, w:100, h:180, name:'ALU', desc:'32-bit arithmetic logic unit. Also produces the Zero, Negative, Carry and Overflow flags.'},
+  {id:'branch', x:850, y:150, w:100, h:55, t:'Branch|unit', name:'Branch unit', desc:'Combines funct3 with the ALU flags and the Branch, Jump and JumpReg controls into PCSrc.'},
+  {id:'tgt', adder:true, x:730, y:480, w:70, h:50, t:'+', name:'PC target adder', desc:'Adds the immediate to the PC for branches and jal.'},
+  {id:'dmem', x:900, y:260, w:150, h:150, t:'Data memory', clk:true, ports:[['A',900,300,'l'],['WD',900,370,'l'],['RD',1050,340,'r'],['WE',950,260,'t'],['funct3',1016,260,'t']], name:'Data memory', desc:'Byte-addressable RAM with a load/store unit that handles byte, halfword and word accesses.', sub:[['Load / store unit',905,380,140,25]]},
+  {id:'resmux', mux:true, x:1130, y:296, w:28, h:92, name:'Result mux', desc:'Selects what is written to rd: ALUResult, ReadData or PCPlus4.', sel:['10','01','00']},
+];
+// build order for the "build it up" tab
+const BUILD = [
+  {name:'Program counter', short:'PC', boxes:['pc'], wires:['pc'], t:'Start with the program counter: a 32-bit register that holds the address of the current instruction. It changes only on the clock edge, so everything else in the cycle can settle from it.'},
+  {name:'Instruction memory', short:'Instr memory', boxes:['imem'], wires:['instr'], t:'The PC addresses instruction memory, which returns the 32-bit instruction word. The read is combinational: no clock, address in, word out.'},
+  {name:'PC+4 adder and PCNext mux', short:'PC+4, PCNext', boxes:['add4','pcmux'], wires:['pc_add4','four','pcplus4','pcplus4_pcmux','pcnext'], t:'An adder computes PC + 4 while the instruction is being read. For now the PCNext mux just passes it back: straight-line code.'},
+  {name:'Register file', short:'Register file', boxes:['rf'], wires:['instr_bus','instr_bus_dn','instr_a1','instr_a2','instr_a3','rd1','rd2'], t:'The register file. Bits 19:15 and 24:20 of the instruction are wired directly to the two read address ports, and bits 11:7 to the write address. Because these fields never move, no decoding sits between the instruction and the register file.'},
+  {name:'Extend unit', short:'Extend', boxes:['ext'], wires:['instr_bus_ext','instr_ext','immext'], t:'The extend unit rebuilds the immediate. Different formats scatter the bits differently, so this block is a set of muxes plus sign extension from bit 31.'},
+  {name:'ALU and operand muxes', short:'ALU, muxes', boxes:['muxa','muxb','alu'], wires:['srca','srcb','aluresult','zero_muxa','immext_b','rd2_b'], t:'The ALU takes two 32-bit operands. Muxes in front of it choose RD1, PC or 0 for A, and RD2 or the immediate for B. This one ALU handles arithmetic, address calculation, and branch comparison.'},
+  {name:'Result mux and writeback', short:'Result mux', boxes:['resmux'], wires:['alu_down','alu_resmux','result','pcplus4_res'], t:'The result travels back to the register file write port through the result mux. The mux also has a PC+4 input, used only by jal and jalr to save the return address. R-type and I-type ALU instructions are complete at this point.'},
+  {name:'Data memory', short:'Data memory', boxes:['dmem'], wires:['alu_dmem','readdata','rd2_wd'], t:'Data memory is addressed by the ALU result (base + offset). Loads bring ReadData into the result mux. Stores take RD2 as the write data. A load/store unit inside handles byte and halfword sizes.'},
+  {name:'PC target adder', short:'Target adder', boxes:['tgt'], wires:['pc_bus','pc_tgt','immext_tgt','pctarget'], t:'A second adder computes PC + ImmExt, the target of a branch or jal. It runs in parallel with the ALU, so the target is ready by the time the condition is known.'},
+  {name:'Branch unit', short:'Branch unit', boxes:['branch'], wires:['flags','pcsrc','alu_pcmux'], t:'The branch unit reads the ALU flags from the subtraction rs1 - rs2 and decides whether the branch is taken. The condition code (funct3) and the Branch, Jump and JumpReg signals arrive with the control unit in the next step. It drives PCSrc: PC+4, the target, or the ALU result for jalr.'},
+  {name:'Control unit', short:'Control', boxes:['ctrl'], wires:['instr_bus_up','instr_ctrl','pc_muxa','c_regwrite','c_immsrc','c_alusrca','c_alusrcb','c_alucontrol','c_memwrite','c_funct3','c_funct3_dm','c_funct3_br','c_resultsrc','c_branch'], t:'Finally the control unit. From opcode, funct3 and funct7[5] it produces every control signal. The main decoder looks only at the opcode. The ALU decoder adds funct3 and funct7[5] to choose the ALU operation. auipc adds a PC path into the SrcA mux.'},
+];
+const HOVER = {on: true, svgs: []};
+const STAGES = ['Fetch','Decode','Execute','Memory','Writeback'];
+const LBLMAP = {PC:'pc',PCPlus4:'pcplus4',Instr:'instr',SrcA:'srca',SrcB:'srcb',ALUResult:'aluresult',PCTarget:'pctarget',ReadData:'readdata',Result:'result',Flags:'flags',PCSrc:'pcsrc',RegWrite:'c_regwrite',ImmSrc:'c_immsrc',ALUSrcA:'c_alusrca',ALUSrcB:'c_alusrcb',ALUControl:'c_alucontrol',MemWrite:'c_memwrite',funct3:'c_funct3',ResultSrc:'c_resultsrc','Br/Jump/JR':'c_branch',WriteData:'rd2_wd','4':'four','0':'zero_muxa'};
+const PORTINFO = {'R<s1>':'Source register 1 address (rs1 = Instr[19:15]), 5 bits. Selects what RD1 reads.', 'R<s2>':'Source register 2 address (rs2 = Instr[24:20]), 5 bits. Selects what RD2 reads.', 'R<d>':'Destination register address (rd = Instr[11:7]), 5 bits. Selects which register the write port updates.', WD3:'Write data, 32 bits, written at the clock edge when WE3 = 1.', RD1:'Read data 1: contents of register rs1.', RD2:'Read data 2: contents of register rs2.', WE3:'Write enable (RegWrite).', CLK:'Clock. This block holds state and updates on the rising edge.', A:'Address input.', RD:'Read data output.', WD:'Write data input.', WE:'Write enable (MemWrite).', funct3:'Width and sign for loads and stores: lb lh lw lbu lhu sb sh sw.', ImmSrc:'Immediate format select.', ImmExt:'Sign-extended 32-bit immediate.'};
+
+function bboxOf(boxIds, wireIds, pad = 30) {
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  const add = (x, y) => { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); };
+  for (const id of boxIds) { const b = BOXES.find(b => b.id === id); if (!b) continue; if (b.poly) b.poly.split(' ').forEach(p => { const [x, y] = p.split(',').map(Number); add(x, y); }); else { add(b.x, b.y); add(b.x + b.w, b.y + b.h); } }
+  for (const id of wireIds) { const w = WIRES.find(w => w.id === id); if (!w) continue; const pts = [...w.d.matchAll(/([\d.]+),([\d.]+)/g)].map(m => [+m[1], +m[2]]); const xs = pts.map(p => p[0]), ys = pts.map(p => p[1]); if (Math.max(...xs) - Math.min(...xs) > 0.55 * W || Math.max(...ys) - Math.min(...ys) > 0.6 * H) continue; pts.forEach(([x, y]) => add(x, y)); }
+  if (x0 > x1) return null;
+  return {x: x0 - pad, y: y0 - pad, w: x1 - x0 + 2 * pad, h: y1 - y0 + 2 * pad};
+}
+function render(container, opts = {}) {
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.setAttribute('class', 'dp2' + (opts.overview ? ' overview' : ''));
+  let h = '';
+  // wires first
+  for (const w of WIRES) {
+    h += `<path id="w_${w.id}" class="wire ${w.kind || 'data'}" d="${w.d}" data-tip="${w.name}" data-w="${w.id}"/><path class="hit" d="${w.d}" data-w="${w.id}"/>`;
+    // width slash near the start of the path
+    const m = w.d.match(/M([\d.]+),([\d.]+) L([\d.]+),([\d.]+)/);
+    if (m && !w.ns && w.w > 1 && Math.abs(+m[3] - +m[1]) + Math.abs(+m[4] - +m[2]) >= 26) {
+      const x1 = +m[1], y1 = +m[2], x2 = +m[3], y2 = +m[4];
+      const off = w.sx || 12;
+      const horiz = y1 === y2; const px = horiz ? x1 + Math.sign(x2 - x1) * off : x1, py = horiz ? y1 : y1 + Math.sign(y2 - y1) * off;
+      h += `<g class="slash" data-w="${w.id}"><line x1="${px - 4}" y1="${py + (horiz ? 5 : 4)}" x2="${px + 4}" y2="${py - (horiz ? 5 : 4)}"/><text x="${px + (horiz ? 0 : 8)}" y="${py + (horiz ? -7 : 4)}" text-anchor="${horiz ? 'middle' : 'start'}">${w.w}</text></g>`;
+    }
+  }
+  // boxes
+  for (const b of BOXES) {
+    if (b.poly) { h += `<polygon id="b_${b.id}" class="box" points="${b.poly}" data-tip="${b.name}" data-b="${b.id}"/><text class="boxlbl" data-b="${b.id}" x="${b.tx}" y="${b.ty}" text-anchor="middle">${b.t}</text>`; continue; }
+    if (b.mux) { h += `<polygon id="b_${b.id}" class="box mux" points="${b.x},${b.y} ${b.x + b.w},${b.y + 10} ${b.x + b.w},${b.y + b.h - 10} ${b.x},${b.y + b.h}" data-tip="${b.name}" data-b="${b.id}"/>`; b.sel.forEach((s, i) => { h += `<text class="sel" data-b="${b.id}" x="${b.x + 2}" y="${b.y + 14 + i * ((b.h - 16) / b.sel.length) + 4}">${s}</text>`; }); continue; }
+    if (b.adder) { h += `<polygon id="b_${b.id}" class="box" points="${b.x},${b.y} ${b.x + b.w},${b.y + b.h * 0.3} ${b.x + b.w},${b.y + b.h * 0.7} ${b.x},${b.y + b.h} ${b.x},${b.y + b.h * 0.62} ${b.x + 8},${b.y + b.h / 2} ${b.x},${b.y + b.h * 0.38}" data-tip="${b.name}" data-b="${b.id}"/><text class="boxlbl" data-b="${b.id}" x="${b.x + b.w * 0.55}" y="${b.y + b.h / 2 + 6}" text-anchor="middle">+</text>`; continue; }
+    h += `<rect id="b_${b.id}" class="box" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="3" data-tip="${b.name}" data-b="${b.id}"/>`;
+    if (b.sub) for (const [t, x, y, w, hh] of b.sub) h += (b.id === 'ctrl' ? '' : `<rect class="subbox" data-b="${b.id}" x="${x + 4}" y="${y + 4}" width="${w - 8}" height="${hh - 8}" rx="2"/>`) + `<text class="boxlbl sub" data-b="${b.id}" x="${x + w / 2}" y="${y + hh / 2 + 4}" text-anchor="middle">${t}</text>`;
+    if (b.t) { const lines = b.t.split('|'); lines.forEach((l, i) => h += `<text class="boxlbl${i ? ' sub' : ''}" data-b="${b.id}" x="${b.tx || b.x + b.w / 2}" y="${(b.ty || b.y + (b.id === 'dmem' ? 32 : b.h / 2)) + (i - (lines.length - 1) / 2) * 19 + 5}" text-anchor="middle">${l}</text>`); }
+    const subs = t => t.replace(/<(\w+)>/g, '<tspan class="subs" baseline-shift="sub">$1</tspan>');
+    if (b.ports) for (const [t, x, y, side] of b.ports) h += `<text class="port" data-b="${b.id}" data-port="${t}" x="${x + (side === 'l' ? 4 : side === 'r' ? -4 : 0)}" y="${side === 't' ? y + 16 : side === 'b' ? y - 4 : y + 5}" text-anchor="${side === 'l' ? 'start' : side === 'r' ? 'end' : 'middle'}">${subs(t)}</text>`;
+    if (b.clk) h += `<polyline class="clkmark" points="${b.x + b.w / 2 - 5},${b.y + b.h} ${b.x + b.w / 2},${b.y + b.h - 6} ${b.x + b.w / 2 + 5},${b.y + b.h}"/>` + (b.id === 'rf' ? '' : '');
+  }
+  // wire name labels
+  const NL = [[186,345,'PC'],[366,209,'PCPlus4'],[356,392,'Instr','end'],[688,291,'SrcA'],[688,374,'SrcB'],[900,464,'ALUResult'],[834,548,'PCTarget','end'],[1052,356,'ReadData'],[700,623,'Result'],[800,184,'Flags'],[120,29,'PCSrc'],
+    [453,207,'RegWrite','start',true],[608,207,'ImmSrc','start',true],[664,207,'ALUSrcA','start',true],[702,207,'ALUSrcB','start',true],[786,236,'ALUControl'],[970,140,'MemWrite'],[1046,64,'funct3'],[1150,90,'ResultSrc','end'],[776,112,'Br/Jump/JR'],[700,456,'WriteData'],[176,229,'4','end'],[634,304,'0','end']];
+  for (const [x, y, t, anc, rot] of NL) h += `<text text-anchor="${anc || 'start'}"${rot ? ` transform="rotate(-90 ${x} ${y})"` : ''} data-w="${LBLMAP[t] || ''}" class="wlbl${['PCSrc','RegWrite','ImmSrc','ALUSrcA','ALUSrcB','ALUControl','MemWrite','funct3','ResultSrc','Branch, Jump, JumpReg'].includes(t) ? ' ctrl' : ''}" x="${x}" y="${y}">${t}</text>`;
+  h += `<g id="values"></g>`;
+  if (opts.overview) h += `<rect id="viewrect" class="viewrect" x="0" y="0" width="${W}" height="${H}"/>`;
+  svg.innerHTML = h;
+  container.appendChild(svg);
+  let cur = {x: 0, y: 0, w: W, h: H}, anim = null;
+  if (!opts.overview) {
+    let tip = document.getElementById('dptip');
+    HOVER.svgs.push(svg);
+    if (!tip) { tip = document.createElement('div'); tip.id = 'dptip'; document.body.appendChild(tip); }
+    let hov = null;
+    const clearHov = () => { if (hov) { hov.classList.remove('hov'); hov = null; } tip.style.display = 'none'; };
+    svg.addEventListener('mousemove', e => {
+      if (!HOVER.on) { clearHov(); return; }
+      const t = e.target.closest('[data-w], [data-b]'); if (!t) { clearHov(); return; }
+      let html = '', el = null;
+      if (t.dataset.w) { const w = WIRES.find(x => x.id === t.dataset.w); if (!w) { clearHov(); return; } el = svg.querySelector('#w_' + w.id); html = `<b>${w.name}</b> <span class="tw">${w.w} bit${w.w > 1 ? 's' : ''}${w.kind === 'ctrl' ? ', control' : ''}</span><div>${w.desc}</div>`; }
+      else { const b = BOXES.find(x => x.id === t.dataset.b); if (!b) { clearHov(); return; } el = svg.querySelector('#b_' + b.id); const p = t.dataset.port; html = p ? `<b>${b.name}: port ${p.replace(/<(\w+)>/g, '<sub>$1</sub>')}</b><div>${PORTINFO[p] || ''}</div>` : `<b>${b.name}</b><div>${b.desc}</div>`; }
+      if (hov !== el) { if (hov) hov.classList.remove('hov'); hov = el; hov.classList.add('hov'); }
+      tip.innerHTML = html; tip.style.display = 'block';
+      const tw = tip.offsetWidth, th = tip.offsetHeight; let x = e.clientX + 18, y = e.clientY + 18;
+      if (x + tw > window.innerWidth - 8) x = e.clientX - tw - 18; if (y + th > window.innerHeight - 8) y = e.clientY - th - 18;
+      tip.style.left = x + 'px'; tip.style.top = y + 'px';
+    });
+    svg.addEventListener('mouseleave', clearHov);
+  }
+  const valOff = {};   // user drag offsets per wire id
+  function valHtml(w, txt) {
+    const off = valOff[w.id] || [0, 0]; const x = w.v[0] + off[0], y = w.v[1] + off[1]; const bw = txt.length * 8.4 + 8, bh = 19, by = y - 14;
+    const path = svg.querySelector('#w_' + w.id); let best = null;
+    if (path && path.getTotalLength) { const L = path.getTotalLength(); const cx = x + bw / 2, cy = by + bh / 2; for (let t = 0; t <= L; t += 4) { const p = path.getPointAtLength(t); const dd = (p.x - cx) ** 2 + (p.y - cy) ** 2; if (!best || dd < best.d) best = {d: dd, x: p.x, y: p.y}; } }
+    let lead = '';
+    if (best) { const cx = x + bw / 2, cy = by + bh / 2; const dx = best.x - cx, dy = best.y - cy; let sx, sy; if (Math.abs(dx) * bh > Math.abs(dy) * bw) { sx = dx > 0 ? x + bw : x; sy = cy; } else { sx = cx; sy = dy > 0 ? by + bh : by; } lead = `<line class="lead" x1="${sx}" y1="${sy}" x2="${best.x}" y2="${best.y}"/><circle class="leaddot" cx="${best.x}" cy="${best.y}" r="2.6"/>`; }
+    return `<g class="val" data-val="${w.id}">${lead}<rect x="${x}" y="${by}" width="${bw}" height="${bh}" rx="3"/><text x="${x + 4}" y="${y + 1}">${txt}</text></g>`;
+  }
+  if (!opts.overview) {
+    let vdrag = null;
+    svg.addEventListener('pointerdown', e => { const g = e.target.closest('.val'); if (!g) return; e.stopImmediatePropagation(); const id = g.dataset.val; const [mx, my] = api.toSvg(e.clientX, e.clientY); vdrag = {id, mx, my, off: (valOff[id] || [0, 0]).slice()}; svg.setPointerCapture(e.pointerId); }, true);
+    svg.addEventListener('pointermove', e => { if (!vdrag) return; e.stopImmediatePropagation(); const [mx, my] = api.toSvg(e.clientX, e.clientY); valOff[vdrag.id] = [vdrag.off[0] + mx - vdrag.mx, vdrag.off[1] + my - vdrag.my]; const w = WIRES.find(x => x.id === vdrag.id); const g = svg.querySelector(`.val[data-val="${vdrag.id}"]`); if (g && api._vals) g.outerHTML = valHtml(w, api._vals[vdrag.id]); }, true);
+    const endV = e => { if (vdrag) { e.stopImmediatePropagation(); vdrag = null; } };
+    svg.addEventListener('pointerup', endV, true); svg.addEventListener('pointercancel', endV, true);
+  }
+  const api = {
+    svg,
+    resetValues() { for (const k in valOff) delete valOff[k]; },
+    // zoom the viewBox to a region (null = whole), matching the container aspect ratio, animated
+    zoomTo(bb, animate = true) {
+      let t = bb ? {...bb} : {x: 0, y: 0, w: W, h: H};
+      const r = container.getBoundingClientRect(); const asp = r.width && r.height ? r.width / r.height : W / H;
+      if (bb) { const minW = 300; if (t.w < minW) { t.x -= (minW - t.w) / 2; t.w = minW; } if (t.w / t.h > asp) { const nh = t.w / asp; t.y -= (nh - t.h) / 2; t.h = nh; } else { const nw = t.h * asp; t.x -= (nw - t.w) / 2; t.w = nw; } }
+      else { if (W / H > asp) { t.h = W / asp; t.y = (H - t.h) / 2; } else { t.w = H * asp; t.x = (W - t.w) / 2; } }
+      const from = {...cur}; if (anim) cancelAnimationFrame(anim);
+      if (!animate) { cur = t; svg.setAttribute('viewBox', `${t.x} ${t.y} ${t.w} ${t.h}`); api.onView && api.onView(t); return; }
+      const t0 = performance.now(), dur = 550;
+      const step = now => { const k = Math.min(1, (now - t0) / dur), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2; cur = {x: from.x + (t.x - from.x) * e, y: from.y + (t.y - from.y) * e, w: from.w + (t.w - from.w) * e, h: from.h + (t.h - from.h) * e}; svg.setAttribute('viewBox', `${cur.x} ${cur.y} ${cur.w} ${cur.h}`); api.onView && api.onView(cur); if (k < 1) anim = requestAnimationFrame(step); };
+      anim = requestAnimationFrame(step);
+    },
+    getView() { return {...cur}; },
+    setView(t) { cur = t; svg.setAttribute('viewBox', `${t.x} ${t.y} ${t.w} ${t.h}`); api.onView && api.onView(t); },
+    pan(dx, dy) { const t = {...cur, x: cur.x + dx, y: cur.y + dy}; api.setView(t); },
+    zoomBy(f, cx, cy) { const t = {...cur}; if (cx === undefined) { cx = t.x + t.w / 2; cy = t.y + t.h / 2; } const nw = Math.max(200, Math.min(W * 1.4, t.w * f)); const k = nw / t.w; api.setView({x: cx - (cx - t.x) * k, y: cy - (cy - t.y) * k, w: nw, h: t.h * k}); },
+    // pointer position (client) to svg user units
+    toSvg(clientX, clientY) { const r = svg.getBoundingClientRect(); const vb = svg.viewBox.baseVal; const sc = Math.min(r.width / vb.width, r.height / vb.height); const ox = (r.width - vb.width * sc) / 2, oy = (r.height - vb.height * sc) / 2; return [vb.x + (clientX - r.left - ox) / sc, vb.y + (clientY - r.top - oy) / sc, sc]; },
+    setViewRect(v) { const r = svg.querySelector('#viewrect'); if (r) { r.setAttribute('x', v.x); r.setAttribute('y', v.y); r.setAttribute('width', v.w); r.setAttribute('height', v.h); } },
+    showAll() { svg.querySelectorAll('.hidden, .on, .dim').forEach(e => e.classList.remove('hidden', 'on', 'dim')); svg.querySelector('#values').innerHTML = ''; },
+    // build-up: show only the given boxes/wires
+    buildTo(step) {
+      const vb = new Set(), vw = new Set();
+      for (let i = 0; i <= step && i < BUILD.length; i++) { BUILD[i].boxes.forEach(b => vb.add(b)); BUILD[i].wires.forEach(w => vw.add(w)); }
+      for (const b of BOXES) svg.querySelector('#b_' + b.id).classList.toggle('hidden', !vb.has(b.id));
+      for (const w of WIRES) { const el = svg.querySelector('#w_' + w.id); el.classList.toggle('hidden', !vw.has(w.id)); el.classList.toggle('on', step < BUILD.length && BUILD[step].wires.includes(w.id)); }
+      for (const b of BOXES) svg.querySelector('#b_' + b.id).classList.toggle('on', step < BUILD.length && BUILD[step].boxes.includes(b.id));
+      svg.querySelectorAll('.sel, .port, .boxlbl, .wlbl, .slash, .clkmark, .subbox').forEach(e => e.classList.add('hidden'));
+      for (const b of BOXES) if (vb.has(b.id)) svg.querySelectorAll(`#b_${b.id} ~ *`).forEach(() => {});
+      // labels: show those whose owning box/wire is visible (approximate by position inside visible boxes or near visible wires)
+      svg.querySelectorAll('.port, .boxlbl, .sel, .clkmark, .subbox').forEach(e => { const x = +e.getAttribute('x') || (e.points ? e.points[0].x : 0), y = +e.getAttribute('y') || (e.points ? e.points[0].y : 0); for (const b of BOXES) { if (!vb.has(b.id)) continue; const bx = b.x, by = b.y, bw = b.w, bh = b.h; if (x >= bx - 2 && x <= bx + bw + 2 && y >= by - 2 && y <= by + bh + 2) { e.classList.remove('hidden'); break; } } });
+      svg.querySelectorAll('.wlbl').forEach(e => { const t = e.textContent; const map = {PC:'pc',PCPlus4:'pcplus4',Instr:'instr',RD1:'rd1',RD2:'rd2',ImmExt:'immext',SrcA:'srca',SrcB:'srcb',ALUResult:'aluresult',PCTarget:'pctarget',ReadData:'readdata',Result:'result',Flags:'flags',PCSrc:'pcsrc',RegWrite:'c_regwrite',ImmSrc:'c_immsrc',ALUSrcA:'c_alusrca',ALUSrcB:'c_alusrcb',ALUControl:'c_alucontrol',MemWrite:'c_memwrite',funct3:'c_funct3',ResultSrc:'c_resultsrc','Branch, Jump, JumpReg':'c_branch',WriteData:'rd2_wd','4':'four','0':'zero_muxa'}; if (vw.has(map[t])) e.classList.remove('hidden'); });
+      svg.querySelectorAll('.slash').forEach(e => { if (vw.has(e.dataset.w)) e.classList.remove('hidden'); });
+    },
+    // highlight a set of wires and boxes; others dimmed
+    highlight(wires, boxes, values) {
+      api.showAll();
+      const ws = new Set(wires), bs = new Set(boxes);
+      for (const w of WIRES) { const el = svg.querySelector('#w_' + w.id); el.classList.toggle('on', ws.has(w.id)); el.classList.toggle('dim', !ws.has(w.id)); }
+      for (const b of BOXES) { const el = svg.querySelector('#b_' + b.id); el.classList.toggle('on', bs.has(b.id)); el.classList.toggle('dim', !bs.has(b.id)); }
+      const vg = svg.querySelector('#values'); vg.innerHTML = '';
+      if (values) { let vh = ''; api._vals = values; api._ws = ws;
+        for (const w of WIRES) { if (!ws.has(w.id) || !w.v || values[w.id] === undefined) continue; vh += valHtml(w, values[w.id]); }
+        vg.innerHTML = vh; }
+    },
+    setCtrl(on) { svg.classList.toggle('noctrl', !on); },
+    wireInfo: id => WIRES.find(w => w.id === id), boxInfo: id => BOXES.find(b => b.id === id),
+  };
+  return api;
+}
+// Mouse control of the magnifier: drag in the main view pans, wheel zooms, drag the rectangle in the overview moves it, click in the overview centers there
+function attachMagnifier(dp, ov, onManual) {
+  let drag = null;
+  dp.svg.addEventListener('pointerdown', e => { drag = {x: e.clientX, y: e.clientY, view: dp.getView()}; dp.svg.setPointerCapture(e.pointerId); });
+  dp.svg.addEventListener('pointermove', e => { if (!drag) return; const [, , sc] = dp.toSvg(e.clientX, e.clientY); dp.setView({...drag.view, x: drag.view.x - (e.clientX - drag.x) / sc, y: drag.view.y - (e.clientY - drag.y) / sc}); onManual && onManual(); });
+  dp.svg.addEventListener('pointerup', () => { drag = null; }); dp.svg.addEventListener('pointercancel', () => { drag = null; });
+  dp.svg.addEventListener('wheel', e => { e.preventDefault(); const [cx, cy] = dp.toSvg(e.clientX, e.clientY); dp.zoomBy(e.deltaY > 0 ? 1.15 : 1 / 1.15, cx, cy); onManual && onManual(); }, {passive: false});
+  let odrag = null;
+  ov.svg.addEventListener('pointerdown', e => { const [x, y] = ov.toSvg(e.clientX, e.clientY); const v = dp.getView(); if (x >= v.x && x <= v.x + v.w && y >= v.y && y <= v.y + v.h) odrag = {x, y, view: v}; else { dp.setView({...v, x: x - v.w / 2, y: y - v.h / 2}); onManual && onManual(); } ov.svg.setPointerCapture(e.pointerId); });
+  ov.svg.addEventListener('pointermove', e => { if (!odrag) return; const [x, y] = ov.toSvg(e.clientX, e.clientY); dp.setView({...odrag.view, x: odrag.view.x + (x - odrag.x), y: odrag.view.y + (y - odrag.y)}); onManual && onManual(); });
+  ov.svg.addEventListener('pointerup', () => { odrag = null; }); ov.svg.addEventListener('pointercancel', () => { odrag = null; });
+  ov.svg.style.cursor = 'crosshair'; dp.svg.style.cursor = 'grab';
+}
+return {render, bboxOf, attachMagnifier, HOVER, WIRES, BOXES, BUILD, STAGES, W, H};
+})();
+
+// ===== Instruction execution on the detailed datapath =====
+const IX = (() => {
+  const REQUIRED = ['add','sub','xor','or','and','sll','srl','sra','slt','sltu','addi','xori','ori','andi','slli','srli','srai','slti','sltiu','jalr','lb','lh','lw','lbu','lhu','sb','sh','sw','beq','bne','blt','bge','bltu','bgeu','jal','lui','auipc'];
+  const GROUPS = [['R-type ALU', ['add','sub','xor','or','and','sll','srl','sra','slt','sltu']], ['I-type ALU', ['addi','xori','ori','andi','slli','srli','srai','slti','sltiu']], ['Loads', ['lb','lh','lw','lbu','lhu']], ['Stores', ['sb','sh','sw']], ['Branches', ['beq','bne','blt','bge','bltu','bgeu']], ['Jumps', ['jal','jalr']], ['Upper', ['lui','auipc']]];
+  const SAMPLES = {add:'add s0, s1, s2', sub:'sub s0, s1, s2', xor:'xor t0, t1, t2', or:'or t0, t1, t2', and:'and t0, t1, t2', sll:'sll t0, s0, s1', srl:'srl t0, s0, s1', sra:'sra t0, s0, s1', slt:'slt t2, s0, t0', sltu:'sltu t2, s0, t0',
+    addi:'addi s0, s1, -372', xori:'xori a0, a0, -1', ori:'ori t0, t0, 0xFF', andi:'andi t0, t0, 0xFF', slli:'slli t0, s1, 2', srli:'srli t0, t1, 4', srai:'srai t0, t1, 5', slti:'slti t0, s0, 10', sltiu:'sltiu t0, s0, 1', jalr:'jalr zero, 0(ra)',
+    lb:'lb t0, 0(a0)', lh:'lh t0, 2(a0)', lw:'lw t1, 4(s0)', lbu:'lbu t0, 0(a0)', lhu:'lhu t0, 2(a0)', sb:'sb t0, 3(a0)', sh:'sh t0, 2(a0)', sw:'sw t1, -8(sp)',
+    beq:'beq s0, s1, 12', bne:'bne s3, s4, 8', blt:'blt a0, a1, -16', bge:'bge s1, t2, 20', bltu:'bltu a0, a1, 12', bgeu:'bgeu a0, a1, -8', jal:'jal ra, 2048', lui:'lui s0, 0xFEDC8', auipc:'auipc a0, 0x2'};
+  const ALUOP = {add:'add',sub:'sub',xor:'xor',or:'or',and:'and',sll:'sll',srl:'srl',sra:'sra',slt:'slt',sltu:'sltu',addi:'add',xori:'xor',ori:'or',andi:'and',slli:'sll',srli:'srl',srai:'sra',slti:'slt',sltiu:'sltu'};
+  const ALUCODE = {add:'0000',sub:'0001',and:'0010',or:'0011',xor:'0100',sll:'0101',srl:'0110',sra:'0111',slt:'1000',sltu:'1001'};
+  const hx = v => '0x' + ((v >>> 0).toString(16)).padStart(8, '0');
+  const sh = v => (v >>> 0).toString(16);
+
+  // run one instruction on a prepared machine, return event plus before-state
+  function run(asm) {
+    const p = RV.assembleProgram(asm + '\n', {textBase: 0x100});
+    if (!p.ok) throw new Error(p.errors[0].msg);
+    const s = SIM.create(); SIM.reset(s, p);
+    for (let i = 1; i < 32; i++) s.x[i] = i * 3 + 4;
+    s.x[2] = 0xFFF0; s.x[8] = 0x2000; s.x[10] = 0x2000; s.x[1] = 0x180; s.x[9] = 12; s.x[18] = 5; s.x[6] = 0x1C0; s.x[7] = 3; s.x[11] = 9; s.x[19] = 7; s.x[20] = 7;
+    const d = RV.decode(p.items[0].word); const f = d.fields;
+    if (['beq','bge','bgeu'].includes(d.e.m)) s.x[f.rs2] = s.x[f.rs1];
+    if (d.e.m === 'blt' || d.e.m === 'bltu') { s.x[f.rs1] = 4; s.x[f.rs2] = 9; }
+    for (let i = 0; i < 16; i++) SIM.writeMem(s, 0x2000 + i * 4, (i + 1) * 10 + 0x11223300, 4);
+    SIM.writeMem(s, 0xFFF0 - 8, 0x180, 4); SIM.writeMem(s, 0xFFF0 - 4, 77, 4);
+    const before = {rs1: s.x[f.rs1] | 0, rs2: s.x[f.rs2] | 0};
+    const ev = SIM.step(s);
+    return {ev, d, f, before, sim: s};
+  }
+  function controls(m, cls) {
+    const c = {RegWrite:0, ImmSrc:'x', ALUSrcA:'00', ALUSrcB:'0', ALUControl:'x', MemWrite:0, ResultSrc:'x', Branch:0, Jump:0, JumpReg:0, PCSrc:'00'};
+    const alu = ALUOP[m];
+    switch (cls) {
+      case 'alu': c.RegWrite = 1; c.ALUControl = alu; c.ResultSrc = '00'; break;
+      case 'alui': c.RegWrite = 1; c.ImmSrc = 'I'; c.ALUSrcB = '1'; c.ALUControl = alu; c.ResultSrc = '00'; break;
+      case 'load': c.RegWrite = 1; c.ImmSrc = 'I'; c.ALUSrcB = '1'; c.ALUControl = 'add'; c.ResultSrc = '01'; break;
+      case 'store': c.ImmSrc = 'S'; c.ALUSrcB = '1'; c.ALUControl = 'add'; c.MemWrite = 1; break;
+      case 'branch': c.ImmSrc = 'B'; c.ALUControl = 'sub'; c.Branch = 1; break;
+      case 'jump': c.RegWrite = 1; c.ResultSrc = '10'; if (m === 'jal') { c.ImmSrc = 'J'; c.Jump = 1; c.PCSrc = '01'; } else { c.ImmSrc = 'I'; c.ALUSrcB = '1'; c.ALUControl = 'add'; c.JumpReg = 1; c.PCSrc = '10'; } break;
+      case 'upper': c.RegWrite = 1; c.ImmSrc = 'U'; c.ALUSrcB = '1'; c.ALUControl = 'add'; c.ResultSrc = '00'; c.ALUSrcA = m === 'lui' ? '10' : '01'; break;
+    }
+    return c;
+  }
+  // wires and boxes active per instruction, with phase tags
+  const PH = {fetch:['pcnext','pc','pc_add4','four','pcplus4','pcplus4_pcmux','instr'], decode:['instr_bus','instr_bus_dn','instr_bus_up','instr_bus_ext','instr_ctrl','instr_a1','instr_a2','instr_a3','instr_ext','rd1','rd2','immext','c_regwrite','c_immsrc','c_alusrca','c_alusrcb','c_alucontrol','c_memwrite','c_funct3','c_funct3_dm','c_funct3_br','c_resultsrc','c_branch'], execute:['srca','srcb','rd2_b','pc_muxa','zero_muxa','aluresult','flags','pc_bus','pc_tgt','immext_b','immext_tgt','pctarget','pcsrc'], memory:['alu_dmem','rd2_wd','readdata'], writeback:['alu_down','alu_resmux','result','alu_pcmux','pcplus4_res']};
+  function active(m, cls, ev) {
+    const c = controls(m, cls);
+    const usesALU = !(cls === 'jump' && m === 'jal');
+    let w = ['pcnext','pc','pc_add4','four','pcplus4','instr','instr_bus','instr_bus_dn','instr_bus_up','instr_ctrl','pcsrc'];
+    let b = ['pcmux','pc','add4','imem','ctrl','branch'];
+    const taken = ev.taken;
+    if (usesALU) { w.push('c_alusrca','c_alusrcb','c_alucontrol','srca','srcb'); b.push('muxa','muxb','alu'); }
+    if (c.RegWrite) { w.push('c_regwrite','c_resultsrc','instr_a3','result'); b.push('rf','resmux'); }
+    if (c.ImmSrc !== 'x') { w.push('c_immsrc','instr_bus_ext','instr_ext','immext'); b.push('ext'); }
+    if (c.ALUSrcB === '1') w.push('immext_b');
+    w.push('c_branch');   // Branch, Jump, JumpReg are read by the branch unit every cycle: zeros force PCSrc = 00
+    switch (cls) {
+      case 'alu': w.push('instr_a1','instr_a2','rd1','rd2','rd2_b','aluresult','alu_down','alu_resmux'); b.push('rf'); break;
+      case 'alui': w.push('instr_a1','rd1','aluresult','alu_down','alu_resmux'); b.push('rf'); break;
+      case 'load': w.push('instr_a1','rd1','aluresult','alu_dmem','readdata','c_funct3','c_funct3_dm'); b.push('rf','dmem'); break;
+      case 'store': w.push('instr_a1','instr_a2','rd1','rd2','rd2_wd','aluresult','alu_dmem','c_memwrite','c_funct3','c_funct3_dm'); b.push('rf','dmem'); break;
+      case 'branch': w.push('instr_a1','instr_a2','rd1','rd2','rd2_b','flags','c_funct3','c_funct3_br','immext_tgt','pc_bus','pc_tgt','pctarget'); b.push('rf','tgt'); if (!taken) w = w.filter(x => x !== 'pctarget'); break;
+      case 'jump': w.push('pcplus4_res'); if (m === 'jal') { w.push('immext_tgt','pc_bus','pc_tgt','pctarget'); b.push('tgt'); } else { w.push('instr_a1','rd1','aluresult','alu_down','alu_pcmux'); b.push('rf'); } break;
+      case 'upper': w.push('aluresult','alu_down','alu_resmux'); w.push(m === 'lui' ? 'zero_muxa' : 'pc_muxa'); if (m === 'auipc') w.push('pc_bus'); break;
+    }
+    const pcsrc = cls === 'branch' ? (taken ? '01' : '00') : c.PCSrc;
+    if (pcsrc === '00') w.push('pcplus4_pcmux');
+    if (pcsrc !== '00' && cls !== 'jump') w = w.filter(x => x !== 'pcplus4');   // taken branch: PC+4 is computed but discarded
+    return {wires: [...new Set(w)], boxes: [...new Set(b)], pcsrc};
+  }
+  function values(r) {
+    const {ev, d, f, before} = r; const m = d.e.m, cls = d.e.cls;
+    const v = {};
+    v.pc = hx(ev.pc); v.pcplus4 = hx(ev.pc + 4); v.instr = hx(d.word); v.pcnext = hx(ev.pcNext);
+    v.rd1 = hx(before.rs1); v.rd2 = hx(before.rs2); v.immext = hx(f.imm);
+    if (d.e.shamt) v.immext = hx(RV.immOf(d.word, 'I'));
+    const c = controls(m, cls);
+    if (cls !== 'jump' || m === 'jalr') {
+      v.srca = c.ALUSrcA === '01' ? hx(ev.pc) : c.ALUSrcA === '10' ? hx(0) : hx(before.rs1);
+      v.srcb = c.ALUSrcB === '1' ? hx(d.e.shamt ? RV.immOf(d.word, 'I') : f.imm) : hx(before.rs2);
+    }
+    if (cls === 'branch') { v.aluresult = hx(before.rs1 - before.rs2); v.flags = flags(before.rs1, before.rs2).text; }
+    else if (cls === 'jump' && m === 'jal') {}
+    else v.aluresult = hx(m === 'jalr' ? (before.rs1 + f.imm) : m === 'lui' ? f.imm : ev.alu !== undefined ? ev.alu : ev.result);
+    if (cls === 'branch' || m === 'jal') v.pctarget = hx(ev.pc + f.imm);
+    if (cls === 'load') v.readdata = hx(ev.memRead);
+    if (ev.rdWritten !== null || (c.RegWrite && f.rd === 0)) v.result = hx(ev.result);
+    return v;
+  }
+  function flags(a, b) { const s = (a - b) | 0; const ua = a >>> 0, ub = b >>> 0; const Z = s === 0 ? 1 : 0, N = s < 0 ? 1 : 0, C = ua >= ub ? 1 : 0, V = ((a >= 0) !== (b >= 0)) && ((s < 0) !== (a < 0)) ? 1 : 0; return {Z, N, C, V, text: `Z=${Z} N=${N} C=${C} V=${V}`}; }
+  function narrate(r) {
+    const {ev, d, f, before} = r; const m = d.e.m, cls = d.e.cls, c = controls(m, cls);
+    const S = s => `<span class="sig">${s}</span>`, V = v => `<span class="hv">${typeof v === 'number' ? hx(v) : v}</span>`, R = n => `<span class="rg">${RV.XREG[n]}</span>`, B = s => `<span class="blk">${s}</span>`, N = n => `<span class="num">${n}</span>`;
+    const out = [];
+    // fetch
+    out.push(['Fetch', [`${B('PC')} = ${V(ev.pc)} addresses ${B('instruction memory')}`, `Instruction word ${V(d.word)} read out`, `${B('PC+4 adder')}: ${S('PCPlus4')} = ${V(ev.pc + 4)}`]]);
+    // decode
+    const dec = [`${B('Main decoder')} sees opcode ${N((d.word & 0x7F).toString(2).padStart(7, '0'))}`];
+    const on = Object.entries(c).filter(([k, v]) => !['ALUControl','PCSrc'].includes(k) && v !== 0 && v !== 'x').map(([k, v]) => `${S(k)}=${N(v)}`);
+    dec.push(`Sets ${on.join(', ')}` + (c.ALUControl !== 'x' ? `. ${B('ALU decoder')}: ${S('ALUControl')} = ${N(c.ALUControl)} (${N(ALUCODE[c.ALUControl])})` : ''));
+    if (['alu','alui','load','store','branch'].includes(cls) || m === 'jalr') dec.push(`${B('Register file')} reads ${S('RD1')} = ${R(f.rs1)} = ${V(before.rs1)}` + (['alu','store','branch'].includes(cls) ? `, ${S('RD2')} = ${R(f.rs2)} = ${V(before.rs2)}` : '') + ' straight from the instruction bits');
+    if (c.ImmSrc === 'U') { const fld = (f.imm >>> 12) & 0xFFFFF; dec.push(`${B('Extend unit')}, U layout: the 20-bit field ${N('0x' + fld.toString(16))} written in the assembly sits in bits 31:12 of the word. The unit passes it through and appends twelve zeros: ${S('ImmExt')} = ${V(f.imm)}`, `The shift by 12 is implied by the format, never written. The value used is ${N('0x' + fld.toString(16))} << 12, not ${N('0x' + fld.toString(16))}`); }
+    else if (c.ImmSrc !== 'x') dec.push(d.e.shamt ? `${B('Extend unit')} rebuilds the I-type immediate: ${S('ImmExt')} = ${V(RV.immOf(d.word, 'I'))}. Only bits 4:0 (${N(f.imm)}) are the shift amount${m === 'srai' ? '. Bit 30 (here bit 10 of the field) marks srai' : ''}` : `${B('Extend unit')} rebuilds the ${N(c.ImmSrc)}-type immediate: ${S('ImmExt')} = ${V(f.imm)} (${N(f.imm)})`);
+    out.push(['Decode', dec]);
+    // execute
+    const ex = [];
+    const srcA = c.ALUSrcA === '01' ? 'PC' : c.ALUSrcA === '10' ? '0' : 'RD1', srcB = c.ALUSrcB === '1' ? 'ImmExt' : 'RD2';
+    switch (cls) {
+      case 'alu': ex.push(`${S('SrcA')} = ${S('RD1')}, ${S('SrcB')} = ${S('RD2')} (${S('ALUSrcB')} = ${N(0)})`, `${B('ALU')} computes ${N(m)}: ${V(before.rs1)} ${N(m)} ${V(before.rs2)} = ${V(ev.alu)}`); if (['sll','srl','sra'].includes(m)) ex.push(`Shift amount is ${S('RD2')}[4:0] = ${N(before.rs2 & 31)}`); break;
+      case 'alui': ex.push(`${S('SrcA')} = ${S('RD1')}, ${S('SrcB')} = ${S('ImmExt')} (${S('ALUSrcB')} = ${N(1)})`, d.e.shamt ? `${B('ALU')} computes ${N(ALUOP[m])}: ${V(before.rs1)} ${N(ALUOP[m])} ${N(f.imm)} = ${V(ev.alu)}, using ${S('ImmExt')}[4:0] as the shift amount` : `${B('ALU')} computes ${N(ALUOP[m])}: ${V(before.rs1)} ${N(ALUOP[m])} ${V(f.imm)} = ${V(ev.alu)}`); break;
+      case 'load': case 'store': ex.push(`${S('SrcA')} = ${S('RD1')}, ${S('SrcB')} = ${S('ImmExt')}`, `${B('ALU')} adds base + offset: ${V(before.rs1)} + ${N(f.imm)} = ${V(ev.memAddr)}, the memory address`); break;
+      case 'branch': { const fl = flags(before.rs1, before.rs2); ex.push(`${B('ALU')} subtracts ${S('RD1')} - ${S('RD2')} = ${V(before.rs1 - before.rs2)}`, `Flags: ${N(fl.text)}`, `${B('Branch unit')} tests the ${N(m)} condition from ${S('funct3')}: ${ev.taken ? '<span class="ok">taken</span>' : '<span class="no">not taken</span>'}`, `${B('Target adder')}: ${S('PCTarget')} = PC + ImmExt = ${V(ev.pc + f.imm)}`); break; }
+      case 'jump': if (m === 'jal') ex.push(`${B('ALU')} is idle`, `${B('Target adder')}: ${S('PCTarget')} = PC + ImmExt = ${V(ev.pc + f.imm)}`, `${B('Branch unit')}: ${S('Jump')} = ${N(1)} sets ${S('PCSrc')} = ${N('01')}`); else ex.push(`${S('SrcA')} = ${S('RD1')}, ${S('SrcB')} = ${S('ImmExt')}`, `${B('ALU')} adds ${V(before.rs1)} + ${N(f.imm)} = ${V(before.rs1 + f.imm)}, bit 0 cleared on the way to the PC`, `${S('JumpReg')} = ${N(1)} sets ${S('PCSrc')} = ${N('10')}`); break;
+      case 'upper': ex.push(m === 'lui' ? `${S('SrcA')} = ${N(0)} (${S('ALUSrcA')} = ${N('10')}), ${S('SrcB')} = ${S('ImmExt')}` : `${S('SrcA')} = ${S('PC')} (${S('ALUSrcA')} = ${N('01')}), ${S('SrcB')} = ${S('ImmExt')}`, m === 'lui' ? `${B('ALU')} adds ${N(0)} + ${V(f.imm)} = ${V(f.imm)}: the immediate passes through. The low 12 bits are 0, a following addi fills them` : `${B('ALU')} adds ${V(ev.pc)} + ${V(f.imm)} = ${V(ev.alu)}: an address ${N(f.imm >>> 0)} bytes past this instruction, wherever the code was loaded`); break;
+    }
+    if (!(cls === 'branch' || cls === 'jump')) ex.push(`${B('Branch unit')}: ${S('Branch')} = ${S('Jump')} = ${S('JumpReg')} = ${N(0)}, so ${S('PCSrc')} = ${N('00')} regardless of the flags`);
+    out.push(['Execute', ex]);
+    // memory
+    if (cls === 'load') out.push(['Memory', [`${B('Data memory')} reads at ${V(ev.memAddr)}`, `${B('Load unit')} selects ${N({lb:'one byte, sign-extended', lh:'a halfword, sign-extended', lw:'the whole word', lbu:'one byte, zero-extended', lhu:'a halfword, zero-extended'}[m])} (${S('funct3')} = ${N(f.f3.toString(2).padStart(3, '0'))})`, `${S('ReadData')} = ${V(ev.memRead)}`]]);
+    else if (cls === 'store') out.push(['Memory', [`${S('MemWrite')} = ${N(1)}: ${B('store unit')} enables ${N({sb:'one byte lane', sh:'two byte lanes', sw:'all four lanes'}[m])} at ${V(ev.memAddr)}`, `${S('WriteData')} = ${S('RD2')} = ${V(before.rs2)}${m !== 'sw' ? ' (low ' + (m === 'sb' ? 8 : 16) + ' bits)' : ''}, written at the clock edge`]]);
+    else out.push(['Memory', [`No memory access: ${S('MemWrite')} = ${N(0)}, ${S('ReadData')} ignored`]]);
+    // writeback
+    const wb = [];
+    if (c.RegWrite) { const src = {'00':'ALUResult', '01':'ReadData', '10':'PCPlus4'}[c.ResultSrc]; wb.push(`${S('ResultSrc')} = ${N(c.ResultSrc)} selects ${S(src)}: ${S('Result')} = ${V(ev.result)}`, `${S('RegWrite')} = ${N(1)}: ${R(f.rd)} captures it at the clock edge` + (f.rd === 0 ? ' <span class="no">(x0: write has no effect)</span>' : '')); }
+    else wb.push(`${S('RegWrite')} = ${N(0)}: no register changes`);
+    const pcs = cls === 'branch' ? (ev.taken ? '01' : '00') : c.PCSrc;
+    wb.push(`${S('PCSrc')} = ${N(pcs)}: ${B('PC')} loads ${S({'00':'PCPlus4', '01':'PCTarget', '10':'ALUResult'}[pcs])} = ${V(ev.pcNext)} at the same edge`);
+    out.push(['Writeback', wb]);
+    return out;
+  }
+  return {REQUIRED, GROUPS, SAMPLES, ALUCODE, run, controls, active, values, narrate, PH};
+})();
+
+// ===================== UI modules =====================
+const $ = s => document.querySelector(s);
+const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+// Tab 1: build it up
+const T1 = (() => {
+  let dp, ov, step = 0, mag = true;
+  function build(r) {
+    r.innerHTML = `<div class="t1"><div class="t1-dp" id="t1dp"></div><div class="t1-side"><div class="ov" id="t1ov"></div><div class="stepper" id="t1steps"></div><div class="row magbar"><label class="tog"><input type="checkbox" id="t1mag" checked> magnify</label><button class="btn sm" id="t1zout" title="zoom out (-)">&minus;</button><button class="btn sm" id="t1zin" title="zoom in (+)">+</button><button class="btn sm" id="t1fit" title="fit (0)">Fit</button></div><div class="row"><button class="btn" id="t1prev">Back</button><button class="btn primary" id="t1next">Next block</button></div></div><div class="t1-text" id="t1text"></div></div>`;
+    dp = DP2.render($('#t1dp'));
+    ov = DP2.render($('#t1ov'), {overview: true});
+    dp.onView = v => ov.setViewRect(v);
+    $('#t1mag').onchange = () => { mag = $('#t1mag').checked; go(step); };
+    $('#t1zin').onclick = () => dp.zoomBy(1 / 1.3); $('#t1zout').onclick = () => dp.zoomBy(1.3); $('#t1fit').onclick = () => go(step);
+    DP2.attachMagnifier(dp, ov);
+    window.addEventListener('resize', () => go(step));
+    const st = $('#t1steps');
+    DP2.BUILD.forEach((b, i) => { const d = el('div', 'stp', `<span>${i + 1}</span>${b.short}`); d.onclick = () => go(i); st.appendChild(d); });
+    const done = el('div', 'stp', `<span>${DP2.BUILD.length + 1}</span>Complete`); done.onclick = () => go(DP2.BUILD.length); st.appendChild(done);
+    $('#t1prev').onclick = () => go(Math.max(0, step - 1)); $('#t1next').onclick = () => go(Math.min(DP2.BUILD.length, step + 1));
+    go(0);
+  }
+  function go(i) {
+    step = i;
+    document.querySelectorAll('#t1steps .stp').forEach((d, j) => { d.classList.toggle('on', j === i); d.classList.toggle('done', j < i); });
+    const vis = i >= DP2.BUILD.length ? null : DP2.BUILD[i];
+    if (mag && vis) { const bb = DP2.bboxOf(vis.boxes, vis.wires, 34); dp.zoomTo(bb); } else dp.zoomTo(null);
+    if (i >= DP2.BUILD.length) { dp.showAll(); ov.showAll(); $('#t1text').innerHTML = `<h3>The complete single-cycle datapath</h3><p>Every instruction flows left to right in one clock cycle: fetch, register read and immediate extension, ALU, memory, writeback. Black wires carry data (bus width marked). Blue wires are control. The next tab traces all 37 instructions through this diagram.</p>`; }
+    else { dp.buildTo(i); ov.buildTo(i); const b = DP2.BUILD[i]; $('#t1text').innerHTML = `<h3>${b.name}</h3><p>${b.t}</p>`; }
+    $('#t1next').textContent = i >= DP2.BUILD.length ? 'Done' : 'Next block';
+  }
+  function onKey(k) { if (k === 'ArrowRight' || k === ' ') { go(Math.min(DP2.BUILD.length, step + 1)); return true; } if (k === 'ArrowLeft') { go(Math.max(0, step - 1)); return true; } if (k === 'z' || k === 'Z') { mag = !mag; $('#t1mag').checked = mag; go(step); return true; }
+    if (k === '+' || k === '=') { dp.zoomBy(1 / 1.3); return true; } if (k === '-' || k === '_') { dp.zoomBy(1.3); return true; } if (k === '0') { go(step); return true; }
+    const pan = {w:[0,-1], s:[0,1], a:[-1,0], d:[1,0], W:[0,-1], S:[0,1], A:[-1,0], D:[1,0]}[k]; if (pan) { const v = dp.getView(); dp.pan(pan[0] * v.w * 0.12, pan[1] * v.h * 0.12); return true; }
+    return false; }
+  return {build, onKey};
+})();
+
+// Tab 2: instructions
+const T4 = (() => {
+  let dp, ov, cur = 'add', phase = 'all', showVals = true, r = null, mag = true;
+  const PHBOX = {fetch:{x:10,y:25,w:390,h:400}, decode:{x:340,y:40,w:330,h:480}, execute:{x:620,y:130,w:340,h:420}, memory:{x:840,y:230,w:360,h:240}, writeback:{x:380,y:280,w:820,h:350}};
+  function build(root) {
+    root.innerHTML = `<div class="t4"><div class="t4-chips" id="t4chips"></div><div class="t4-body"><div class="t4-dp"><div class="row t4-ctl"><div class="seg" id="t4phase"><button data-p="all" class="on">All</button><button data-p="fetch">Fetch</button><button data-p="decode">Decode</button><button data-p="execute">Execute</button><button data-p="memory">Memory</button><button data-p="writeback">Writeback</button></div><label class="tog"><input type="checkbox" id="t4vals" checked> values on wires</label><label class="tog"><input type="checkbox" id="t4mag" checked> magnify phase</label><button class="btn sm" id="t4zout">&minus;</button><button class="btn sm" id="t4zin">+</button><button class="btn sm" id="t4fit">Fit</button><label class="t4-custom">custom <input id="t4in" class="mono" spellcheck="false" placeholder="sub a0, a1, a2"></label><button class="btn sm" id="t4regs" title="register names (N)">Register names</button></div><div id="t4dp"></div></div><div class="t4-side"><div class="ov" id="t4ov"></div><div id="t4head"></div><div id="t4ctrl"></div><div id="t4narr"></div></div></div></div>`;
+    const ch = $('#t4chips');
+    IX.GROUPS.forEach(([g, ms]) => { const grp = el('div', 'grp', `<span class="gname">${g}</span>`); ms.forEach(m => { const b = el('button', 'chip mono', m); b.dataset.m = m; b.onclick = () => load(IX.SAMPLES[m]); grp.appendChild(b); }); ch.appendChild(grp); });
+    dp = DP2.render($('#t4dp'));
+    ov = DP2.render($('#t4ov'), {overview: true}); dp.onView = v => ov.setViewRect(v);
+    $('#t4mag').onchange = () => { mag = $('#t4mag').checked; render(); };
+    $('#t4regs').onclick = () => toggleRegs();
+    const rp = document.createElement('div'); rp.id = 'regpop'; rp.innerHTML = `<div class="card"><div class="row" style="justify-content:space-between"><h3>Register names: the RISC-V ABI</h3><button class="btn sm" id="regclose">Close</button></div>
+      <p class="muted">The hardware sees only the 5-bit number. The names come from the calling convention and say who must preserve the register.</p>
+      <table class="regtab"><thead><tr><th>Register</th><th>ABI name</th><th>Role</th><th>Saved by</th></tr></thead><tbody>
+      <tr><td class="mono">x0</td><td class="mono">zero</td><td>hardwired 0</td><td></td></tr>
+      <tr><td class="mono">x1</td><td class="mono">ra</td><td>return address</td><td>caller</td></tr>
+      <tr><td class="mono">x2</td><td class="mono">sp</td><td>stack pointer</td><td>callee</td></tr>
+      <tr><td class="mono">x3</td><td class="mono">gp</td><td>global pointer</td><td></td></tr>
+      <tr><td class="mono">x4</td><td class="mono">tp</td><td>thread pointer</td><td></td></tr>
+      <tr><td class="mono">x5 to x7</td><td class="mono">t0 to t2</td><td>temporaries</td><td>caller</td></tr>
+      <tr><td class="mono">x8</td><td class="mono">s0 / fp</td><td>saved register, frame pointer</td><td>callee</td></tr>
+      <tr><td class="mono">x9</td><td class="mono">s1</td><td>saved register</td><td>callee</td></tr>
+      <tr><td class="mono">x10, x11</td><td class="mono">a0, a1</td><td>arguments and return values</td><td>caller</td></tr>
+      <tr><td class="mono">x12 to x17</td><td class="mono">a2 to a7</td><td>arguments</td><td>caller</td></tr>
+      <tr><td class="mono">x18 to x27</td><td class="mono">s2 to s11</td><td>saved registers</td><td>callee</td></tr>
+      <tr><td class="mono">x28 to x31</td><td class="mono">t3 to t6</td><td>temporaries</td><td>caller</td></tr>
+      </tbody></table>
+      <p class="muted">Caller-saved: a function may overwrite it, so the caller saves it first if needed. Callee-saved: a function must restore it before returning. add x8, x9, x18 and add s0, s1, s2 are the same machine word.</p></div>`;
+    document.body.appendChild(rp);
+    rp.addEventListener('click', e => { if (e.target === rp || e.target.id === 'regclose') toggleRegs(false); });
+    $('#t4zin').onclick = () => dp.zoomBy(1 / 1.3); $('#t4zout').onclick = () => dp.zoomBy(1.3); $('#t4fit').onclick = () => render();
+    DP2.attachMagnifier(dp, ov);
+    $('#t4phase').querySelectorAll('button').forEach(b => b.onclick = () => { phase = b.dataset.p; $('#t4phase').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); render(); });
+    $('#t4vals').onchange = () => { showVals = $('#t4vals').checked; render(); };
+    $('#t4in').addEventListener('change', () => load($('#t4in').value));
+    load('add s0, s1, s2');
+  }
+  function load(asm) {
+    try { r = IX.run(asm.trim()); } catch (e) { $('#t4head').innerHTML = `<div class="err bad">${esc(e.message)}</div>`; return; }
+    cur = r.d.e.m;
+    document.querySelectorAll('#t4chips .chip').forEach(b => b.classList.toggle('on', b.dataset.m === cur));
+    render();
+  }
+  function render() {
+    if (!r) return;
+    const {ev, d, f} = r; const m = d.e.m, cls = d.e.cls;
+    const act = IX.active(m, cls, ev);
+    let wires = act.wires;
+    if (phase !== 'all') wires = wires.filter(w => IX.PH[phase].includes(w));
+    const vals = IX.values(r);
+    dp.highlight(wires, act.boxes, showVals ? vals : null);
+    ov.highlight(act.wires, act.boxes, null);
+    dp.zoomTo(mag && phase !== 'all' ? PHBOX[phase] : null);
+    const c = IX.controls(m, cls); c.PCSrc = act.pcsrc;
+    $('#t4head').innerHTML = `<div class="t4-ins"><span class="mono big">${esc(ev.text)}</span> <span class="pill ext">${d.fmt}-type</span> <span class="mono muted">${'0x' + (d.word >>> 0).toString(16).padStart(8, '0')}</span></div>`;
+    const rows = Object.entries(c).map(([k, v]) => `<div class="cs ${v === 0 || v === 'x' ? 'off' : 'on'}${k === 'ALUControl' ? ' wide' : ''}"><span>${k}</span><b class="mono">${v}${k === 'ALUControl' && IX.ALUCODE[v] ? ' <small>' + IX.ALUCODE[v] + '</small>' : ''}</b></div>`).join('');
+    $('#t4ctrl').innerHTML = `<h4>Control signals</h4><div class="ctrl-grid">${rows}</div>`;
+    const narr = IX.narrate(r);
+    $('#t4narr').innerHTML = narr.map(([s, items]) => `<div class="ph ph-${s.toLowerCase()}${phase !== 'all' && phase !== s.toLowerCase() ? ' dimp' : ''}"><div class="ph-tag">${s}</div><ul>${items.map(t => `<li>${t}</li>`).join('')}</ul></div>`).join('');
+  }
+  function toggleRegs(on) { const rp = document.getElementById('regpop'); if (!rp) return; rp.classList.toggle('open', on === undefined ? !rp.classList.contains('open') : on); }
+  function onKey(k) { if (k === 'n' || k === 'N') { toggleRegs(); return true; } if (k === 'Escape') { toggleRegs(false); return false; } const list = IX.REQUIRED; const i = list.indexOf(cur); if (k === 'ArrowRight') { load(IX.SAMPLES[list[(i + 1) % list.length]]); return true; } if (k === 'ArrowLeft') { load(IX.SAMPLES[list[(i + list.length - 1) % list.length]]); return true; } if (k === 'v' || k === 'V') { showVals = !showVals; $('#t4vals').checked = showVals; render(); return true; }
+    if (k === '+' || k === '=') { dp.zoomBy(1 / 1.3); return true; } if (k === '-' || k === '_') { dp.zoomBy(1.3); return true; } if (k === '0') { render(); return true; }
+    const pan = {w:[0,-1], s:[0,1], a:[-1,0], d:[1,0], W:[0,-1], S:[0,1], A:[-1,0], D:[1,0]}[k]; if (pan) { const v = dp.getView(); dp.pan(pan[0] * v.w * 0.12, pan[1] * v.h * 0.12); return true; } if (/^[1-3]$/.test(k) && false) return false; return false; }
+  return {build, onKey, load};
+})();
+
+
+
+// Tab 3: run a program on the single-cycle datapath
+const RUNPROGS = [
+  {n:'Branch taken', s:`# beq: branch is taken
+main:
+  addi s0, zero, 4      # s0 = 4
+  addi s1, zero, 1      # s1 = 1
+  slli s1, s1, 2        # s1 = 1 << 2 = 4
+  beq  s0, s1, target   # taken
+  addi s1, s1, 1        # skipped
+  sub  s1, s1, s0       # skipped
+target:
+  add  s1, s1, s0       # s1 = 8
+stop:
+  jal  zero, stop       # jump to self: program stops`},
+  {n:'If / else', s:`# if (i == j) f = g + h; else f = f - i;
+# s0 = f, s1 = g, s2 = h, s3 = i, s4 = j
+main:
+  addi s0, zero, 10
+  addi s1, zero, 2
+  addi s2, zero, 3
+  addi s3, zero, 7
+  addi s4, zero, 7
+  bne  s3, s4, L1       # test the opposite case
+  add  s0, s1, s2       # f = g + h
+  jal  zero, done
+L1:
+  sub  s0, s0, s3       # f = f - i
+done:
+  jal  zero, done`},
+  {n:'For loop with slt', s:`# sum the powers of 2 below 101
+# s0 = i, s1 = sum
+main:
+  addi s1, zero, 0
+  addi s0, zero, 1
+  addi t0, zero, 101
+loop:
+  slt  t2, s0, t0       # t2 = (i < 101)
+  beq  t2, zero, done
+  add  s1, s1, s0
+  slli s0, s0, 1
+  jal  zero, loop
+done:
+  jal  zero, done`},
+  {n:'Array scaled by 8', s:`# for (i = 0; i < 4; i++) array[i] = array[i] * 8;
+main:
+  lui  s0, 0x2          # s0 = 0x2000, the array
+  addi s1, zero, 0
+  addi t2, zero, 4
+loop:
+  bge  s1, t2, done
+  slli t0, s1, 2        # byte offset = i * 4
+  add  t0, t0, s0
+  lw   t1, 0(t0)
+  slli t1, t1, 3        # * 8
+  sw   t1, 0(t0)
+  addi s1, s1, 1
+  jal  zero, loop
+done:
+  jal  zero, done
+.data
+array: .word 1, 2, 3, 4`},
+  {n:'Function call with stack', s:`# s3 = diffofsums(2, 3, 4, 5)
+main:
+  addi a0, zero, 2
+  addi a1, zero, 3
+  addi a2, zero, 4
+  addi a3, zero, 5
+  jal  ra, diffofsums
+  add  s3, a0, zero     # keep result
+stop:
+  jal  zero, stop
+diffofsums:
+  addi sp, sp, -4       # make room on the stack
+  sw   s3, 0(sp)        # save s3 (callee-saved)
+  add  t0, a0, a1
+  add  t1, a2, a3
+  sub  s3, t0, t1
+  add  a0, s3, zero     # return value
+  lw   s3, 0(sp)        # restore s3
+  addi sp, sp, 4
+  jalr zero, 0(ra)      # return`},
+  {n:'Count characters', s:`# count the characters of a string
+main:
+  lui  a0, 0x2          # a0 = 0x2000, the string
+  addi t1, zero, 0      # count
+loop:
+  lbu  t0, 0(a0)        # one byte
+  beq  t0, zero, done   # NUL ends the string
+  addi t1, t1, 1
+  addi a0, a0, 1
+  jal  zero, loop
+done:
+  jal  zero, done
+.data
+str: .asciz "RISC-V"`},
+];
+const T6 = (() => {
+  let root, dp, ov, sim = SIM.create(), prog = null, timer = null, hexMode = true, last = null, cycle = 0, trace = [];
+  const hx = v => '0x' + ((v >>> 0).toString(16)).padStart(8, '0');
+  function build(r) {
+    root = r;
+    root.innerHTML = `<div class="t6">
+      <div class="t6-mid">
+        <div class="row t6-ctl"><button class="btn primary" id="t6step">Step</button><button class="btn" id="t6run">Run</button><button class="btn" id="t6reset">Reset</button><label>speed <input type="range" id="t6spd" min="1" max="10" value="3"></label><span class="t6-cyc">cycle <b id="t6cyc">0</b></span><span class="status mono" id="t6status"></span><span class="t6-zoom"><button class="btn sm" id="t6zout">&minus;</button><button class="btn sm" id="t6zin">+</button><button class="btn sm" id="t6fit">Fit</button></span></div>
+        <div class="t6-dp" id="t6dp"><div class="ov t6-ov" id="t6ov"></div></div>
+        <div class="t6-strip"><h4>One instruction per cycle</h4><div id="t6strip" class="strip6"></div></div>
+      </div>
+      <div class="t6-right">
+        <div class="t6-list"><div class="row"><select id="t6sel"></select><button class="btn sm" id="t6editbtn" title="edit the program">Edit</button></div><span id="t6legend" class="reglg"></span><div id="t6list" class="listing mono"></div><div id="t6editor" class="t6-editor"><textarea id="t6src" class="mono" spellcheck="false"></textarea><div class="row"><button class="btn sm" id="t6asm">Assemble</button><button class="btn sm" id="t6close">Close</button><span id="t6err" class="err"></span></div></div></div>
+        <div class="t6-regs"><div class="row"><h4>Registers</h4><div class="seg small"><button id="t6hex" class="on">hex</button><button id="t6dec">dec</button></div><span id="t6reglg" class="reglg"></span></div><div id="t6regs" class="regs6 mono"></div></div>
+        <div class="t6-mem"><h4>Memory <span class="muted">data at 0x2000, stack below 0xFFF0</span></h4><div id="t6mem" class="mem6 mono"></div></div>
+      </div></div>`;
+    const sel = $('#t6sel'); RUNPROGS.forEach((p, i) => { const o = el('option', '', p.n); o.value = i; sel.appendChild(o); });
+    sel.onchange = () => { $('#t6src').value = RUNPROGS[sel.value].s; assemble(); };
+    $('#t6asm').onclick = assemble; $('#t6step').onclick = step; $('#t6run').onclick = toggleRun; $('#t6reset').onclick = reset;
+    $('#t6editbtn').onclick = () => $('#t6editor').classList.toggle('open'); $('#t6close').onclick = () => $('#t6editor').classList.remove('open');
+    $('#t6hex').onclick = () => { hexMode = true; $('#t6hex').classList.add('on'); $('#t6dec').classList.remove('on'); renderState(); };
+    $('#t6dec').onclick = () => { hexMode = false; $('#t6dec').classList.add('on'); $('#t6hex').classList.remove('on'); renderState(); };
+    dp = DP2.render($('#t6dp'));
+    ov = DP2.render($('#t6ov'), {overview: true}); dp.onView = v => ov.setViewRect(v); DP2.attachMagnifier(dp, ov);
+    $('#t6zin').onclick = () => dp.zoomBy(1 / 1.3); $('#t6zout').onclick = () => dp.zoomBy(1.3); $('#t6fit').onclick = () => dp.zoomTo(null);
+    $('#t6src').value = RUNPROGS[0].s; assemble();
+  }
+  function assemble() {
+    stopRun();
+    const p = RV.assembleProgram($('#t6src').value, {});
+    const e = $('#t6err');
+    if (!p.ok) { e.textContent = p.errors.map(x => (x.line !== undefined ? 'line ' + (x.line + 1) + ': ' : '') + x.msg).join(' | '); e.classList.add('bad'); return; }
+    const bad = p.items.filter(it => !it.data && it.e && !IX.REQUIRED.includes(it.e.m));
+    if (bad.length) { e.textContent = `not in the 37-instruction datapath: ${[...new Set(bad.map(it => it.e.m))].join(', ')}`; e.classList.add('bad'); return; }
+    e.classList.remove('bad'); e.textContent = `${p.items.filter(i => !i.data).length} instructions`;
+    prog = p; reset();
+  }
+  function reset() { stopRun(); if (!prog) return; SIM.reset(sim, prog); cycle = 0; trace = []; last = null; dp.showAll(); renderAll(); }
+  function step() {
+    if (!prog || sim.halted) return;
+    const pc = sim.pc >>> 0; const word = SIM.readMem(sim, pc, 4); const d = RV.decode(word);
+    const before = d.ok ? {rs1: sim.x[d.fields.rs1] | 0, rs2: sim.x[d.fields.rs2] | 0} : {rs1: 0, rs2: 0};
+    const ev = SIM.step(sim); if (!ev) return;
+    cycle++;
+    last = d.ok ? {ev, d, f: d.fields, before, sim} : null;
+    trace.push({cycle, pc, text: ev.text, cls: d.ok ? d.e.cls : 'sys'});
+    renderAll();
+  }
+  function toggleRun() { if (timer) stopRun(); else { if (!prog || sim.halted) return; $('#t6run').textContent = 'Pause'; const tick = () => { step(); if (sim.halted) { stopRun(); return; } timer = setTimeout(tick, 1400 / (+$('#t6spd').value)); }; tick(); } }
+  function stopRun() { if (timer) clearTimeout(timer); timer = null; const b = $('#t6run'); if (b) b.textContent = 'Run'; }
+  function renderAll() {
+    $('#t6cyc').textContent = cycle;
+    $('#t6status').textContent = sim.halted ? sim.haltMsg : (last ? `executed ${last.ev.text}, next PC = ${hx(sim.pc)}` : `PC = ${hx(sim.pc)}`); $('#t6status').classList.toggle('halt', sim.halted);
+    // datapath: the instruction just executed, with its real values
+    if (last) { const {ev, d} = last; const m = d.e.m, cls = d.e.cls; const act = IX.active(m, cls, ev); dp.highlight(act.wires, act.boxes, IX.values(last)); ov.highlight(act.wires, act.boxes, null); } else { dp.showAll(); ov.showAll(); }
+    // listing
+    const L = $('#t6list'); L.innerHTML = '';
+    const labelsAt = {}; for (const k in prog.labels) (labelsAt[prog.labels[k]] = labelsAt[prog.labels[k]] || []).push(k);
+    let cur = null;
+    for (const it of prog.items) { if (it.data) continue; if (labelsAt[it.addr]) L.appendChild(el('div', 'lbl', labelsAt[it.addr].join(', ') + ':')); const isNext = it.addr === (sim.pc >>> 0), isCur = last && it.addr === last.ev.pc; const row = el('div', 'irow' + (isCur ? ' cur' : '') + (isNext ? ' next' : '')); row.innerHTML = `<span class="a">${isCur ? '&#9654;' : isNext ? '&#8595;' : ''}</span><span class="t">${esc(it.text)}</span>`; row.title = isCur ? 'executed in this cycle: shown on the datapath and in the panels' : isNext ? 'next: PC points here' : ''; if (isCur) cur = row; else if (isNext && !cur) cur = row; L.appendChild(row); }
+    $('#t6legend').innerHTML = last ? `<span class="lg-cur">&#9654; executed this cycle</span> <span class="lg-next">&#8595; next (PC)</span>` : '';
+    if (cur) cur.scrollIntoView({block: 'nearest'});
+    renderState(); renderStrip();
+  }
+  const fmt = v => hexMode ? hx(v) : String(v | 0);
+  function renderState() {
+    const R = $('#t6regs'); R.innerHTML = '';
+    const changed = last && last.ev.rdWritten !== null ? last.ev.rdWritten : -1;
+    const reads = new Set(); if (last) { const c = last.d.e.cls, m = last.d.e.m; if (['alu','alui','load','store','branch'].includes(c) || m === 'jalr') reads.add(last.f.rs1); if (['alu','store','branch'].includes(c)) reads.add(last.f.rs2); }
+    for (let i = 0; i < 32; i++) { const dv = el('div', 'reg' + (i === changed ? ' chg' : reads.has(i) ? ' rd' : '')); dv.innerHTML = `<span class="ra">${RV.XREG[i]}</span><span class="rv">${fmt(sim.x[i])}</span>`; dv.title = i === changed ? 'written by this instruction' : reads.has(i) ? 'read by this instruction' : ''; R.appendChild(dv); }
+    $('#t6reglg').innerHTML = last ? `<span class="lg-rd">read</span> <span class="lg-wr">written</span>` : '';
+    const M = $('#t6mem'); M.innerHTML = '';
+    const dataEnd = Math.max(prog.dataBase + 16, ...prog.items.filter(i => i.data).map(i => i.addr + i.bytes));
+    const memRow = (a, tag) => { const w = SIM.readMem(sim, a, 4); const acc = last && last.ev.memAddr !== null && (last.ev.memAddr & ~3) === a; const dv = el('div', 'reg' + (acc && last.ev.memWrite !== null ? ' chg' : acc ? ' rd' : '')); if (acc) dv.title = last.ev.memWrite !== null ? 'written by this instruction' : 'read by this instruction'; dv.innerHTML = `<span class="ra">${a.toString(16).padStart(4, '0')}${tag ? ' ' + tag : ''}</span><span class="rv">${fmt(w)}</span>`; return dv; };
+    for (let a = prog.dataBase; a < Math.min(dataEnd, prog.dataBase + 32); a += 4) M.appendChild(memRow(a, ''));
+    const sp = sim.x[2] >>> 0; if (sp < 0xFFF0) { M.appendChild(el('div', 'memsep', 'stack')); for (let a = Math.max(0xFFD0, sp & ~3); a <= 0xFFEC; a += 4) M.appendChild(memRow(a, a === sp ? 'sp' : '')); }
+  }
+  function renderStrip() {
+    const S = $('#t6strip'); const rows = trace.slice(-4); const first = rows.length ? rows[0].cycle : 1; const cols = 6;
+    let h = `<div class="s6h"><span></span>${Array.from({length: cols}, (_, i) => `<span>c${first + i}</span>`).join('')}</div>`;
+    for (const t of rows) { const k = t.cycle - first; h += `<div class="s6r"><span class="s6i mono">${esc(t.text)}</span>${Array.from({length: cols}, (_, i) => i === k ? `<span class="s6c on cls-${t.cls}">IF ID EX MEM WB</span>` : '<span class="s6c"></span>').join('')}</div>`; }
+    if (!rows.length) h += `<div class="muted">Step to execute the first instruction.</div>`;
+    S.innerHTML = h;
+  }
+  function onKey(k) { if (k === ' ' || k === 'ArrowRight') { step(); return true; } if (k === 'r' || k === 'R') { toggleRun(); return true; } if (k === 'Backspace') { reset(); return true; }
+    if (k === '+' || k === '=') { dp.zoomBy(1 / 1.3); return true; } if (k === '-' || k === '_') { dp.zoomBy(1.3); return true; } if (k === '0') { dp.zoomTo(null); return true; }
+    const pan = {w:[0,-1], s:[0,1], a:[-1,0], d:[1,0], W:[0,-1], S:[0,1], A:[-1,0], D:[1,0]}[k]; if (pan) { const v = dp.getView(); dp.pan(pan[0] * v.w * 0.12, pan[1] * v.h * 0.12); return true; } return false; }
+  return {build, onKey};
+})();
+
+const APP = (() => {
+  const MODS = [
+    {id:'t1', name:'Build it up', sub:'one block at a time', mod:T1, hint:'Arrows or Space add the next block. Drag the diagram or the orange box to move the magnifier. Wheel, + and - resize it. 0 refits.'},
+    {id:'t4', name:'Instructions', sub:'all 37 on the datapath', mod:T4, hint:'Click an instruction or use arrows. Phase buttons isolate and magnify one part of the cycle. Drag a value box to move it. Drag the diagram or wheel to move and resize the magnifier. V toggles values.'},
+    {id:'t6', name:'Run', sub:'a program, cycle by cycle', mod:T6, hint:'Space or right arrow steps one cycle. R runs, Backspace resets. Edit the program and Assemble.'},
+  ];
+  let cur = 0, built = new Set();
+  function init() {
+    const tabs = $('#tabs');
+    MODS.forEach((m, i) => { const b = el('button', 'tab', `<span class="n">${i + 1}</span><span class="tn">${m.name}</span><span class="ts">${m.sub}</span>`); b.onclick = () => go(i); tabs.appendChild(b); });
+    document.addEventListener('keydown', ev => {
+      const tag = (ev.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (/^[1-3]$/.test(ev.key)) { go(+ev.key - 1); ev.preventDefault(); return; }
+      if (ev.key === '?') { $('#help').classList.toggle('open'); return; }
+      if (ev.key === 'Escape') { $('#help').classList.remove('open'); const rp = document.getElementById('regpop'); if (rp) rp.classList.remove('open'); return; }
+      if (ev.key === 'h' || ev.key === 'H') { DP2.HOVER.on = !DP2.HOVER.on; $('#hovtog').checked = DP2.HOVER.on; return; }
+      if (ev.key === 'f' || ev.key === 'F') { if (!document.fullscreenElement) document.documentElement.requestFullscreen?.(); else document.exitFullscreen?.(); return; }
+      if (MODS[cur].mod.onKey(ev.key)) ev.preventDefault();
+    });
+    $('#hovtog').onchange = () => { DP2.HOVER.on = $('#hovtog').checked; if (!DP2.HOVER.on) { const t = document.getElementById('dptip'); if (t) t.style.display = 'none'; document.querySelectorAll('.dp2 .hov').forEach(e => e.classList.remove('hov')); } };
+    go(0);
+  }
+  function go(i) {
+    cur = i;
+    document.querySelectorAll('.tab').forEach((b, j) => b.classList.toggle('on', j === i));
+    document.querySelectorAll('.module').forEach((m, j) => m.classList.toggle('on', j === i));
+    if (!built.has(i)) { MODS[i].mod.build(document.getElementById(MODS[i].id)); built.add(i); }
+    $('#hint').textContent = MODS[i].hint;
+  }
+  return {init, go};
+})();
+document.addEventListener('DOMContentLoaded', APP.init);
+
+</script>
+</body>
+</html>

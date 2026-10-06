@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ECE 473 — SIEGE Lab</title>
-<meta name="description" content="Course demos and materials for ECE 473 Computer Architecture and Organization at the University of Maine, taught by Dr. Prabuddha Chakraborty — including an interactive RISC-V instruction decoder that runs entirely in the browser.">
+<meta name="description" content="Course demos and materials for ECE 473 Computer Architecture and Organization at the University of Maine, taught by Dr. Prabuddha Chakraborty — including an interactive RISC-V instruction decoder and a single-cycle datapath simulator that run entirely in the browser.">
 <link rel="canonical" href="https://www.siegelab.org/teaching/ece473/">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SIEGE Lab">
 <meta property="og:title" content="ECE 473 — Computer Architecture and Organization">
-<meta property="og:description" content="Interactive course demos and materials for ECE 473 at the University of Maine, including a browser-based RISC-V instruction decoder.">
+<meta property="og:description" content="Interactive course demos and materials for ECE 473 at the University of Maine, including a browser-based RISC-V instruction decoder and single-cycle datapath simulator.">
 <meta property="og:url" content="https://www.siegelab.org/teaching/ece473/">
 <meta property="og:image" content="https://www.siegelab.org/assets/siege-logo.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -194,8 +194,7 @@ section + section{border-top:1px solid var(--line)}
 /* ---------- demo cards ---------- */
 .demos{
   list-style:none;margin:0;padding:0;
-  display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,560px));
-  justify-content:start;
+  display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
 }
 .demo{
   background:var(--bg);border:1px solid var(--line);border-radius:var(--radius);
@@ -347,6 +346,7 @@ kbd{
     </ul>
     <div class="hero__actions">
       <a class="btn" href="/teaching/ece473/riscv-decode/">Open the RISC-V decoder <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <a class="btn" href="/teaching/ece473/single-cycle/">Open the single-cycle datapath <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       <a class="btn btn--ghost" href="/">Back to SIEGE Lab</a>
     </div>
   </div>
@@ -362,7 +362,7 @@ kbd{
       <h2>About these materials</h2>
     </div>
     <div class="prose">
-      <p>ECE 473 is about how a machine actually executes a program — instruction sets, encodings, datapaths, memory hierarchy and the design trade-offs behind them. The pieces on this page are the parts of that story that are easier to <em>use</em> than to read about: an instruction is easier to understand once you have taken one apart field by field and put it back together.</p>
+      <p>ECE 473 is about how a machine actually executes a program — instruction sets, encodings, datapaths, memory hierarchy and the design trade-offs behind them. The pieces on this page are the parts of that story that are easier to <em>use</em> than to read about: an instruction is easier to understand once you have taken one apart field by field and put it back together, and a datapath is easier to understand once you have built it block by block and watched a program flow through it.</p>
       <p>Each demo is a single self-contained HTML file. Open it in any modern browser, press <kbd>F</kbd> for fullscreen, <kbd>?</kbd> for the key list, and work through it at your own pace. Nothing is uploaded and nothing is tracked.</p>
     </div>
   </div>
@@ -404,6 +404,32 @@ kbd{
           <a class="btn btn--ghost" href="/teaching/ece473/riscv-decode/index.html" download="riscv-decode-it.html">Download the file</a>
         </div>
       </li>
+      <li class="demo">
+        <div class="demo__head">
+          <h3>RISC-V: single-cycle datapath</h3>
+          <span class="tag">RISC-V</span>
+        </div>
+        <span class="kicker">Build the datapath, trace every instruction, run a program</span>
+        <p>Assemble the single-cycle RV32I datapath one block at a time and learn what each piece is for. Then pick any of the 37 base instructions and watch it light up the wires it uses, with live values and control signals, phase by phase. Finally load a program &mdash; or write your own &mdash; and step it through the machine one clock cycle at a time, with registers and memory updating as you go.</p>
+        <ul class="demo__modules">
+          <li>
+            <span class="name">1 &middot; Build it up</span>
+            <span class="what">Add the datapath one block at a time, with a magnifier to zoom in on the part being added.</span>
+          </li>
+          <li>
+            <span class="name">2 &middot; Instructions</span>
+            <span class="what">All 37 RV32I instructions on the datapath &mdash; isolate fetch, decode, execute, memory or writeback.</span>
+          </li>
+          <li>
+            <span class="name">3 &middot; Run</span>
+            <span class="what">Assemble a program and step it cycle by cycle, watching registers and memory change.</span>
+          </li>
+        </ul>
+        <div class="demo__actions">
+          <a class="btn" href="/teaching/ece473/single-cycle/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          <a class="btn btn--ghost" href="/teaching/ece473/single-cycle/index.html" download="riscv-single-cycle-datapath.html">Download the file</a>
+        </div>
+      </li>
     </ul>
   </div>
 </section>
@@ -422,7 +448,7 @@ kbd{
       </li>
       <li>
         <h3>On your own</h3>
-        <p>Press <kbd>?</kbd> for the full key list. Arrow keys step through examples; <kbd>Enter</kbd> checks an answer and <kbd>Space</kbd> reveals one.</p>
+        <p>Press <kbd>?</kbd> in any demo for its full key list. Arrow keys step through examples, instructions or blocks; <kbd>Space</kbd> steps or reveals, depending on the module.</p>
       </li>
       <li>
         <h3>Offline</h3>
