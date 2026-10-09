@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ECE 473 — SIEGE Lab</title>
-<meta name="description" content="Course demos and materials for ECE 473 Computer Architecture and Organization at the University of Maine, taught by Dr. Prabuddha Chakraborty — including an interactive RISC-V instruction decoder and a single-cycle datapath simulator that run entirely in the browser.">
+<meta name="description" content="Course demos and materials for ECE 473 Computer Architecture and Organization at the University of Maine, taught by Dr. Prabuddha Chakraborty — including an interactive RISC-V instruction decoder, a single-cycle datapath simulator and a five-stage pipeline simulator that run entirely in the browser.">
 <link rel="canonical" href="https://www.siegelab.org/teaching/ece473/">
 <link rel="icon" type="image/png" href="/assets/favicon.png">
 <link rel="apple-touch-icon" href="/assets/favicon.png">
@@ -12,7 +12,7 @@
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="SIEGE Lab">
 <meta property="og:title" content="ECE 473 — Computer Architecture and Organization">
-<meta property="og:description" content="Interactive course demos and materials for ECE 473 at the University of Maine, including a browser-based RISC-V instruction decoder and single-cycle datapath simulator.">
+<meta property="og:description" content="Interactive course demos and materials for ECE 473 at the University of Maine, including a browser-based RISC-V instruction decoder, single-cycle datapath simulator and five-stage pipeline simulator.">
 <meta property="og:url" content="https://www.siegelab.org/teaching/ece473/">
 <meta property="og:image" content="https://www.siegelab.org/assets/siege-logo.png">
 <meta name="twitter:card" content="summary_large_image">
@@ -347,6 +347,7 @@ kbd{
     <div class="hero__actions">
       <a class="btn" href="/teaching/ece473/riscv-decode/">Open the RISC-V decoder <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       <a class="btn" href="/teaching/ece473/single-cycle/">Open the single-cycle datapath <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+      <a class="btn" href="/teaching/ece473/pipeline/">Open the five-stage pipeline <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
       <a class="btn btn--ghost" href="/">Back to SIEGE Lab</a>
     </div>
   </div>
@@ -362,7 +363,7 @@ kbd{
       <h2>About these materials</h2>
     </div>
     <div class="prose">
-      <p>ECE 473 is about how a machine actually executes a program — instruction sets, encodings, datapaths, memory hierarchy and the design trade-offs behind them. The pieces on this page are the parts of that story that are easier to <em>use</em> than to read about: an instruction is easier to understand once you have taken one apart field by field and put it back together, and a datapath is easier to understand once you have built it block by block and watched a program flow through it.</p>
+      <p>ECE 473 is about how a machine actually executes a program — instruction sets, encodings, datapaths, memory hierarchy and the design trade-offs behind them. The pieces on this page are the parts of that story that are easier to <em>use</em> than to read about: an instruction is easier to understand once you have taken one apart field by field and put it back together, a datapath is easier to understand once you have built it block by block and watched a program flow through it, and a pipeline is easier to understand once you have watched five instructions share it and seen exactly where they get in each other&rsquo;s way.</p>
       <p>Each demo is a single self-contained HTML file. Open it in any modern browser, press <kbd>F</kbd> for fullscreen, <kbd>?</kbd> for the key list, and work through it at your own pace. Nothing is uploaded and nothing is tracked.</p>
     </div>
   </div>
@@ -430,6 +431,32 @@ kbd{
           <a class="btn btn--ghost" href="/teaching/ece473/single-cycle/index.html" download="riscv-single-cycle-datapath.html">Download the file</a>
         </div>
       </li>
+      <li class="demo">
+        <div class="demo__head">
+          <h3>RISC-V: five-stage pipeline</h3>
+          <span class="tag">RISC-V</span>
+        </div>
+        <span class="kicker">Cut the datapath into stages, trace an instruction, run a program with hazards</span>
+        <p>Start from the single-cycle datapath and cut it into the classic five stages, adding the pipeline registers one at a time and seeing what has to travel with each instruction. Then send one instruction through, stage by stage, with live values at every boundary. Finally run real programs cycle by cycle on a pipeline with forwarding, load-use stalls, branch flushes and an optional one-bit predictor &mdash; toggle each policy and watch the cycle count change.</p>
+        <ul class="demo__modules">
+          <li>
+            <span class="name">1 &middot; From single-cycle</span>
+            <span class="what">Insert IF/ID, ID/EX, EX/MEM and MEM/WB, then add the forwarding muxes and the hazard unit.</span>
+          </li>
+          <li>
+            <span class="name">2 &middot; Instruction</span>
+            <span class="what">Pick an instruction class and move one instruction through the five stages, one at a time.</span>
+          </li>
+          <li>
+            <span class="name">3 &middot; Run</span>
+            <span class="what">Step a program through the pipeline with a live pipeline diagram, hazard presets and stall and flush counters.</span>
+          </li>
+        </ul>
+        <div class="demo__actions">
+          <a class="btn" href="/teaching/ece473/pipeline/">Launch demo <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a>
+          <a class="btn btn--ghost" href="/teaching/ece473/pipeline/index.html" download="riscv-five-stage-pipeline.html">Download the file</a>
+        </div>
+      </li>
     </ul>
   </div>
 </section>
@@ -448,7 +475,7 @@ kbd{
       </li>
       <li>
         <h3>On your own</h3>
-        <p>Press <kbd>?</kbd> in any demo for its full key list. Arrow keys step through examples, instructions or blocks; <kbd>Space</kbd> steps or reveals, depending on the module.</p>
+        <p>Press <kbd>?</kbd> in any demo for its full key list. Arrow keys step through examples, instructions, blocks or stages; <kbd>Space</kbd> steps or reveals, depending on the module.</p>
       </li>
       <li>
         <h3>Offline</h3>
